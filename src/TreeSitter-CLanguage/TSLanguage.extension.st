@@ -1,7 +1,7 @@
 Extension { #name : 'TSLanguage' }
 
 { #category : '*TreeSitter-CLanguage' }
-TSLanguage class >> cLang [
+TSLanguage class >> cLanguage [
 
 	^ TSCLibrary uniqueInstance tree_sitter_c
 ]
