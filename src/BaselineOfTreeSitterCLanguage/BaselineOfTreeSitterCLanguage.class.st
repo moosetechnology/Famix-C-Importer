@@ -28,7 +28,7 @@ BaselineOfTreeSitterCLanguage >> defineGroups: spec [
 
 	spec
 		group: 'default'
-		with: #( 'TreeSitter-CLanguage' ).  
+		with: #( 'TreeSitter-CLanguage' 'TreeSitter-CLanguage-Tests' ).  
 ]
 
 { #category : 'baselines' }
