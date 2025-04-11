@@ -38,5 +38,9 @@ BaselineOfTreeSitterCLanguage >> definePackages: spec [
 		package: 'TreeSitter-CLanguage'
 		with: [
 			spec requires:
-					#( TreeSitter ) ]
+					#( TreeSitter ) ];
+		package: 'TreeSitter-CLanguage-Tests'
+		with: [ 
+			spec requires: 
+					#('TreeSitter-CLanguage') ]
 ]
