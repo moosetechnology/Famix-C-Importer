@@ -31,6 +31,19 @@ TSCImporterVisitorTest >> testFunctionDefinitionName [
 	
 ]
 
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testParameterName [
+
+	| tsRoot |
+	tsRoot := self tsParamaterList: (self tsParamater: 'arg1').
+1 halt.
+	tsRoot accept: importer.
+
+	self assert: importer model allParameters size equals: 1.
+	self assert: importer model allParameters anyOne name equals: 'arg1'.
+	
+]
+
 { #category : 'running' }
 TSCImporterVisitorTest >> tsFunction: aString [
 
@@ -53,4 +66,20 @@ TSCImporterVisitorTest >> tsIdentifier: aString [
 	^TSStub new
 		type: #identifier ;
 		setTextFromSourceText: aString
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsParamater: aString [
+
+	^TSStub new
+		type: #parameter_declaration ;
+		collectFieldNameOfNamedChild: { #identifier -> (self tsIdentifier: aString) }.
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsParamaterList: aTSStubOrADictionnary [
+
+	^TSStub new
+		type: #parameter_list ;
+		collectFieldNameOfNamedChild: { '<unnamedChild>' -> aTSStubOrADictionnary }.
 ]

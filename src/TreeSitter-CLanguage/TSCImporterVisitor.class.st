@@ -84,9 +84,11 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 	| firstKey |
 	fields isEmpty ifTrue: [ ^ {  } ].
 	firstKey := fields keys first.
-	(fields at: firstKey) class = TSNode
-		ifTrue: [ model newParameter ]
-		ifFalse: [
-		(fields at: firstKey) do: [ :eachDeclaration | model newParameter ] ].
+	
+	(fields at: firstKey) isCollection
+		ifTrue: [
+		(fields at: firstKey) do: [ :eachDeclaration | model newParameter ] ]
+		ifFalse: [ model newParameter ].
+		
 	super visitCParameterList: aTSNode withFields: fields
 ]
