@@ -36,7 +36,6 @@ TSCImporterVisitorTest >> testParameterName [
 
 	| tsRoot |
 	tsRoot := self tsParamaterList: (self tsParamater: 'arg1').
-1 halt.
 	tsRoot accept: importer.
 
 	self assert: importer model allParameters size equals: 1.
