@@ -49,10 +49,13 @@ TSCImporterVisitor >> sourceCode: anObject [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
- "declarator parameters"
+	"declarator parameters"
+	context isNotEmpty ifTrue: [
+		(context top class = FamixCFunction) ifTrue: [
+			context top name:
+				(self visitKey: 'declarator' inDictionnary: fields) ] ].
 
-	context top name: (self visitKey: 'declarator' inDictionnary: fields).
-	self visitKey: 'parameters' inDictionnary: fields.
+	self visitKey: 'parameters' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
