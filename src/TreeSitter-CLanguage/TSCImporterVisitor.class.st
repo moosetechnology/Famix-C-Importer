@@ -54,7 +54,6 @@ TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 		(context top class = FamixCFunction) ifTrue: [
 			context top name:
 				(self visitKey: 'declarator' inDictionnary: fields) ] ].
-
 	self visitKey: 'parameters' inDictionnary: fields
 ]
 
@@ -74,4 +73,20 @@ TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
 	^aTSNode textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
+	"fields is a TSNode instance if there is only one parameter"
+
+	"otherwise it will be an orederedCollection"
+
+	| firstKey |
+	fields isEmpty ifTrue: [ ^ {  } ].
+	firstKey := fields keys first.
+	(fields at: firstKey) class = TSNode
+		ifTrue: [ model newParameter ]
+		ifFalse: [
+		(fields at: firstKey) do: [ :eachDeclaration | model newParameter ] ].
+	super visitCParameterList: aTSNode withFields: fields
 ]
