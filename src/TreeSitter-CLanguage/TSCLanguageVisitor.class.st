@@ -151,6 +151,7 @@ TSCLanguageVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCLanguageVisitor >> visitCParameterList: aTSNode withFields: fields [
+
  ^ {
        self visitKey: '<unnamedChild>' inDictionnary: fields.
    }

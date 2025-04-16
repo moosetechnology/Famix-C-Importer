@@ -50,10 +50,12 @@ TSCImporterVisitor >> sourceCode: anObject [
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
+		
 	context isNotEmpty ifTrue: [
 		(context top class = FamixCFunction) ifTrue: [
 			context top name:
-				(self visitKey: 'declarator' inDictionnary: fields) ] ].
+				(self visitKey: 'declarator' inDictionnary: fields) ].
+			 ].
 	self visitKey: 'parameters' inDictionnary: fields
 ]
 
@@ -64,15 +66,21 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	context push: model newFunction.
 
 	super visitCFunctionDefinition: aTSNode withFields: fields.
-
+	
 	context pop
 ]
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
-
 	^aTSNode textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
+	"type declarator"
+	model newParameterNamed: (self visitKey: 'declarator' inDictionnary: fields).
+	self visitKey: 'type' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
@@ -84,11 +92,11 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 	| firstKey |
 	fields isEmpty ifTrue: [ ^ {  } ].
 	firstKey := fields keys first.
-	
 	(fields at: firstKey) isCollection
 		ifTrue: [
-		(fields at: firstKey) do: [ :eachDeclaration | model newParameter ] ]
-		ifFalse: [ model newParameter ].
-		
-	super visitCParameterList: aTSNode withFields: fields
+			(fields at: firstKey) do: [ :eachParameterDeclaration |
+				self
+					visitCParameterDeclaration: eachParameterDeclaration
+					withFields: eachParameterDeclaration collectFieldNameOfNamedChild ] ]
+		ifFalse: [ super visitCParameterList: aTSNode withFields: fields ]
 ]
