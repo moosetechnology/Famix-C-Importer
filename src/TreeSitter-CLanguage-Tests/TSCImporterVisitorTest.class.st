@@ -23,7 +23,7 @@ TSCImporterVisitorTest >> testFunctionDefinitionName [
 
 	| tsRoot |
 	tsRoot := self tsFunction: 'func'.
-
+	
 	tsRoot accept: importer.
 
 	self assert: importer model allFunctions size equals: 1.
@@ -35,12 +35,11 @@ TSCImporterVisitorTest >> testFunctionDefinitionName [
 TSCImporterVisitorTest >> testParameterName [
 
 	| tsRoot |
-	tsRoot := self tsParamaterList: (self tsParamater: 'arg1').
+	tsRoot := self tsParamater: 'arg1'.
 	tsRoot accept: importer.
 
 	self assert: importer model allParameters size equals: 1.
-	self assert: importer model allParameters anyOne name equals: 'arg1'.
-	
+	self assert: importer model allParameters anyOne name equals: 'arg1'
 ]
 
 { #category : 'running' }
@@ -72,7 +71,7 @@ TSCImporterVisitorTest >> tsParamater: aString [
 
 	^TSStub new
 		type: #parameter_declaration ;
-		collectFieldNameOfNamedChild: { #identifier -> (self tsIdentifier: aString) }.
+		collectFieldNameOfNamedChild: { #declarator -> (self tsIdentifier: aString) }.
 ]
 
 { #category : 'running' }
