@@ -104,3 +104,11 @@ TSCImporterVisitorTest >> tsParamaterList: aTSStubOrADictionnary [
 		type: #parameter_list ;
 		collectFieldNameOfNamedChild: { '<unnamedChild>' -> aTSStubOrADictionnary }.
 ]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsTranslationUnit: aTSStubOrADictionnary [
+
+	^TSStub new
+		type: #translation_unit ;
+		collectFieldNameOfNamedChild: { '<unnamedChild>' -> aTSStubOrADictionnary }.
+]
