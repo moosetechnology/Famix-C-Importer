@@ -50,12 +50,12 @@ TSCImporterVisitor >> sourceCode: anObject [
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
-		
+
 	context isNotEmpty ifTrue: [
-		(context top class = FamixCFunction) ifTrue: [
+		context top class = FamixCFunction ifTrue: [
 			context top name:
-				(self visitKey: 'declarator' inDictionnary: fields) ].
-			 ].
+				(self visitKey: 'declarator' inDictionnary: fields) ] ].
+
 	self visitKey: 'parameters' inDictionnary: fields
 ]
 
@@ -73,7 +73,13 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
-	^aTSNode textFromSourceText: sourceCode
+
+	| fileAnchor |
+	fileAnchor := FamixCIndexedFileAnchor new.
+	fileAnchor startPos: aTSNode startByte.
+	fileAnchor endPos: aTSNode endByte.
+	context top sourceAnchor: fileAnchor.
+	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
