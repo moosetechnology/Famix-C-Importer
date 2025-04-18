@@ -7,7 +7,9 @@ Class {
 	#instVars : [
 		'textFromSourceText',
 		'collectFieldNameOfNamedChild',
-		'type'
+		'type',
+		'startByte',
+		'endByte'
 	],
 	#category : 'TreeSitter-CLanguage-Tests',
 	#package : 'TreeSitter-CLanguage-Tests'
@@ -32,9 +34,40 @@ TSStub >> collectFieldNameOfNamedChild: aCollection [
 ]
 
 { #category : 'accessing' }
+TSStub >> endByte [
+
+	^ endByte
+]
+
+{ #category : 'accessing' }
+TSStub >> endByte: anObject [
+
+	endByte := anObject
+]
+
+{ #category : 'accessing' }
 TSStub >> setTextFromSourceText: aString [
 
 	textFromSourceText := aString
+]
+
+{ #category : 'accessing' }
+TSStub >> startByte [
+
+	^ startByte
+]
+
+{ #category : 'accessing' }
+TSStub >> startByte: anObject [
+
+	startByte := anObject
+]
+
+{ #category : 'accessing' }
+TSStub >> startEnd: aPoint [
+
+	startByte := aPoint x.
+	endByte := aPoint y
 ]
 
 { #category : 'accessing' }

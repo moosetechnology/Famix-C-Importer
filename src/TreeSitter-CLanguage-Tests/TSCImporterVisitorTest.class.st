@@ -32,6 +32,20 @@ TSCImporterVisitorTest >> testFunctionDefinitionName [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
+
+	| tsRoot |
+	tsRoot := self tsFunction: 'func'.
+	tsRoot startEnd: 1@4.
+	tsRoot accept: importer.
+
+	self assert: importer model allFunctions size equals: 1.
+	self assert: importer model allFunctions anyOne startPos equals: 1.
+	self assert: importer model allFunctions anyOne endPos equals: 4.
+	
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testParameterName [
 
 	| tsRoot |
