@@ -19,6 +19,22 @@ TSCImporterVisitorTest >> setUp [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
+
+	| tsRoot nodes |
+	nodes := OrderedCollection new.
+	nodes
+		add: (self tsFunctionDeclarator: 'func');
+		add: (self tsFunction: 'func').
+	tsRoot := self tsTranslationUnit: nodes.
+
+	tsRoot accept: importer.
+
+	self assert: importer model allFunctions size equals: 1.
+	self assert: importer model allFunctions anyOne name equals: 'func'
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testFunctionDefinitionName [
 
 	| tsRoot |
@@ -64,6 +80,19 @@ TSCImporterVisitorTest >> testParameterName [
 	self assert: importer model allParameters anyOne name equals: 'arg1'
 ]
 
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testSkipFunctionDeclarationWithoutDefinition [
+
+	| tsRoot nodes |
+	nodes := OrderedCollection new.
+	nodes add: (self tsFunctionDeclarator: 'func').
+	tsRoot := self tsTranslationUnit: nodes.
+
+	tsRoot accept: importer.
+
+	self assert: importer model allFunctions size equals: 0
+]
+
 { #category : 'running' }
 TSCImporterVisitorTest >> tsFunction: aString [
 
@@ -106,9 +135,9 @@ TSCImporterVisitorTest >> tsParamaterList: aTSStubOrADictionnary [
 ]
 
 { #category : 'running' }
-TSCImporterVisitorTest >> tsTranslationUnit: aTSStubOrADictionnary [
+TSCImporterVisitorTest >> tsTranslationUnit: aTSStubOrOrderedCollection [
 
 	^TSStub new
 		type: #translation_unit ;
-		collectFieldNameOfNamedChild: { '<unnamedChild>' -> aTSStubOrADictionnary }.
+		collectFieldNameOfNamedChild: { '<unnamedChild>' -> aTSStubOrOrderedCollection}.
 ]
