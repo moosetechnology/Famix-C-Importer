@@ -51,10 +51,13 @@ TSCImporterVisitor >> sourceCode: anObject [
 TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
 
-	context isNotEmpty ifTrue: [
-		context top class = FamixCFunction ifTrue: [
-			context top name:
-				(self visitKey: 'declarator' inDictionnary: fields) ] ].
+	"here we have to check that that this functionDelcarator node is inside a functionDefinition"
+
+	"as we skip function declaration for now. e.g: void myFunc();"
+
+	aTSNode parent type = 'function_definition' ifTrue: [
+		context top name:
+			(self visitKey: 'declarator' inDictionnary: fields) ].
 
 	self visitKey: 'parameters' inDictionnary: fields
 ]

@@ -9,7 +9,8 @@ Class {
 		'collectFieldNameOfNamedChild',
 		'type',
 		'startByte',
-		'endByte'
+		'endByte',
+		'parent'
 	],
 	#category : 'TreeSitter-CLanguage-Tests',
 	#package : 'TreeSitter-CLanguage-Tests'
@@ -43,6 +44,18 @@ TSStub >> endByte [
 TSStub >> endByte: anObject [
 
 	endByte := anObject
+]
+
+{ #category : 'accessing' }
+TSStub >> parent [
+
+	^ parent
+]
+
+{ #category : 'accessing' }
+TSStub >> parent: anObject [
+
+	parent := anObject
 ]
 
 { #category : 'accessing' }
