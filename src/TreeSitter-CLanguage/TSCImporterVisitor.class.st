@@ -85,8 +85,12 @@ TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
 	"type declarator"
-	model newParameterNamed: (self visitKey: 'declarator' inDictionnary: fields).
-	self visitKey: 'type' inDictionnary: fields
+
+	context push: model newParameter.
+	context top name: (self visitKey: 'declarator' inDictionnary: fields).
+	self visitKey: 'type' inDictionnary: fields.
+
+	context pop
 ]
 
 { #category : 'visiting' }
