@@ -31,7 +31,11 @@ TSStub >> collectFieldNameOfNamedChild [
 { #category : 'accessing' }
 TSStub >> collectFieldNameOfNamedChild: aCollection [
 
-	collectFieldNameOfNamedChild := Dictionary newFrom: aCollection
+	collectFieldNameOfNamedChild := Dictionary newFrom: aCollection.
+	collectFieldNameOfNamedChild do: [ :eachTSStub | 
+		"define parent relationship for each child of this node"
+		eachTSStub parent: self 
+		]
 ]
 
 { #category : 'accessing' }

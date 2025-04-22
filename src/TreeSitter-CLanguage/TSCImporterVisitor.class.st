@@ -59,6 +59,7 @@ TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 		context top name:
 			(self visitKey: 'declarator' inDictionnary: fields) ].
 
+
 	self visitKey: 'parameters' inDictionnary: fields
 ]
 
