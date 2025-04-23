@@ -144,6 +144,22 @@ TSCImporterVisitorTest >> testStructName [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testStructNameAnchor [
+
+	| tsRoot tsStruct tsTypeIdentifier|
+	tsStruct := self tsStructSpecifier: 'Person'.
+	
+	tsTypeIdentifier := tsStruct collectFieldNameOfNamedChild at: 'name'.
+	tsTypeIdentifier startEnd: 1 @ 8.
+	
+	tsRoot := self tsTranslationUnit: tsStruct.
+	tsRoot accept: importer.
+
+	self assert: (importer model allWithType: FamixCStruct ) anyOne sourceAnchor startPos equals: 1.
+	self assert: (importer model allWithType: FamixCStruct ) anyOne sourceAnchor endPos equals: 8.
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 
 	| tsRoot tsStruct |
