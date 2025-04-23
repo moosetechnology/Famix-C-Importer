@@ -140,3 +140,35 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 					withFields: eachParameterDeclaration collectFieldNameOfNamedChild ] ]
 		ifFalse: [ super visitCParameterList: aTSNode withFields: fields ]
 ]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
+	"name body"
+	context push: model newStruct.
+	context top name: (self visitKey: 'name' inDictionnary: fields).
+	
+	self visitKey: 'body' inDictionnary: fields.
+	context pop
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'type' inDictionnary: fields.
+       self visitKey: 'declarator' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
+	"no fields"
+
+	| fileAnchor |
+
+	fileAnchor := FamixCIndexedFileAnchor new.
+	fileAnchor startPos: aTSNode startByte.
+	fileAnchor endPos: aTSNode endByte.
+	context top sourceAnchor: fileAnchor.
+	^ aTSNode textFromSourceText: sourceCode
+]
