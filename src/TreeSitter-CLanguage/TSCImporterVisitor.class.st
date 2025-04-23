@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'model',
 		'context',
-		'sourceCode'
+		'sourceCode',
+		'functionRegistry'
 	],
 	#category : 'TreeSitter-CLanguage',
 	#package : 'TreeSitter-CLanguage'
@@ -22,11 +23,20 @@ TSCImporterVisitor >> context: anObject [
 	context := anObject
 ]
 
+{ #category : 'visiting' }
+TSCImporterVisitor >> extractFunctionNameFromDeclarator: aTSNodeDeclarator [
+
+	| identifier |
+	identifier := aTSNodeDeclarator nodeChildByFieldName: 'declarator'.
+	^ identifier textFromSourceText: sourceCode
+]
+
 { #category : 'initialization' }
 TSCImporterVisitor >> initialize [ 
 	super initialize.
 	context := Stack new. 
 	model := FamixCModel new.
+	functionRegistry := OrderedDictionary new.
 ]
 
 { #category : 'accessing' }
@@ -51,26 +61,42 @@ TSCImporterVisitor >> sourceCode: anObject [
 TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
 
-	"here we have to check that that this functionDelcarator node is inside a functionDefinition"
+	| fnName fnModel |
+	fnName := self extractFunctionNameFromDeclarator: aTSNode.
+	(functionRegistry includesKey: fnName)
+		ifTrue: [ fnModel := functionRegistry at: fnName ]
+		ifFalse: [
+			fnModel := FamixCFunction new.
+			fnModel name: fnName.
+			functionRegistry at: fnName put: fnModel.
+			model add: fnModel ].
+	context push: fnModel.
+	self visitKey: 'declarator' inDictionnary: fields.
+	self visitKey: 'parameters' inDictionnary: fields.
+	context pop
 
-	"as we skip function declaration for now. e.g: void myFunc();"
-
-	aTSNode parent type = 'function_definition' ifTrue: [
-		context top name:
-			(self visitKey: 'declarator' inDictionnary: fields) ].
-
-
-	self visitKey: 'parameters' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	"type declarator body"
 
-	context push: model newFunction.
+	| fnName fnModel declaratorNode |
+	declaratorNode := aTSNode nodeChildByFieldName: 'declarator'.
+	fnName := self extractFunctionNameFromDeclarator: declaratorNode.
 
+	(functionRegistry includesKey: fnName)
+		ifTrue: [ fnModel := functionRegistry at: fnName ]
+		ifFalse: [
+			fnModel := FamixCFunction new.
+			fnModel name: fnName.
+			functionRegistry at: fnName put: fnModel.
+			model add: fnModel ].
+	context push: fnModel.
+
+	"context push: model newFunction."
 	super visitCFunctionDefinition: aTSNode withFields: fields.
-	
+
 	context pop
 ]
 
