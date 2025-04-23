@@ -84,7 +84,7 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 TSCImporterVisitorTest >> testParameterName [
 
 	| tsRoot |
-	tsRoot := self tsParamater: 'arg1'.
+	tsRoot := self tsFunctionDeclarator: 'myFunc' parameters: (self tsParamater: 'arg1').
 	tsRoot accept: importer.
 
 	self assert: importer model allParameters size equals: 1.
