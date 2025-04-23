@@ -116,7 +116,11 @@ TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
-	context push: model newParameter.
+	| paramEntity |
+	paramEntity := FamixCParameter new.
+	paramEntity parentBehaviouralEntity: context top.
+	model add: paramEntity.
+	context push: paramEntity.
 	context top name: (self visitKey: 'declarator' inDictionnary: fields).
 	self visitKey: 'type' inDictionnary: fields.
 

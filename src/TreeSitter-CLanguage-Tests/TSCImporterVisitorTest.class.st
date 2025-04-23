@@ -110,7 +110,26 @@ TSCImporterVisitorTest >> testParameterNameWithFunction [
 	self assert: importer model allParameters size equals: 2.
 	self assert: (paramNames includes: 'arg1').
 	self assert: (paramNames includes: 'arg2').
-	"TODO: test parameter belongs to myFunc function"
+
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testParameterParentFunction [
+
+	| tsFunction paramList parent |
+	paramList := OrderedCollection new.
+	paramList
+		add: (self tsParamater: 'arg1');
+		add: (self tsParamater: 'arg2').
+	tsFunction := self
+		              tsFunctionDeclarator: 'myFunc'
+		              parameters: paramList.
+
+	tsFunction accept: importer.
+	parent := importer model allParameters asCollection atRandom parentBehaviouralEntity.
+	self assert: parent isFunction.
+	self assert: parent name equals: 'myFunc'
+
 ]
 
 { #category : 'tests' }
