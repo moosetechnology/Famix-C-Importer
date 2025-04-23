@@ -61,16 +61,16 @@ TSCImporterVisitor >> sourceCode: anObject [
 TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
 
-	| fnName fnModel |
+	| fnName fnEntity |
 	fnName := self extractFunctionNameFromDeclarator: aTSNode.
 	(functionRegistry includesKey: fnName)
-		ifTrue: [ fnModel := functionRegistry at: fnName ]
+		ifTrue: [ fnEntity := functionRegistry at: fnName ]
 		ifFalse: [
-			fnModel := FamixCFunction new.
-			fnModel name: fnName.
-			functionRegistry at: fnName put: fnModel.
-			model add: fnModel ].
-	context push: fnModel.
+			fnEntity := FamixCFunction new.
+			fnEntity name: fnName.
+			functionRegistry at: fnName put: fnEntity.
+			model add: fnEntity ].
+	context push: fnEntity.
 	self visitKey: 'declarator' inDictionnary: fields.
 	self visitKey: 'parameters' inDictionnary: fields.
 	context pop
@@ -81,18 +81,18 @@ TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	"type declarator body"
 
-	| fnName fnModel declaratorNode |
+	| fnName fnEntity declaratorNode |
 	declaratorNode := aTSNode nodeChildByFieldName: 'declarator'.
 	fnName := self extractFunctionNameFromDeclarator: declaratorNode.
 
 	(functionRegistry includesKey: fnName)
-		ifTrue: [ fnModel := functionRegistry at: fnName ]
+		ifTrue: [ fnEntity := functionRegistry at: fnName ]
 		ifFalse: [
-			fnModel := FamixCFunction new.
-			fnModel name: fnName.
-			functionRegistry at: fnName put: fnModel.
-			model add: fnModel ].
-	context push: fnModel.
+			fnEntity := FamixCFunction new.
+			fnEntity name: fnName.
+			functionRegistry at: fnName put: fnEntity.
+			model add: fnEntity ].
+	context push: fnEntity.
 
 	"context push: model newFunction."
 	super visitCFunctionDefinition: aTSNode withFields: fields.
