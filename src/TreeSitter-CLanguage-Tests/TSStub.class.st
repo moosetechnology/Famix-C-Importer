@@ -50,6 +50,11 @@ TSStub >> endByte: anObject [
 	endByte := anObject
 ]
 
+{ #category : 'as yet unclassified' }
+TSStub >> nodeChildByFieldName: aString [ 
+	^ self collectFieldNameOfNamedChild at: aString ifAbsent: nil 
+]
+
 { #category : 'accessing' }
 TSStub >> parent [
 

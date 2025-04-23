@@ -19,6 +19,17 @@ TSCImporterVisitorTest >> setUp [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testFunctionDeclarationWithoutDefinition [
+
+	| tsRoot |
+	tsRoot := self tsFunctionDeclarator: 'func'.
+
+	tsRoot accept: importer.
+
+	self assert: importer model allFunctions size equals: 1
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 
 	| tsRoot nodes |
@@ -81,16 +92,14 @@ TSCImporterVisitorTest >> testParameterName [
 ]
 
 { #category : 'tests' }
-TSCImporterVisitorTest >> testSkipFunctionDeclarationWithoutDefinition [
+TSCImporterVisitorTest >> testStructName [
 
-	| tsRoot nodes |
-	nodes := OrderedCollection new.
-	nodes add: (self tsFunctionDeclarator: 'func').
-	tsRoot := self tsTranslationUnit: nodes.
-
+	| tsRoot |
+	tsRoot := self tsStructSpecifier: 'Person'.
 	tsRoot accept: importer.
 
-	self assert: importer model allFunctions size equals: 0
+	self assert: (importer model allWithType: FamixCStruct ) size equals: 1.
+	self assert: (importer model allWithType: FamixCStruct ) anyOne name equals: 'Person'
 ]
 
 { #category : 'running' }
@@ -135,9 +144,23 @@ TSCImporterVisitorTest >> tsParamaterList: aTSStubOrADictionnary [
 ]
 
 { #category : 'running' }
+TSCImporterVisitorTest >> tsStructSpecifier: aString [ 
+	^ TSStub new
+		type: #struct_specifier;
+		collectFieldNameOfNamedChild: { #name -> (self tsTypeIdentifier: aString) }.
+]
+
+{ #category : 'running' }
 TSCImporterVisitorTest >> tsTranslationUnit: aTSStubOrOrderedCollection [
 
 	^TSStub new
 		type: #translation_unit ;
 		collectFieldNameOfNamedChild: { '<unnamedChild>' -> aTSStubOrOrderedCollection}.
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsTypeIdentifier: aString [ 
+	^TSStub new
+		type: #type_identifier ;
+		setTextFromSourceText: aString
 ]
