@@ -136,11 +136,32 @@ TSCImporterVisitorTest >> testParameterParentFunction [
 TSCImporterVisitorTest >> testStructName [
 
 	| tsRoot |
-	tsRoot := self tsStructSpecifier: 'Person'.
+	tsRoot := self tsTranslationUnit: (self tsStructSpecifier: 'Person').
 	tsRoot accept: importer.
 
 	self assert: (importer model allWithType: FamixCStruct ) size equals: 1.
 	self assert: (importer model allWithType: FamixCStruct ) anyOne name equals: 'Person'
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
+
+	| tsRoot tsStruct |
+	tsStruct := self tsStructSpecifier: 'Person'.
+	tsRoot := self tsDeclaration: 'p1' type: tsStruct.
+	tsRoot accept: importer.
+
+	self assert: (importer model allWithType: FamixCStruct ) size equals: 0.
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsDeclaration: aString type: aTSStub [
+
+	^ TSStub new
+		  type: #declaration;
+		  collectFieldNameOfNamedChild: {
+				  (#declarator -> (self tsIdentifier: aString)).
+				  (#type -> aTSStub) }
 ]
 
 { #category : 'running' }

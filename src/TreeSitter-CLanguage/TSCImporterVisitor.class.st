@@ -105,10 +105,13 @@ TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
 	| fileAnchor |
-	fileAnchor := FamixCIndexedFileAnchor new.
-	fileAnchor startPos: aTSNode startByte.
-	fileAnchor endPos: aTSNode endByte.
-	context top sourceAnchor: fileAnchor.
+	context isNotEmpty ifTrue: [
+		fileAnchor := FamixCIndexedFileAnchor new.
+		fileAnchor startPos: aTSNode startByte.
+		fileAnchor endPos: aTSNode endByte.
+		context top sourceAnchor: fileAnchor 
+		].
+
 	^ aTSNode textFromSourceText: sourceCode
 ]
 
@@ -148,11 +151,19 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
-	context push: model newStruct.
-	context top name: (self visitKey: 'name' inDictionnary: fields).
-	
+
+	| inDeclaration |
+	inDeclaration := aTSNode parent type = 'declaration'.
+
+	inDeclaration
+		ifTrue: [ self visitKey: 'name' inDictionnary: fields ]
+		ifFalse: [ "inside a struct definition"
+			context push: model newStruct.
+			context top name: (self visitKey: 'name' inDictionnary: fields) ].
+
+
 	self visitKey: 'body' inDictionnary: fields.
-	context pop
+	inDeclaration ifFalse: [ context pop ]
 ]
 
 { #category : 'visiting' }
@@ -169,10 +180,11 @@ TSCImporterVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
 	"no fields"
 
 	| fileAnchor |
-
-	fileAnchor := FamixCIndexedFileAnchor new.
-	fileAnchor startPos: aTSNode startByte.
-	fileAnchor endPos: aTSNode endByte.
-	context top sourceAnchor: fileAnchor.
+	context isNotEmpty ifTrue: [
+		fileAnchor := FamixCIndexedFileAnchor new.
+		fileAnchor startPos: aTSNode startByte.
+		fileAnchor endPos: aTSNode endByte.
+		context top sourceAnchor: fileAnchor 
+		].
 	^ aTSNode textFromSourceText: sourceCode
 ]
