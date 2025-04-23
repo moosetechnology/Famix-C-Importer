@@ -92,6 +92,28 @@ TSCImporterVisitorTest >> testParameterName [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testParameterNameWithFunction [
+
+	| tsFunction paramList paramNames |
+	paramList := OrderedCollection new.
+	paramList
+		add: (self tsParamater: 'arg1');
+		add: (self tsParamater: 'arg2').
+	tsFunction := self
+		              tsFunctionDeclarator: 'myFunc'
+		              parameters: paramList.
+
+	tsFunction accept: importer.
+	
+	paramNames := importer model allParameters asCollection collect: [:each | each name ].
+	
+	self assert: importer model allParameters size equals: 2.
+	self assert: (paramNames includes: 'arg1').
+	self assert: (paramNames includes: 'arg2').
+	"TODO: test parameter belongs to myFunc function"
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testStructName [
 
 	| tsRoot |
@@ -117,6 +139,17 @@ TSCImporterVisitorTest >> tsFunctionDeclarator: aString [
 	^TSStub new
 		type: #function_declarator ;
 		collectFieldNameOfNamedChild: { #declarator -> (self tsIdentifier: aString) }
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsFunctionDeclarator: aString parameters: aTSNodeOrCollection [
+
+	^ TSStub new
+		  type: #function_declarator;
+		  collectFieldNameOfNamedChild: {
+				  (#declarator -> (self tsIdentifier: aString)).
+				  (#parameters -> (self tsParamaterList: aTSNodeOrCollection)
+				) }
 ]
 
 { #category : 'running' }
