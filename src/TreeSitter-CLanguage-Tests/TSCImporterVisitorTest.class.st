@@ -13,9 +13,10 @@ Class {
 
 { #category : 'running' }
 TSCImporterVisitorTest >> setUp [
+
 	super setUp.
 
-	importer := TSCImporterVisitor new
+	importer := TSCImporterVisitor new fileName: '/test/file/name'
 ]
 
 { #category : 'tests' }
@@ -143,20 +144,15 @@ TSCImporterVisitorTest >> testParameterNameWithFunction [
 { #category : 'tests' }
 TSCImporterVisitorTest >> testParameterParentFunction [
 
-	| tsFunction paramList parent |
-	paramList := OrderedCollection new.
-	paramList
-		add: (self tsParamater: 'arg1');
-		add: (self tsParamater: 'arg2').
-	tsFunction := self
-		              tsFunctionDeclarator: 'myFunc'
-		              parameters: paramList.
+	| tsFunction |
+	tsFunction := self tsFunctionDeclarator: 'myFunc' parameters: {
+			              (self tsParamater: 'arg1').
+			              (self tsParamater: 'arg2') }.
 
 	tsFunction accept: importer.
-	parent := importer model allParameters asCollection atRandom parentBehaviouralEntity.
-	self assert: parent isFunction.
-	self assert: parent name equals: 'myFunc'
-
+	importer model allParameters do: [ :param |
+		self assert: param parentBehaviouralEntity isFunction.
+		self assert: param parentBehaviouralEntity name equals: 'myFunc' ]
 ]
 
 { #category : 'tests' }

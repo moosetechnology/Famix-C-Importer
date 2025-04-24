@@ -5,6 +5,7 @@ Class {
 		'model',
 		'context',
 		'sourceCode',
+		'fileName',
 		'functionRegistry'
 	],
 	#category : 'TreeSitter-CLanguage',
@@ -29,6 +30,27 @@ TSCImporterVisitor >> extractFunctionNameFromDeclarator: aTSNodeDeclarator [
 	| identifier |
 	identifier := aTSNodeDeclarator nodeChildByFieldName: 'declarator'.
 	^ identifier textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> extractSourceAnchor: aTSNode [
+
+	^ FamixCIndexedFileAnchor new
+		              startPos: aTSNode startByte;
+		              endPos: aTSNode endByte;
+		              fileName: fileName.
+]
+
+{ #category : 'accessing' }
+TSCImporterVisitor >> fileName [
+
+	^ fileName
+]
+
+{ #category : 'accessing' }
+TSCImporterVisitor >> fileName: anObject [
+
+	fileName := anObject
 ]
 
 { #category : 'initialization' }
@@ -71,8 +93,9 @@ TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 			functionRegistry at: fnName put: fnEntity.
 			model add: fnEntity ].
 	context push: fnEntity.
-	self visitKey: 'declarator' inDictionnary: fields.
+	
 	self visitKey: 'parameters' inDictionnary: fields.
+	
 	context pop
 
 ]
@@ -94,7 +117,6 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 			model add: fnEntity ].
 	context push: fnEntity.
 
-	"context push: model newFunction."
 	super visitCFunctionDefinition: aTSNode withFields: fields.
 
 	context pop
@@ -120,39 +142,32 @@ TSCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	| paramEntity |
-	paramEntity := FamixCParameter new.
+	
+	paramEntity := model newParameter.
 	paramEntity parentBehaviouralEntity: context top.
-	model add: paramEntity.
-	context push: paramEntity.
-	context top name: (self visitKey: 'declarator' inDictionnary: fields).
+	paramEntity name: (self visitKey: 'declarator' inDictionnary: fields).
+	
 	self visitKey: 'type' inDictionnary: fields.
-
-	context pop
+	
+	 ^ paramEntity
 ]
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 	"<unnamedChild>"
+
 	"(fields at: '<unnamedChild>') is a TSNode instance if there is only one parameter"
 
 	"otherwise it will be an orederedCollection"
-	
+
 	"before visiting all parameters, we need to check if they have already been added to the model from their function prototype"
 
-	| firstKey parentFunctionName parentFunctionEntity |
-	fields isEmpty ifTrue: [ ^ {  } ].
+	| firstKey parentFunctionEntity |
+	fields isEmpty ifTrue: [ ^ self ].
 
-	parentFunctionName := self extractFunctionNameFromDeclarator: aTSNode parent.
-	
-	parentFunctionEntity := model allFunctions
-		                        detect: [ :each | each name = parentFunctionName ]
-		                        ifNone: [ nil ].
-	parentFunctionEntity ifNotNil: [
-		parentFunctionEntity parameters isNotEmpty ifTrue: [ 
-			"parameters already in the model"
-			^ {  } 
-			] 
-		].
+	parentFunctionEntity := context top.
+	parentFunctionEntity parameters isNotEmpty ifTrue: [ "parameters already in the model"
+		^ self ].
 
 	firstKey := fields keys first.
 	(fields at: firstKey) isCollection
@@ -162,6 +177,7 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 					visitCParameterDeclaration: eachParameterDeclaration
 					withFields: eachParameterDeclaration collectFieldNameOfNamedChild ] ]
 		ifFalse: [ super visitCParameterList: aTSNode withFields: fields ]
+		
 ]
 
 { #category : 'visiting' }
