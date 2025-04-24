@@ -132,12 +132,28 @@ TSCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
-	"fields is a TSNode instance if there is only one parameter"
+	"<unnamedChild>"
+	"(fields at: '<unnamedChild>') is a TSNode instance if there is only one parameter"
 
 	"otherwise it will be an orederedCollection"
+	
+	"before visiting all parameters, we need to check if they have already been added to the model from their function prototype"
 
-	| firstKey |
+	| firstKey parentFunctionName parentFunctionEntity |
 	fields isEmpty ifTrue: [ ^ {  } ].
+
+	parentFunctionName := self extractFunctionNameFromDeclarator: aTSNode parent.
+	
+	parentFunctionEntity := model allFunctions
+		                        detect: [ :each | each name = parentFunctionName ]
+		                        ifNone: [ nil ].
+	parentFunctionEntity ifNotNil: [
+		parentFunctionEntity parameters isNotEmpty ifTrue: [ 
+			"parameters already in the model"
+			^ {  } 
+			] 
+		].
+
 	firstKey := fields keys first.
 	(fields at: firstKey) isCollection
 		ifTrue: [

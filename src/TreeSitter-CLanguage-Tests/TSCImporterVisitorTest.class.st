@@ -81,6 +81,33 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDefinition [
+
+	| tsRoot nodes tsFunctionDefinition tsFunctionDeclarator paramList paramNames |
+	paramList := OrderedCollection new.
+	paramList
+		add: (self tsParamater: 'arg1');
+		add: (self tsParamater: 'arg2').
+	tsFunctionDeclarator := self
+		              tsFunctionDeclarator: 'myFunc'
+		              parameters: paramList.
+	tsFunctionDefinition := self tsFunction: 'myFunc' parameters: paramList.
+	
+	nodes := OrderedCollection new.
+	nodes add: tsFunctionDeclarator; add: tsFunctionDefinition.
+	tsRoot := self tsTranslationUnit: nodes.
+	
+	tsRoot accept: importer.
+	
+	paramNames := importer model allParameters asCollection collect: [:each | each name ].
+	
+	self assert: importer model allParameters size equals: 2.
+	self assert: (paramNames includes: 'arg1').
+	self assert: (paramNames includes: 'arg2').
+
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testParameterName [
 
 	| tsRoot |
@@ -187,6 +214,15 @@ TSCImporterVisitorTest >> tsFunction: aString [
 		  type: #function_definition;
 		  collectFieldNameOfNamedChild:
 			  { (#declarator -> (self tsFunctionDeclarator: aString)) }
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsFunction: aString parameters: aTSNodeOrCollection [
+
+	^ TSStub new
+		  type: #function_definition;
+		  collectFieldNameOfNamedChild:
+			  { (#declarator -> (self tsFunctionDeclarator: aString parameters: aTSNodeOrCollection )) }
 ]
 
 { #category : 'running' }
