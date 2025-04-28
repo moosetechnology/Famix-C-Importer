@@ -26,8 +26,8 @@ TSCImporterVisitor >> context: anObject [
 { #category : 'visiting' }
 TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 
-	^ (model allWithType: aFamixCEntity) anySatisfy: [ :each |
-		  each name = aString ]
+	^ (model allWithType: aFamixCEntity) anySatisfy:
+		  [ :each | each name = aString ]
 ]
 
 { #category : 'visiting' }

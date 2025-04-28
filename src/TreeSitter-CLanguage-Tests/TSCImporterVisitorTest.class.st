@@ -59,6 +59,24 @@ TSCImporterVisitorTest >> testFunctionDefinitionName [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testFunctionEntityDoesNotExistInModel [
+
+	importer model newFunctionNamed: 'aFunction'.
+
+	self deny:
+		(importer ensureEntityExist: FamixCFunction value: 'anotherFunction')
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testFunctionEntityExistInModel [
+
+	importer model newFunctionNamed: 'aFunction'.
+
+	self assert:
+		(importer ensureEntityExist: FamixCFunction value: 'aFunction')
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 
 	| tsRoot |
@@ -106,6 +124,24 @@ TSCImporterVisitorTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDe
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testParameterEntityDoesNotExistInModel [
+
+	importer model newParameterNamed: 'aParam'.
+
+	self deny:
+		(importer ensureEntityExist: FamixCParameter value: 'anotherParam')
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testParameterEntityExistInModel [
+
+	importer model newParameterNamed: 'aParam'.
+
+	self assert:
+		(importer ensureEntityExist: FamixCParameter value: 'aParam')
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testParameterName [
 
 	| tsRoot |
@@ -150,6 +186,24 @@ TSCImporterVisitorTest >> testParameterParentFunction [
 	importer model allParameters do: [ :param |
 		self assert: param parentBehaviouralEntity isFunction.
 		self assert: param parentBehaviouralEntity name equals: 'myFunc' ]
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testStructEntityDoesNotExistInModel [
+
+	importer model newStruct name: 'AStruct'.
+
+	self deny:
+		(importer ensureEntityExist: FamixCStruct value: 'AnotherStruct')
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testStructEntityExistInModel [
+
+	importer model newStruct name: 'Person'.
+
+	self assert:
+		(importer ensureEntityExist: FamixCStruct value: 'Person')
 ]
 
 { #category : 'tests' }
