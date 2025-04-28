@@ -247,28 +247,37 @@ TSCImporterVisitorTest >> testStructName [
 { #category : 'tests' }
 TSCImporterVisitorTest >> testStructNameAnchor [
 
-	| tsRoot tsStruct tsTypeIdentifier|
-	tsStruct := self tsStructSpecifier: 'Person'.
-	
-	tsTypeIdentifier := tsStruct collectFieldNameOfNamedChild at: 'name'.
-	tsTypeIdentifier startEnd: 1 @ 8.
-	
-	tsRoot := self tsTranslationUnit: tsStruct.
+	| tsRoot |
+	tsRoot := self tsStructSpecifier: 'Person'.
+
+	tsRoot startEnd: 1 @ 8.
+
 	tsRoot accept: importer.
 
-	self assert: (importer model allWithType: FamixCStruct ) anyOne sourceAnchor startPos equals: 1.
-	self assert: (importer model allWithType: FamixCStruct ) anyOne sourceAnchor endPos equals: 8.
+	self
+		assert:
+			(importer model allWithType: FamixCStruct) anyOne sourceAnchor
+				startPos
+		equals: 1.
+	self
+		assert:
+		(importer model allWithType: FamixCStruct) anyOne sourceAnchor
+			endPos
+		equals: 8
 ]
 
 { #category : 'tests' }
 TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 
-	| tsRoot tsStruct |
+	| tsRoot tsStruct tsDeclaration|
 	tsStruct := self tsStructSpecifier: 'Person'.
-	tsRoot := self tsDeclaration: 'p1' type: tsStruct.
+	tsDeclaration := self tsDeclaration: 'p1' type: tsStruct.
+	tsRoot := self tsTranslationUnit: { tsStruct . tsDeclaration }.
 	tsRoot accept: importer.
 
-	self assert: (importer model allWithType: FamixCStruct ) size equals: 0.
+	self
+		assert: (importer model allWithType: FamixCStruct) size
+		equals: 1
 ]
 
 { #category : 'running' }

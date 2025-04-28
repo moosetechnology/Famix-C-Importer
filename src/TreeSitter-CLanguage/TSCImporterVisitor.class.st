@@ -5,7 +5,8 @@ Class {
 		'model',
 		'context',
 		'sourceCode',
-		'fileName'
+		'fileName',
+		'inDeclaration'
 	],
 	#category : 'TreeSitter-CLanguage',
 	#package : 'TreeSitter-CLanguage'
@@ -34,9 +35,9 @@ TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 TSCImporterVisitor >> extractSourceAnchor: aTSNode [
 
 	^ FamixCIndexedFileAnchor new
-		              startPos: aTSNode startByte;
-		              endPos: aTSNode endByte;
-		              fileName: fileName.
+		  startPos: aTSNode startByte;
+		  endPos: aTSNode endByte;
+		  fileName: fileName
 ]
 
 { #category : 'accessing' }
@@ -57,6 +58,7 @@ TSCImporterVisitor >> initialize [
 	super initialize.
 	context := Stack new.
 	model := FamixCModel new.
+	inDeclaration := false
 ]
 
 { #category : 'accessing' }
@@ -75,6 +77,15 @@ TSCImporterVisitor >> model: anObject [
 TSCImporterVisitor >> sourceCode: anObject [
 
 	sourceCode := anObject
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
+	"type declarator"
+
+	inDeclaration := true.
+	super visitCDeclaration: aTSNode withFields: fields.
+	inDeclaration := false.
 ]
 
 { #category : 'visiting' }
@@ -173,18 +184,24 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
 
-	| inDeclaration |
-	inDeclaration := aTSNode parent type = 'declaration'.
-
+	| structEntity |
 	inDeclaration
-		ifTrue: [ self visitKey: 'name' inDictionnary: fields ]
+		ifTrue: [
+			| structName |
+			structName := self visitKey: 'name' inDictionnary: fields.
+			structEntity := (model allWithType: FamixCStruct)
+				                detect: [ :each | each name = structName ]
+				                ifNone: [ nil ] ]
 		ifFalse: [ "inside a struct definition"
-			context push: model newStruct.
-			context top name: (self visitKey: 'name' inDictionnary: fields) ].
+			structEntity := model newStruct name:
+				                (self visitKey: 'name' inDictionnary: fields).
+			structEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
+			context push: structEntity ].
 
 
 	self visitKey: 'body' inDictionnary: fields.
-	inDeclaration ifFalse: [ context pop ]
+	inDeclaration ifFalse: [ context pop ].
+	^ structEntity
 ]
 
 { #category : 'visiting' }
