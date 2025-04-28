@@ -47,7 +47,7 @@ TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 ]
 
 { #category : 'tests' }
-TSCImporterVisitorTest >> testFunctionDefinitionName [
+TSCImporterVisitorTest >> testFunctionDefinitionWithoutDeclaration [
 
 	| tsRoot |
 	tsRoot := self tsFunction: 'func'.
