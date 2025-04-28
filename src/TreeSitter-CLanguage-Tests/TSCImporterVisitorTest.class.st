@@ -97,6 +97,25 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testParamSourceAnchor [
+
+	| tsRoot tsParameter |
+	
+	tsParameter := (self tsParamater: 'param1') startEnd: 1 @ 7.
+
+	tsRoot := self tsFunctionDeclarator: 'func' parameters: tsParameter.
+
+	tsRoot accept: importer.
+
+	self
+		assert: importer model allParameters anyOne sourceAnchor startPos
+		equals: 1.
+	self
+		assert: importer model allParameters anyOne sourceAnchor endPos
+		equals: 7
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDefinition [
 
 	| tsRoot nodes tsFunctionDefinition tsFunctionDeclarator paramList paramNames |
@@ -245,7 +264,7 @@ TSCImporterVisitorTest >> testStructName [
 ]
 
 { #category : 'tests' }
-TSCImporterVisitorTest >> testStructNameAnchor [
+TSCImporterVisitorTest >> testStructSourceAnchor [
 
 	| tsRoot |
 	tsRoot := self tsStructSpecifier: 'Person'.

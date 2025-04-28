@@ -142,14 +142,15 @@ TSCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	| paramEntity |
-	
 	paramEntity := model newParameter.
-	paramEntity parentBehaviouralEntity: context top.
-	paramEntity name: (self visitKey: 'declarator' inDictionnary: fields).
-	
+	paramEntity
+		parentBehaviouralEntity: context top;
+		name: (self visitKey: 'declarator' inDictionnary: fields);
+		sourceAnchor: (self extractSourceAnchor: aTSNode).
+
 	self visitKey: 'type' inDictionnary: fields.
-	
-	 ^ paramEntity
+
+	^ paramEntity
 ]
 
 { #category : 'visiting' }
