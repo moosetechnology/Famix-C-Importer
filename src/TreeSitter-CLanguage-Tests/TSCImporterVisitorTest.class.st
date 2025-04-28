@@ -189,6 +189,33 @@ TSCImporterVisitorTest >> testParameterParentFunction [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testParametersWithTheSameNameButInDifferentFunction [
+
+	| tsRoot nodes paramList paramNames |
+	paramList := OrderedCollection new.
+	paramList
+		add: (self tsParamater: 'arg1');
+		add: (self tsParamater: 'arg2').
+
+	nodes := OrderedCollection new.
+
+	nodes
+		add: (self tsFunctionDeclarator: 'myFunc1' parameters: paramList);
+		add: (self tsFunction: 'myFunc2' parameters: paramList).
+
+	tsRoot := self tsTranslationUnit: nodes.
+
+	tsRoot accept: importer.
+
+	paramNames := importer model allParameters collect: [ :each |
+		              each name ].
+
+	self assert: importer model allParameters size equals: 4.
+	self assert: (paramNames count: [ :each | each = 'arg1' ]) equals: 2.
+	self assert: (paramNames count: [ :each | each = 'arg2' ]) equals: 2
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testStructEntityDoesNotExistInModel [
 
 	importer model newStruct name: 'AStruct'.
