@@ -60,14 +60,11 @@ TSCImporterVisitorTest >> testFunctionDefinitionName [
 
 { #category : 'tests' }
 TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
-	"in a function_definition TSNode, the name, the startByte and the endByte are in the identifer node (function_definition > function_declarator > identifier)"
 
-	| tsRoot tsIdentifier |
+	| tsRoot |
 	tsRoot := self tsFunction: 'func'.
 
-	tsIdentifier := (tsRoot collectFieldNameOfNamedChild at: #declarator)
-		              collectFieldNameOfNamedChild at: #declarator.
-	tsIdentifier startEnd: 1 @ 5.
+	tsRoot startEnd: 1 @ 5.
 
 	tsRoot accept: importer.
 

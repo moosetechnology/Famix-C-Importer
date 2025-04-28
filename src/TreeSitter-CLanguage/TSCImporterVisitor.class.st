@@ -5,8 +5,7 @@ Class {
 		'model',
 		'context',
 		'sourceCode',
-		'fileName',
-		'functionRegistry'
+		'fileName'
 	],
 	#category : 'TreeSitter-CLanguage',
 	#package : 'TreeSitter-CLanguage'
@@ -25,11 +24,10 @@ TSCImporterVisitor >> context: anObject [
 ]
 
 { #category : 'visiting' }
-TSCImporterVisitor >> extractFunctionNameFromDeclarator: aTSNodeDeclarator [
+TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 
-	| identifier |
-	identifier := aTSNodeDeclarator nodeChildByFieldName: 'declarator'.
-	^ identifier textFromSourceText: sourceCode
+	^ (model allWithType: aFamixCEntity) anySatisfy: [ :each |
+		  each name = aString ]
 ]
 
 { #category : 'visiting' }
@@ -54,11 +52,11 @@ TSCImporterVisitor >> fileName: anObject [
 ]
 
 { #category : 'initialization' }
-TSCImporterVisitor >> initialize [ 
+TSCImporterVisitor >> initialize [
+
 	super initialize.
-	context := Stack new. 
+	context := Stack new.
 	model := FamixCModel new.
-	functionRegistry := OrderedDictionary new.
 ]
 
 { #category : 'accessing' }
@@ -84,55 +82,46 @@ TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
 
 	| fnName fnEntity |
-	fnName := self extractFunctionNameFromDeclarator: aTSNode.
-	(functionRegistry includesKey: fnName)
-		ifTrue: [ fnEntity := functionRegistry at: fnName ]
+	
+	fnName := self visitKey: 'declarator' inDictionnary: fields.
+	
+	(self ensureEntityExist: FamixCFunction value: fnName)
+		ifTrue: [
+			fnEntity := model allFunctions detect: [ :each | each name = fnName ] 
+			]
 		ifFalse: [
-			fnEntity := FamixCFunction new.
-			fnEntity name: fnName.
-			functionRegistry at: fnName put: fnEntity.
-			model add: fnEntity ].
+			fnEntity := model newFunctionNamed: fnName.
+			fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode) 
+			].
+		
 	context push: fnEntity.
-	
-	self visitKey: 'parameters' inDictionnary: fields.
-	
-	context pop
 
+	self visitKey: 'parameters' inDictionnary: fields.
+
+	^ context pop
 ]
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	"type declarator body"
 
-	| fnName fnEntity declaratorNode |
-	declaratorNode := aTSNode nodeChildByFieldName: 'declarator'.
-	fnName := self extractFunctionNameFromDeclarator: declaratorNode.
+	| fnEntity |
+	self visitKey: 'type' inDictionnary: fields.
+	"get the created function entity after visiting the declarator key"
+	fnEntity := self visitKey: 'declarator' inDictionnary: fields.
 
-	(functionRegistry includesKey: fnName)
-		ifTrue: [ fnEntity := functionRegistry at: fnName ]
-		ifFalse: [
-			fnEntity := FamixCFunction new.
-			fnEntity name: fnName.
-			functionRegistry at: fnName put: fnEntity.
-			model add: fnEntity ].
+	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
+
 	context push: fnEntity.
 
-	super visitCFunctionDefinition: aTSNode withFields: fields.
-
+	self visitKey: 'body' inDictionnary: fields.
+	
 	context pop
 ]
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
-
-	| fileAnchor |
-	context isNotEmpty ifTrue: [
-		fileAnchor := FamixCIndexedFileAnchor new.
-		fileAnchor startPos: aTSNode startByte.
-		fileAnchor endPos: aTSNode endByte.
-		context top sourceAnchor: fileAnchor 
-		].
 
 	^ aTSNode textFromSourceText: sourceCode
 ]
