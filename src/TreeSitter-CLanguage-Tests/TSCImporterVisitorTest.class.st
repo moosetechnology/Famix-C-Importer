@@ -116,6 +116,78 @@ TSCImporterVisitorTest >> testLocalVariableName [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testLocalVariableParentFunction [
+
+	| tsDeclaration tsFunction |
+	tsDeclaration := self
+		                 tsDeclaration: 'aLocalVar'
+		                 type: (self tsPrimitiveType: 'int').
+	tsFunction := self
+		              tsFunction: 'parentFunction'
+		              body: (self tsCompoundStatement: tsDeclaration).
+
+	tsFunction accept: importer.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self assert:
+		importer model allLocalVariables first parentBehaviouralEntity isFunction.
+	self
+		assert:
+		importer model allLocalVariables first parentBehaviouralEntity name
+		equals: 'parentFunction'
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testLocalVariableSkipFileScopeVariable [
+
+	| tsDeclaration tsRoot |
+	tsDeclaration := self
+		                 tsDeclaration: 'aFileScopeVar'
+		                 type: (self tsPrimitiveType: 'int').
+	tsRoot := self tsTranslationUnit: tsDeclaration.
+
+	tsRoot accept: importer.
+
+	self assert: importer model allLocalVariables size equals: 0.
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testLocalVariableSourceAnchor [
+
+	| tsDeclaration tsFunction |
+	tsDeclaration := self
+		                 tsDeclaration: 'aLocalVar'
+		                 type: (self tsPrimitiveType: 'int').
+	tsDeclaration startEnd: 1 @ 14.
+	tsFunction := self
+		              tsFunction: 'parentFunction'
+		              body: (self tsCompoundStatement: tsDeclaration).
+
+	tsFunction accept: importer.
+
+	self assert: importer model allLocalVariables first sourceAnchor startPos equals: 1.
+	self assert: importer model allLocalVariables first sourceAnchor endPos equals: 14.
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
+
+	| tsDeclaration tsFunction |
+	tsDeclaration := self
+		                 tsDeclaration: 'aLocalVar'
+		                 type: (self tsPrimitiveType: 'int')
+		                 value: (self tsNumberLiteral: 10).
+	tsFunction := self tsFunction: 'parentFunction' body: tsDeclaration.
+
+	tsFunction accept: importer.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'aLocalVar'
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testParamSourceAnchor [
 
 	| tsRoot tsParameter |
@@ -338,6 +410,16 @@ TSCImporterVisitorTest >> tsDeclaration: aString type: aTSStub [
 ]
 
 { #category : 'running' }
+TSCImporterVisitorTest >> tsDeclaration: aString type: aTSStubType value: aTSStubValue [
+
+	^ TSStub new
+		  type: #declaration;
+		  collectFieldNameOfNamedChild: {
+				  (#declarator -> (self tsInitDeclarator: aString value: aTSStubValue)).
+				  (#type -> aTSStubType) }
+]
+
+{ #category : 'running' }
 TSCImporterVisitorTest >> tsFunction: aString [
 
 	^ TSStub new
@@ -390,6 +472,24 @@ TSCImporterVisitorTest >> tsIdentifier: aString [
 	^TSStub new
 		type: #identifier ;
 		setTextFromSourceText: aString
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsInitDeclarator: aString value: aTSNode [
+
+	^ TSStub new
+		  type: #init_declarator;
+		  collectFieldNameOfNamedChild: {
+				  (#declarator -> (self tsIdentifier: aString )).
+				  (#value -> aTSNode) }
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsNumberLiteral: aString [
+
+	^ TSStub new
+		  type: #number_literal;
+		  setTextFromSourceText: aString
 ]
 
 { #category : 'running' }

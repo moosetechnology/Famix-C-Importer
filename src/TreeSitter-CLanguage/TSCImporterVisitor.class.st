@@ -84,8 +84,23 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	inDeclaration := true.
-	super visitCDeclaration: aTSNode withFields: fields.
-	inDeclaration := false.
+	
+	self visitKey: 'type' inDictionnary: fields.
+	
+	(context isNotEmpty and: [ context top isFunction ])
+		ifTrue: [ 
+			| localVarEntity |
+			localVarEntity := FamixCLocalVariable new name:
+				                  (self
+					                   visitKey: 'declarator'
+					                   inDictionnary: fields).
+			localVarEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
+			localVarEntity parentBehaviouralEntity: context top.
+
+			model add: localVarEntity ]
+		ifFalse: [ self visitKey: 'declarator' inDictionnary: fields ].
+
+	inDeclaration := false
 ]
 
 { #category : 'visiting' }
@@ -135,6 +150,14 @@ TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
 	^ aTSNode textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCInitDeclarator: aTSNode withFields: fields [
+	"declarator value"
+
+	self visitKey: 'value' inDictionnary: fields.
+	^ self visitKey: 'declarator' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
