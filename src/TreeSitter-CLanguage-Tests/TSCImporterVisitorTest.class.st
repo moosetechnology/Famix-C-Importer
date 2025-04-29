@@ -97,6 +97,25 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testLocalVariableName [
+
+	| tsDeclaration tsFunction |
+	tsDeclaration := self
+		                 tsDeclaration: 'aLocalVar'
+		                 type: (self tsPrimitiveType: 'int').
+	tsFunction := self
+		              tsFunction: 'parentFunction'
+		              body: (self tsCompoundStatement: tsDeclaration).
+
+	tsFunction accept: importer.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'aLocalVar'
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testParamSourceAnchor [
 
 	| tsRoot tsParameter |
@@ -300,6 +319,15 @@ TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 ]
 
 { #category : 'running' }
+TSCImporterVisitorTest >> tsCompoundStatement: aTSStubOrADictionnary [
+
+	^ TSStub new
+		  type: #compound_statement;
+		  collectFieldNameOfNamedChild:
+			  { ('<unnamedChild>' -> aTSStubOrADictionnary) }
+]
+
+{ #category : 'running' }
 TSCImporterVisitorTest >> tsDeclaration: aString type: aTSStub [
 
 	^ TSStub new
@@ -316,6 +344,16 @@ TSCImporterVisitorTest >> tsFunction: aString [
 		  type: #function_definition;
 		  collectFieldNameOfNamedChild:
 			  { (#declarator -> (self tsFunctionDeclarator: aString)) }
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsFunction: aString body: aCompoundStatementNode [
+
+	^ TSStub new
+		  type: #function_definition;
+		  collectFieldNameOfNamedChild: {
+				  (#declarator -> (self tsFunctionDeclarator: aString)).
+				  (#body -> aCompoundStatementNode) }
 ]
 
 { #category : 'running' }
@@ -368,6 +406,14 @@ TSCImporterVisitorTest >> tsParamaterList: aTSStubOrADictionnary [
 	^TSStub new
 		type: #parameter_list ;
 		collectFieldNameOfNamedChild: { '<unnamedChild>' -> aTSStubOrADictionnary }.
+]
+
+{ #category : 'running' }
+TSCImporterVisitorTest >> tsPrimitiveType: aString [
+
+	^ TSStub new
+		  type: #primitive_type;
+		  setTextFromSourceText: aString
 ]
 
 { #category : 'running' }
