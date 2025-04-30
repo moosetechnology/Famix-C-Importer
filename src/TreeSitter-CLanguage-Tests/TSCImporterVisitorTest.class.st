@@ -20,6 +20,32 @@ TSCImporterVisitorTest >> setUp [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testEnsureEntityExistForExistingEntity [
+
+	importer model newFunctionNamed: 'aFunction'.
+
+	self assert:
+		(importer ensureEntityExist: FamixCFunction value: 'aFunction')
+			isFunction.
+	self
+		assert:
+		(importer ensureEntityExist: FamixCFunction value: 'aFunction') name
+		equals: 'aFunction'
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testEnsureEntityExistForNonExistingEntity [
+
+	self assert:
+		(importer ensureEntityExist: FamixCFunction value: 'aFunction')
+			isFunction.
+	self
+		assert:
+		(importer ensureEntityExist: FamixCFunction value: 'aFunction') name
+		equals: 'aFunction'
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testFunctionDeclarationWithoutDefinition [
 
 	| tsRoot |
@@ -56,24 +82,6 @@ TSCImporterVisitorTest >> testFunctionDefinitionWithoutDeclaration [
 	
 	self assert: importer model allFunctions size equals: 1.
 	self assert: importer model allFunctions anyOne name equals: 'func'
-]
-
-{ #category : 'tests' }
-TSCImporterVisitorTest >> testFunctionEntityDoesNotExistInModel [
-
-	importer model newFunctionNamed: 'aFunction'.
-
-	self deny:
-		(importer ensureEntityExist: FamixCFunction value: 'anotherFunction')
-]
-
-{ #category : 'tests' }
-TSCImporterVisitorTest >> testFunctionEntityExistInModel [
-
-	importer model newFunctionNamed: 'aFunction'.
-
-	self assert:
-		(importer ensureEntityExist: FamixCFunction value: 'aFunction')
 ]
 
 { #category : 'tests' }
@@ -234,24 +242,6 @@ TSCImporterVisitorTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDe
 ]
 
 { #category : 'tests' }
-TSCImporterVisitorTest >> testParameterEntityDoesNotExistInModel [
-
-	importer model newParameterNamed: 'aParam'.
-
-	self deny:
-		(importer ensureEntityExist: FamixCParameter value: 'anotherParam')
-]
-
-{ #category : 'tests' }
-TSCImporterVisitorTest >> testParameterEntityExistInModel [
-
-	importer model newParameterNamed: 'aParam'.
-
-	self assert:
-		(importer ensureEntityExist: FamixCParameter value: 'aParam')
-]
-
-{ #category : 'tests' }
 TSCImporterVisitorTest >> testParameterName [
 
 	| tsRoot |
@@ -323,24 +313,6 @@ TSCImporterVisitorTest >> testParametersWithTheSameNameButInDifferentFunction [
 	self assert: importer model allParameters size equals: 4.
 	self assert: (paramNames count: [ :each | each = 'arg1' ]) equals: 2.
 	self assert: (paramNames count: [ :each | each = 'arg2' ]) equals: 2
-]
-
-{ #category : 'tests' }
-TSCImporterVisitorTest >> testStructEntityDoesNotExistInModel [
-
-	importer model newStruct name: 'AStruct'.
-
-	self deny:
-		(importer ensureEntityExist: FamixCStruct value: 'AnotherStruct')
-]
-
-{ #category : 'tests' }
-TSCImporterVisitorTest >> testStructEntityExistInModel [
-
-	importer model newStruct name: 'Person'.
-
-	self assert:
-		(importer ensureEntityExist: FamixCStruct value: 'Person')
 ]
 
 { #category : 'tests' }

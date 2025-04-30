@@ -27,8 +27,9 @@ TSCImporterVisitor >> context: anObject [
 { #category : 'visiting' }
 TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 
-	^ (model allWithType: aFamixCEntity) anySatisfy:
-		  [ :each | each name = aString ]
+	^ (model allWithType: aFamixCEntity)
+		  detect: [ :each | each name = aString ]
+		  ifNone: [ model add: (aFamixCEntity new name: aString) ]
 ]
 
 { #category : 'visiting' }
@@ -84,11 +85,11 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	inDeclaration := true.
-	
+
 	self visitKey: 'type' inDictionnary: fields.
-	
+	"check if it is a declaration inside a function, for local variable"
 	(context isNotEmpty and: [ context top isFunction ])
-		ifTrue: [ 
+		ifTrue: [
 			| localVarEntity |
 			localVarEntity := FamixCLocalVariable new name:
 				                  (self
@@ -108,18 +109,11 @@ TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
 
 	| fnName fnEntity |
-	
 	fnName := self visitKey: 'declarator' inDictionnary: fields.
-	
-	(self ensureEntityExist: FamixCFunction value: fnName)
-		ifTrue: [
-			fnEntity := model allFunctions detect: [ :each | each name = fnName ] 
-			]
-		ifFalse: [
-			fnEntity := model newFunctionNamed: fnName.
-			fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode) 
-			].
-		
+
+	fnEntity := self ensureEntityExist: FamixCFunction value: fnName.
+	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
+
 	context push: fnEntity.
 
 	self visitKey: 'parameters' inDictionnary: fields.
@@ -132,16 +126,15 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	"type declarator body"
 
 	| fnEntity |
-	self visitKey: 'type' inDictionnary: fields.
-	"get the created function entity after visiting the declarator key"
+	"get the created function entity after visiting the declarator"
 	fnEntity := self visitKey: 'declarator' inDictionnary: fields.
 
 	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
 
 	context push: fnEntity.
-
+	self visitKey: 'type' inDictionnary: fields.
 	self visitKey: 'body' inDictionnary: fields.
-	
+
 	context pop
 ]
 
