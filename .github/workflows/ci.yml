@@ -36,8 +36,15 @@ jobs:
       - uses: hpi-swa/setup-smalltalkCI@v1
         with:
           smalltalk-image: ${{ matrix.smalltalk }}
-      - run: smalltalkci -s ${{ matrix.smalltalk }}
+
+      - name: Run tests
         shell: bash
+        run: | 
+          smalltalkci -s ${{ matrix.smalltalk }}
+          echo 'current location'
+          pwd
+          echo 'lcov file'
+          cat /home/runner/work/TreeSitterCLanguage/TreeSitterCLanguage/coverage/lcov.info
         timeout-minutes: 15
 
       - name: Coveralls
