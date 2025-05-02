@@ -39,15 +39,11 @@ jobs:
 
       - name: Run tests
         shell: bash
-        run: | 
-          smalltalkci -s ${{ matrix.smalltalk }}
-          echo 'current location'
-          pwd
-          echo 'lcov file'
-          cat /home/runner/work/TreeSitterCLanguage/TreeSitterCLanguage/coverage/lcov.info
+        run: smalltalkci -s ${{ matrix.smalltalk }}
         timeout-minutes: 15
 
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Coveralls
+      #   uses: coverallsapp/github-action@master
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
