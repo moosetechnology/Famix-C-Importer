@@ -2,7 +2,7 @@ SmalltalkCISpec {
   #loading : [
     SCIMetacelloLoadSpec {
         #baseline : 'FamixCpp',
-        #directory : 'github://moosetechnology/Famix-Cpp:main',
+        #directory : 'https://github.com/moosetechnology/Famix-Cpp:main',
         #platforms : [ #pharo ],
         #onConflict : #useIncoming,
         #onUpgrade : #useIncoming
