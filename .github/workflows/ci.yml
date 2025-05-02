@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 on: push
 
 jobs:
@@ -29,7 +32,7 @@ jobs:
           tree-sitter build
           sudo mv c.so /usr/local/lib/libtree-sitter-c.so
           cd ..
-          
+
       - uses: hpi-swa/setup-smalltalkCI@v1
         with:
           smalltalk-image: ${{ matrix.smalltalk }}
