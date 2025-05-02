@@ -7,5 +7,5 @@ SmalltalkCISpec {
       #onConflict : #useIncoming,
       #onUpgrade : #useIncoming
     }
-  ],
+  ]
 }
