@@ -1,0 +1,38 @@
+name: CI
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        smalltalk: [ Pharo64-12 ]
+    name: ${{ matrix.smalltalk }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: tree-sitter/setup-action@v2
+
+      - name: Clone Tree Sitter C 
+        uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+        with:
+          depth: 1
+          branch: master
+          owner: tree-sitter
+          repository: tree-sitter-c
+      
+      - name: Build C lib grammar
+        shell: bash
+        run: |
+          cd tree-sitter-c
+          tree-sitter build
+          sudo mv c.so /usr/local/lib/libtree-sitter-c.so
+          cd ..
+
+      - uses: hpi-swa/setup-smalltalkCI@v1
+        with:
+          smalltalk-image: ${{ matrix.smalltalk }}
+      - run: smalltalkci -s ${{ matrix.smalltalk }}
+        shell: bash
+        timeout-minutes: 15
