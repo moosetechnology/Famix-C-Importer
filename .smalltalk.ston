@@ -14,5 +14,11 @@ SmalltalkCISpec {
       #onConflict : #useIncoming,
       #onUpgrade : #useIncoming
     }
-  ]
+  ],
+  #testing : {
+    #coverage : {
+      #packages : [ 'TreeSitterCLanguage.*' ],
+      #format : #lcov
+    }
+  }
 }
