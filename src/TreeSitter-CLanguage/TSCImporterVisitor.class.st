@@ -40,7 +40,7 @@ TSCImporterVisitor >> extractSourceAnchor: aTSNode [
 	sourceAnchor := FamixCIndexedFileAnchor new
 		                startPos: aTSNode startByte;
 		                endPos: aTSNode endByte.
-	fileName ifNotNil: [ sourceAnchor filename: fileName ].
+	fileName ifNotNil: [ sourceAnchor fileName: fileName ].
 
 	^ sourceAnchor
 ]
