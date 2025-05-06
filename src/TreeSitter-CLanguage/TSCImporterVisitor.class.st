@@ -2,6 +2,7 @@ Class {
 	#name : 'TSCImporterVisitor',
 	#superclass : 'TSCLanguageVisitor',
 	#instVars : [
+		'parser',
 		'model',
 		'context',
 		'sourceCode',
@@ -35,10 +36,13 @@ TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 { #category : 'visiting' }
 TSCImporterVisitor >> extractSourceAnchor: aTSNode [
 
-	^ FamixCIndexedFileAnchor new
-		  startPos: aTSNode startByte;
-		  endPos: aTSNode endByte;
-		  fileName: fileName
+	| sourceAnchor |
+	sourceAnchor := FamixCIndexedFileAnchor new
+		                startPos: aTSNode startByte;
+		                endPos: aTSNode endByte.
+	fileName ifNotNil: [ sourceAnchor filename: fileName ].
+
+	^ sourceAnchor
 ]
 
 { #category : 'accessing' }
@@ -53,10 +57,27 @@ TSCImporterVisitor >> fileName: anObject [
 	fileName := anObject
 ]
 
+{ #category : 'as yet unclassified' }
+TSCImporterVisitor >> importFromString: aString [
+
+	| rootNode |
+	rootNode := (parser parseString: aString) rootNode.
+	sourceCode := aString.
+	fileName := nil.
+
+	rootNode accept: self.
+	
+	^ model
+]
+
 { #category : 'initialization' }
 TSCImporterVisitor >> initialize [
 
 	super initialize.
+	
+	parser := TSParser new.
+	parser language: (TSLanguage cLanguage).
+	
 	context := Stack new.
 	model := FamixCModel new.
 	inDeclaration := false
