@@ -60,7 +60,7 @@ TSCImporterVisitor >> importFromString: aString [
 	| rootNode |
 	rootNode := (parser parseString: aString) rootNode.
 	sourceCode := aString.
-	fileName := '** Not a file - Imported from string **'.
+	fileName := '** Not a file - Imported from a string **'.
 
 	rootNode accept: self.
 	
