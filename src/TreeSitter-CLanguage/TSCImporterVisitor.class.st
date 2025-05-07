@@ -36,13 +36,10 @@ TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 { #category : 'visiting' }
 TSCImporterVisitor >> extractSourceAnchor: aTSNode [
 
-	| sourceAnchor |
-	sourceAnchor := FamixCIndexedFileAnchor new
-		                startPos: aTSNode startByte;
-		                endPos: aTSNode endByte.
-	fileName ifNotNil: [ sourceAnchor fileName: fileName ].
-
-	^ sourceAnchor
+	^ FamixCIndexedFileAnchor new
+		  startPos: aTSNode startByte;
+		  endPos: aTSNode endByte;
+		  fileName: fileName
 ]
 
 { #category : 'accessing' }
@@ -63,7 +60,7 @@ TSCImporterVisitor >> importFromString: aString [
 	| rootNode |
 	rootNode := (parser parseString: aString) rootNode.
 	sourceCode := aString.
-	fileName := nil.
+	fileName := '** Not a file - Imported from a string **'.
 
 	rootNode accept: self.
 	
