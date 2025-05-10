@@ -58,7 +58,7 @@ TSCImporterVisitor >> fileName: anObject [
 TSCImporterVisitor >> importFromString: aString [
 
 	| rootNode |
-	rootNode := (parser parseString: aString) rootNode.
+	rootNode := self parseString: aString.
 	sourceCode := aString.
 	fileName := '** Not a file - Imported from a string **'.
 
@@ -71,10 +71,10 @@ TSCImporterVisitor >> importFromString: aString [
 TSCImporterVisitor >> initialize [
 
 	super initialize.
-	
+
 	parser := TSParser new.
-	parser language: (TSLanguage cLanguage).
-	
+	parser language: TSLanguage cLanguage.
+
 	context := Stack new.
 	model := FamixCModel new.
 	inDeclaration := false
@@ -90,6 +90,13 @@ TSCImporterVisitor >> model [
 TSCImporterVisitor >> model: anObject [
 
 	model := anObject
+]
+
+{ #category : 'parsing' }
+TSCImporterVisitor >> parseString: aString [
+	"return the source code AST"
+
+	^ (parser parseString: aString) rootNode
 ]
 
 { #category : 'accessing' }
