@@ -54,6 +54,43 @@ TSCImporterVisitor >> fileName: anObject [
 	fileName := anObject
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> import: aFileReference [
+
+	aFileReference exists ifFalse: [
+		self error: aFileReference fullName , ' does not exist' ].
+
+	aFileReference isFile
+		ifTrue: [ self importFromFile: aFileReference ]
+		ifFalse: [ self importFromFolder: aFileReference ]
+]
+
+{ #category : 'importer' }
+TSCImporterVisitor >> importFromFile: aFileReference [
+	"accept both .c and .h file"
+
+	"check if it's a .c or .h file"
+
+	| acceptedFiles |
+	acceptedFiles := #( 'c' 'h' ).
+
+	(acceptedFiles includes: aFileReference extensions first)
+		ifTrue: [
+			fileName := aFileReference fullName.
+
+			sourceCode := aFileReference contents.
+
+			(self parseString: sourceCode) accept: self.
+
+			^ model ]
+		ifFalse: [ self error: 'only .c and .h are accepted' ]
+]
+
+{ #category : 'importer' }
+TSCImporterVisitor >> importFromFolder: aFileReference [ 
+	self shouldBeImplemented.
+]
+
 { #category : 'as yet unclassified' }
 TSCImporterVisitor >> importFromString: aString [
 
