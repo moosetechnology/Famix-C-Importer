@@ -60,7 +60,7 @@ TSCImporterVisitor >> import: aFileReference [
 	aFileReference exists ifFalse: [
 		self error: aFileReference fullName , ' does not exist' ].
 
-	aFileReference isFile
+	^ aFileReference isFile
 		ifTrue: [ self importFromFile: aFileReference ]
 		ifFalse: [ self importFromFolder: aFileReference ]
 ]
