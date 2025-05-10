@@ -167,6 +167,15 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCERROR: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'type' inDictionnary: fields.
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
 
