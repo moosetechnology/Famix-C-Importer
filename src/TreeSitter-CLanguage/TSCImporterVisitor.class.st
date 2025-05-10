@@ -54,11 +54,48 @@ TSCImporterVisitor >> fileName: anObject [
 	fileName := anObject
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> import: aFileReference [
+
+	aFileReference exists ifFalse: [
+		self error: aFileReference fullName , ' does not exist' ].
+
+	aFileReference isFile
+		ifTrue: [ self importFromFile: aFileReference ]
+		ifFalse: [ self importFromFolder: aFileReference ]
+]
+
+{ #category : 'importer' }
+TSCImporterVisitor >> importFromFile: aFileReference [
+	"accept both .c and .h file"
+
+	"check if it's a .c or .h file"
+
+	| acceptedFiles |
+	acceptedFiles := #( 'c' 'h' ).
+
+	(acceptedFiles includes: aFileReference extensions first)
+		ifTrue: [
+			fileName := aFileReference fullName.
+
+			sourceCode := aFileReference contents.
+
+			(self parseString: sourceCode) accept: self.
+
+			^ model ]
+		ifFalse: [ self error: 'only .c and .h are accepted' ]
+]
+
+{ #category : 'importer' }
+TSCImporterVisitor >> importFromFolder: aFileReference [ 
+	self shouldBeImplemented.
+]
+
 { #category : 'as yet unclassified' }
 TSCImporterVisitor >> importFromString: aString [
 
 	| rootNode |
-	rootNode := (parser parseString: aString) rootNode.
+	rootNode := self parseString: aString.
 	sourceCode := aString.
 	fileName := '** Not a file - Imported from a string **'.
 
@@ -71,10 +108,10 @@ TSCImporterVisitor >> importFromString: aString [
 TSCImporterVisitor >> initialize [
 
 	super initialize.
-	
+
 	parser := TSParser new.
-	parser language: (TSLanguage cLanguage).
-	
+	parser language: TSLanguage cLanguage.
+
 	context := Stack new.
 	model := FamixCModel new.
 	inDeclaration := false
@@ -90,6 +127,13 @@ TSCImporterVisitor >> model [
 TSCImporterVisitor >> model: anObject [
 
 	model := anObject
+]
+
+{ #category : 'parsing' }
+TSCImporterVisitor >> parseString: aString [
+	"return the source code AST"
+
+	^ (parser parseString: aString) rootNode
 ]
 
 { #category : 'accessing' }
@@ -120,6 +164,15 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 		ifFalse: [ self visitKey: 'declarator' inDictionnary: fields ].
 
 	inDeclaration := false
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCERROR: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'type' inDictionnary: fields.
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
 ]
 
 { #category : 'visiting' }

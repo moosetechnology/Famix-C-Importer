@@ -310,6 +310,15 @@ TSCImporterVisitorTest >> testParametersWithTheSameNameButInDifferentFunction [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testParseStringReturnsATSNode [
+
+	| rootNode |
+	rootNode := importer parseString: 'int maint(){}'.
+	self assert: rootNode class equals: TSNode.
+	self assert: rootNode type equals: 'translation_unit'
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testStructName [
 
 	| sourceCode |
