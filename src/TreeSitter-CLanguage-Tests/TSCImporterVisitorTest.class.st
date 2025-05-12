@@ -373,6 +373,71 @@ TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testTypedefForArray [
+
+	| sourceCode |
+	sourceCode := '
+	typedef int arr[4]; // type definition for an array of size 4
+	arr a = { 10, 20, 30, 40 };
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAliasType) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'arr'
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testTypedefForPointer [
+
+	| sourceCode |
+	sourceCode := '
+	typedef int* intPtr; 
+	int a = 10;
+	intPtr ptr = &a;
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAliasType) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'intPtr'
+]
+
+{ #category : 'tests' }
+TSCImporterVisitorTest >> testTypedefForStruct [
+
+	| sourceCode |
+	sourceCode := '
+	typedef struct Person {
+    int id;
+	} Person;
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAliasType) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'Person'.
+	self
+		assert: (importer model allWithType: FamixCStruct) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCStruct) anyOne name
+		equals: 'Person'
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testTypedefName [
 
 	| sourceCode |
@@ -394,6 +459,8 @@ TSCImporterVisitorTest >> testTypedefName [
 TSCImporterVisitorTest >> testTypedefSourceAnchor [
 
 	| sourceCode |
+	"              0                  20"
+	"              |                  |"
 	sourceCode := 'typedef int Integer;'.
 
 	importer importFromString: sourceCode.
