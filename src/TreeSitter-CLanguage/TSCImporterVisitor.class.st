@@ -184,6 +184,32 @@ TSCImporterVisitor >> visitCERROR: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
+	"type declarator"
+
+	| fieldDelcarationEntity |
+	fieldDelcarationEntity := model newAttribute
+		                          name:
+			                          (self
+				                           visitKey: 'declarator'
+				                           inDictionnary: fields);
+		                          sourceAnchor:
+			                          (self extractSourceAnchor: aTSNode);
+		                          parentType: context top.
+
+	context push: fieldDelcarationEntity.
+	self visitKey: 'type' inDictionnary: fields.
+	context pop
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCFieldIdentifier: aTSNode withFields: fields [
+	"no fields"
+
+	^ aTSNode textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	"declarator parameters"
 

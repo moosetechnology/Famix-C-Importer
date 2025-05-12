@@ -319,6 +319,47 @@ TSCImporterVisitorTest >> testParseStringReturnsATSNode [
 ]
 
 { #category : 'tests - struct' }
+TSCImporterVisitorTest >> testStructFieldName [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute ) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAttribute) anyOne name
+		equals: 'id'
+]
+
+{ #category : 'tests - struct' }
+TSCImporterVisitorTest >> testStructFieldParent [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute) size
+		equals: 1.
+	self
+		assert:
+		(importer model allWithType: FamixCAttribute) anyOne parentType class
+		equals: FamixCStruct.
+	self
+		assert:
+		(importer model allWithType: FamixCAttribute) anyOne parentType name
+		equals: 'Person'
+]
+
+{ #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructName [
 
 	| sourceCode |
