@@ -45,7 +45,7 @@ TSCImporterVisitorTest >> testEnsureEntityExistForNonExistingEntity [
 		equals: 'aFunction'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - functions' }
 TSCImporterVisitorTest >> testFunctionDeclarationWithoutDefinition [
 
 	| sourceCode |
@@ -59,7 +59,7 @@ TSCImporterVisitorTest >> testFunctionDeclarationWithoutDefinition [
 	self assert: importer model allFunctions size equals: 1
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - functions' }
 TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 
 	| sourceCode |
@@ -76,7 +76,7 @@ TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 	self assert: importer model allFunctions anyOne name equals: 'func'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - functions' }
 TSCImporterVisitorTest >> testFunctionDefinitionWithoutDeclaration [
 
 	| sourceCode |
@@ -93,7 +93,7 @@ TSCImporterVisitorTest >> testFunctionDefinitionWithoutDeclaration [
 	self assert: importer model allFunctions anyOne name equals: 'func'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - functions' }
 TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 
 	| sourceCode |
@@ -111,7 +111,7 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 		equals: 13
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableName [
 
 	| sourceCode |
@@ -130,7 +130,7 @@ TSCImporterVisitorTest >> testLocalVariableName [
 		equals: 'aLocalVar'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableParentFunction [
 
 	| sourceCode |
@@ -153,7 +153,7 @@ TSCImporterVisitorTest >> testLocalVariableParentFunction [
 		equals: 'parentFunction'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableSkipFileScopeVariable [
 
 	| sourceCode |
@@ -169,7 +169,7 @@ TSCImporterVisitorTest >> testLocalVariableSkipFileScopeVariable [
 	self assert: importer model allLocalVariables size equals: 0
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableSourceAnchor [
 	
 	| sourceCode |
@@ -186,7 +186,7 @@ TSCImporterVisitorTest >> testLocalVariableSourceAnchor [
 	self assert: importer model allLocalVariables first sourceAnchor endPos equals: 28.
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
 
 	| sourceCode |
@@ -205,7 +205,7 @@ TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
 		equals: 'aLocalVar'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - parameters' }
 TSCImporterVisitorTest >> testParamSourceAnchor [
 
 	| sourceCode |
@@ -221,7 +221,7 @@ TSCImporterVisitorTest >> testParamSourceAnchor [
 		equals: 19
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - parameters' }
 TSCImporterVisitorTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDefinition [
 	"parameters that are declared in function prototype and in definition should not be added two times in the model"
 
@@ -244,7 +244,7 @@ TSCImporterVisitorTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDe
 	self assert: (paramNames includes: 'arg2')
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - parameters' }
 TSCImporterVisitorTest >> testParameterName [
 
 	| sourceCode |
@@ -258,7 +258,7 @@ TSCImporterVisitorTest >> testParameterName [
 	self assert: importer model allParameters anyOne name equals: 'arg1'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - parameters' }
 TSCImporterVisitorTest >> testParameterNameWithFunction [
 
 	| sourceCode paramNames |
@@ -276,7 +276,7 @@ TSCImporterVisitorTest >> testParameterNameWithFunction [
 	self assert: (paramNames includes: 'arg2')
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - parameters' }
 TSCImporterVisitorTest >> testParameterParentFunction [
 
 	| sourceCode |
@@ -290,7 +290,7 @@ TSCImporterVisitorTest >> testParameterParentFunction [
 		self assert: param parentBehaviouralEntity name equals: 'myFunc' ]
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - parameters' }
 TSCImporterVisitorTest >> testParametersWithTheSameNameButInDifferentFunction [
 
 	| sourceCode paramNames |
@@ -318,7 +318,7 @@ TSCImporterVisitorTest >> testParseStringReturnsATSNode [
 	self assert: rootNode type equals: 'translation_unit'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructName [
 
 	| sourceCode |
@@ -336,7 +336,7 @@ TSCImporterVisitorTest >> testStructName [
 		equals: 'Person'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructSourceAnchor [
 
 	| sourceCode |
@@ -356,7 +356,7 @@ TSCImporterVisitorTest >> testStructSourceAnchor [
 		equals: 21
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 
 	| sourceCode |
@@ -372,7 +372,7 @@ TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 		equals: 1
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - typedef' }
 TSCImporterVisitorTest >> testTypedefForArray [
 
 	| sourceCode |
@@ -391,7 +391,7 @@ TSCImporterVisitorTest >> testTypedefForArray [
 		equals: 'arr'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - typedef' }
 TSCImporterVisitorTest >> testTypedefForPointer [
 
 	| sourceCode |
@@ -411,7 +411,7 @@ TSCImporterVisitorTest >> testTypedefForPointer [
 		equals: 'intPtr'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - typedef' }
 TSCImporterVisitorTest >> testTypedefForStruct [
 
 	| sourceCode |
@@ -437,7 +437,7 @@ TSCImporterVisitorTest >> testTypedefForStruct [
 		equals: 'Person'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - typedef' }
 TSCImporterVisitorTest >> testTypedefLongLong [
 
 	| sourceCode |
@@ -455,7 +455,7 @@ TSCImporterVisitorTest >> testTypedefLongLong [
 		equals: 'll'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - typedef' }
 TSCImporterVisitorTest >> testTypedefName [
 
 	| sourceCode |
@@ -473,7 +473,7 @@ TSCImporterVisitorTest >> testTypedefName [
 		equals: 'Integer'
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - typedef' }
 TSCImporterVisitorTest >> testTypedefSourceAnchor [
 
 	| sourceCode |
