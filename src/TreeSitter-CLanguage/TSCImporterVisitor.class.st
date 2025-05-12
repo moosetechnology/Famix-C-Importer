@@ -143,6 +143,14 @@ TSCImporterVisitor >> sourceCode: anObject [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
+	"declarator size"
+
+	self visitKey: 'size' inDictionnary: fields.
+	^ self visitKey: 'declarator' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
@@ -269,6 +277,12 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
+
+	^ self visitKey: 'declarator' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
 
@@ -294,11 +308,17 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
- ^ {
-       self visitKey: 'type' inDictionnary: fields.
-       self visitKey: 'declarator' inDictionnary: fields.
-   }
+	"type declarator"
 
+	| typedefEntity |
+	typedefEntity := model newAliasType
+		                 name:
+			                 (self visitKey: 'declarator' inDictionnary: fields);
+		                 sourceAnchor: (self extractSourceAnchor: aTSNode).
+
+	context push: typedefEntity.
+	self visitKey: 'type' inDictionnary: fields.
+	context pop
 ]
 
 { #category : 'visiting' }
