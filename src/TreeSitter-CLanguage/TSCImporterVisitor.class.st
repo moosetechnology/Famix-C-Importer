@@ -294,11 +294,17 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
- ^ {
-       self visitKey: 'type' inDictionnary: fields.
-       self visitKey: 'declarator' inDictionnary: fields.
-   }
+	"type declarator"
 
+	| typedefEntity |
+	typedefEntity := model newAliasType
+		                 name:
+			                 (self visitKey: 'declarator' inDictionnary: fields);
+		                 sourceAnchor: (self extractSourceAnchor: aTSNode).
+
+	context push: typedefEntity.
+	self visitKey: 'type' inDictionnary: fields.
+	context pop
 ]
 
 { #category : 'visiting' }
