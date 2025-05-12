@@ -438,6 +438,24 @@ TSCImporterVisitorTest >> testTypedefForStruct [
 ]
 
 { #category : 'tests' }
+TSCImporterVisitorTest >> testTypedefLongLong [
+
+	| sourceCode |
+	sourceCode := '
+	typedef long long ll;
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAliasType) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'll'
+]
+
+{ #category : 'tests' }
 TSCImporterVisitorTest >> testTypedefName [
 
 	| sourceCode |
