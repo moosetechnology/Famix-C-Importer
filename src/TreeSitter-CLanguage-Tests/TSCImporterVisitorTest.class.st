@@ -340,6 +340,40 @@ TSCImporterVisitorTest >> testSkipStructTypeFieldAsStructEntity [
 ]
 
 { #category : 'tests - struct' }
+TSCImporterVisitorTest >> testStructFieldAnonymousStruct [
+
+	| sourceCode |
+	sourceCode := '
+	struct WithAnonymousStruct{
+		struct { 
+			struct { 
+				int a; // fields a is promoted to most non anonymous outer struct
+			 };
+		}; 
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCStruct) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCStruct) anyOne name
+		equals: 'WithAnonymousStruct'.
+	self
+		assert: (importer model allWithType: FamixCAttribute) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAttribute) anyOne name
+		equals: 'a'.
+	self
+		assert:
+		(importer model allWithType: FamixCAttribute) anyOne parentType name
+		equals: 'WithAnonymousStruct'
+]
+
+{ #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructFieldArray [
 
 	| sourceCode |

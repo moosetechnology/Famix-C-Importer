@@ -134,6 +134,14 @@ TSCLanguageVisitor >> visitCDeclaration: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCERROR: aTSNode withFields: fields [
+ ^ {
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
  ^ {
        self visitKey: 'name' inDictionnary: fields.
