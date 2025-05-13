@@ -319,6 +319,47 @@ TSCImporterVisitorTest >> testParseStringReturnsATSNode [
 ]
 
 { #category : 'tests - struct' }
+TSCImporterVisitorTest >> testSkipStructTypeFieldAsStructEntity [
+
+	| sourceCode structEntities |
+	sourceCode := '
+	struct Inner {
+    	int a;
+	};
+	struct WithNestedStruct {
+    	struct Inner foo; // Inner should not be considered as a new struct entity 
+	};
+	'.
+	
+	importer importFromString: sourceCode.
+	structEntities := importer model allWithType: FamixCStruct.
+	self
+		assert: structEntities size
+		equals: 2.
+	self assert: (structEntities count: [ :each | each name = 'Inner' ]) equals: 1.
+]
+
+{ #category : 'tests - struct' }
+TSCImporterVisitorTest >> testStructFieldArray [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{
+		char name[50];
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute ) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAttribute) anyOne name
+		equals: 'name'
+]
+
+{ #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructFieldName [
 
 	| sourceCode |
@@ -357,6 +398,51 @@ TSCImporterVisitorTest >> testStructFieldParent [
 		assert:
 		(importer model allWithType: FamixCAttribute) anyOne parentType name
 		equals: 'Person'
+]
+
+{ #category : 'tests - struct' }
+TSCImporterVisitorTest >> testStructFieldPointer [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{
+		int *ptr;
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute ) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAttribute) anyOne name
+		equals: 'ptr'
+]
+
+{ #category : 'tests - struct' }
+TSCImporterVisitorTest >> testStructFieldStruct [
+
+	| sourceCode |
+	sourceCode := '
+	struct Inner {
+    	int a;
+	};
+	struct Person{
+		struct Inner inner;
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute) size
+		equals: 2.
+	self
+		assert:
+			(importer model detect: [ :each | each name = 'Person' ])
+				attributes anyOne name
+		equals: 'inner'
 ]
 
 { #category : 'tests - struct' }

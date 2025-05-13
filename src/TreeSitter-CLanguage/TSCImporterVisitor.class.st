@@ -188,6 +188,7 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	| fieldDelcarationEntity |
+	inDeclaration := true.
 	fieldDelcarationEntity := model newAttribute
 		                          name:
 			                          (self
@@ -199,7 +200,8 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 
 	context push: fieldDelcarationEntity.
 	self visitKey: 'type' inDictionnary: fields.
-	context pop
+	context pop.
+	inDeclaration := false
 ]
 
 { #category : 'visiting' }
