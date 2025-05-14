@@ -55,6 +55,30 @@ TSCImporterVisitorTest >> testAnonymousStructAsFieldType [
 		equals: 'a' "assert bar.a exists"
 ]
 
+{ #category : 'tests - struct' }
+TSCImporterVisitorTest >> testAnonymousStructDeclaration [
+
+	| sourceCode structEntities attributeEntities |
+	sourceCode := '
+	int main() { 
+		struct {
+			int a;
+		} aVariable;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	structEntities := importer model allWithType: FamixCStruct.
+	attributeEntities := importer model allWithType: FamixCAttribute.
+	
+	self assert: structEntities size equals: 1.
+	self assert: structEntities anyOne name equals: ''.
+	self assert: attributeEntities size equals: 1.
+	self assert: attributeEntities anyOne name equals: 'a'.
+	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'
+]
+
 { #category : 'tests' }
 TSCImporterVisitorTest >> testEnsureEntityExistForExistingEntity [
 

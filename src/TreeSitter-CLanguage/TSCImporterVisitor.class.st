@@ -154,22 +154,32 @@ TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
-	inDeclaration := true.
-
-	self visitKey: 'type' inDictionnary: fields.
 	"check if it is a declaration inside a function, for local variable"
+
+	inDeclaration := true.
 	(context isNotEmpty and: [ context top isFunction ])
 		ifTrue: [
 			| localVarEntity |
-			localVarEntity := FamixCLocalVariable new name:
-				                  (self
-					                   visitKey: 'declarator'
-					                   inDictionnary: fields).
-			localVarEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
-			localVarEntity parentBehaviouralEntity: context top.
+			inDeclaration := true.
+			localVarEntity := FamixCLocalVariable new
+				                  name:
+					                  (self
+						                   visitKey: 'declarator'
+						                   inDictionnary: fields);
+				                  sourceAnchor:
+					                  (self extractSourceAnchor: aTSNode);
+				                  parentBehaviouralEntity: context top.
+				
+			model add: localVarEntity.
+			
+			context push: localVarEntity.
+			self visitKey: 'type' inDictionnary: fields.
+			context pop ]
+		ifFalse: [
+			self visitKey: 'type' inDictionnary: fields.
+			self visitKey: 'declarator' inDictionnary: fields ].
 
-			model add: localVarEntity ]
-		ifFalse: [ self visitKey: 'declarator' inDictionnary: fields ].
+
 
 	inDeclaration := false
 ]
@@ -188,6 +198,7 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	| fieldDelcarationEntity |
+
 	(fields includesKey: 'declarator')
 		ifTrue: [
 			fieldDelcarationEntity := model newAttribute
@@ -198,6 +209,7 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 				                          sourceAnchor:
 					                          (self extractSourceAnchor: aTSNode);
 				                          parentType: context top.
+			
 			context push: fieldDelcarationEntity.
 			self visitKey: 'type' inDictionnary: fields.
 			context pop ]
@@ -315,52 +327,93 @@ TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
 
-	| structEntity hasBody isAnonymous structName |
+	| structEntity structName hasBody isAnonymous structAsAttributeType |
 	isAnonymous := (fields includesKey: 'name') not.
 	hasBody := fields includesKey: 'body'.
-	
+	structAsAttributeType := context isNotEmpty and: [
+		                         context top class = FamixCAttribute ].
+
 	structName := ''.
 	isAnonymous ifFalse: [
 		structName := self visitKey: 'name' inDictionnary: fields ].
 
-	((context isNotEmpty and: [ context top class = FamixCAttribute ])
-		 and: [ hasBody ]) ifTrue: [
-		structEntity := model newStruct
-			                name: structName;
-			                sourceAnchor: (self extractSourceAnchor: aTSNode).
-		context top declaredType: structEntity.
-		context push: structEntity.
-		self visitKey: 'body' inDictionnary: fields.
-		context pop.
-		^ structEntity ].
-
-
-	isAnonymous ifTrue: [
-		self visitKey: 'body' inDictionnary: fields.
-		^ nil ].
-
-
 
 	hasBody
-		ifTrue: [ "inside a struct definition"
-			structEntity := model newStruct name: structName.
-			structEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
-			context push: structEntity ]
-		ifFalse: [ "struct_specifier from:
+		ifTrue: [
+			inDeclaration ifTrue: [ 
+				structEntity := model newStruct
+					                name: '';
+					                sourceAnchor: (self extractSourceAnchor: aTSNode).
+					context top declaredType: structEntity.
+					context push: structEntity.
+					self visitKey: 'body' inDictionnary: fields.
+					context pop.
+					^ structEntity
+				 ].
+			(structAsAttributeType or: [ isAnonymous not ]) ifTrue: [
+				structEntity := model newStruct
+					                name: structName;
+					                sourceAnchor: (self extractSourceAnchor: aTSNode).
+				structAsAttributeType ifTrue: [
+					context top declaredType: structEntity ].
+				context push: structEntity.
+				self visitKey: 'body' inDictionnary: fields.
+				context pop.
+				^ structEntity ].
+
+			(isAnonymous and: [ inDeclaration ]) ifTrue: [
+				structEntity := model newStruct
+					                name: '';
+					                sourceAnchor: (self extractSourceAnchor: aTSNode).
+				context top declaredType: structEntity.
+				context push: structEntity.
+				self visitKey: 'body' inDictionnary: fields.
+				context pop.
+				^ structEntity ].
+			self visitKey: 'body' inDictionnary: fields ]
+		ifFalse: [ "no need to create an entity here"
+			structEntity := (model allWithType: FamixCStruct)
+				                detect: [ :each | each name = structName ]
+				                ifNone: [ nil ].
+			^ structEntity ]
+
+
+
+
+
+
+	"(hasBody not or: [ isAnonymous and: [ structAsAttributeType not ] ])
+		ifTrue: [ ""we don't create a struct entity for above conditions;
+	struct_specifier from:
 			 - variable declaration: `struct Person p1;`
 			 - field declaration: 
 			  struct Inner { int a };
 			  struct NestedStruct {
 					struct Inner foo; // here 
-			 	};
-			""we don't create new struct entity"
+					struct { // here as well
+						int a;
+					 }
+			 	};""
 			structEntity := (model allWithType: FamixCStruct)
 				                detect: [ :each | each name = structName ]
-				                ifNone: [ nil ] ].
+				                ifNone: [ nil ].
+			self visitKey: 'body' inDictionnary: fields.
+			^ structEntity ].
 
+	""we create a new struct entity from here""
+
+	structEntity := model newStruct
+		                name: structName;
+		                sourceAnchor: (self extractSourceAnchor: aTSNode).
+
+	structAsAttributeType ifTrue: [
+		context top declaredType: structEntity ].
+
+	context push: structEntity.
 
 	self visitKey: 'body' inDictionnary: fields.
-	^ structEntity
+	context pop.
+	^ structEntity"
 ]
 
 { #category : 'visiting' }
