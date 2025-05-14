@@ -337,83 +337,42 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	isAnonymous ifFalse: [
 		structName := self visitKey: 'name' inDictionnary: fields ].
 
+	(((hasBody and: [ isAnonymous ]) and: [ structAsAttributeType not ])
+		 and: [ inDeclaration not ]) ifTrue: [ "skip entity creation for this case: 
+			```
+			struct foo { 
+				struct {
+					int a; // here
+				}
+			};
+			```
+			"
+		self visitKey: 'body' inDictionnary: fields.
+		^ nil ].
 
 	hasBody
 		ifTrue: [
-			inDeclaration ifTrue: [ 
-				structEntity := model newStruct
-					                name: '';
-					                sourceAnchor: (self extractSourceAnchor: aTSNode).
-					context top declaredType: structEntity.
-					context push: structEntity.
-					self visitKey: 'body' inDictionnary: fields.
-					context pop.
-					^ structEntity
-				 ].
+			structEntity := model newStruct
+				                name: structName;
+				                sourceAnchor: (self extractSourceAnchor: aTSNode).
+
+			inDeclaration ifTrue: [ context top declaredType: structEntity ].
+
 			(structAsAttributeType or: [ isAnonymous not ]) ifTrue: [
-				structEntity := model newStruct
-					                name: structName;
-					                sourceAnchor: (self extractSourceAnchor: aTSNode).
 				structAsAttributeType ifTrue: [
-					context top declaredType: structEntity ].
-				context push: structEntity.
-				self visitKey: 'body' inDictionnary: fields.
-				context pop.
-				^ structEntity ].
+					context top declaredType: structEntity ] ].
 
 			(isAnonymous and: [ inDeclaration ]) ifTrue: [
-				structEntity := model newStruct
-					                name: '';
-					                sourceAnchor: (self extractSourceAnchor: aTSNode).
-				context top declaredType: structEntity.
-				context push: structEntity.
-				self visitKey: 'body' inDictionnary: fields.
-				context pop.
-				^ structEntity ].
-			self visitKey: 'body' inDictionnary: fields ]
+				context top declaredType: structEntity ].
+
+			context push: structEntity.
+			self visitKey: 'body' inDictionnary: fields.
+			context pop ]
 		ifFalse: [ "no need to create an entity here"
 			structEntity := (model allWithType: FamixCStruct)
 				                detect: [ :each | each name = structName ]
-				                ifNone: [ nil ].
-			^ structEntity ]
-
-
-
-
-
-
-	"(hasBody not or: [ isAnonymous and: [ structAsAttributeType not ] ])
-		ifTrue: [ ""we don't create a struct entity for above conditions;
-	struct_specifier from:
-			 - variable declaration: `struct Person p1;`
-			 - field declaration: 
-			  struct Inner { int a };
-			  struct NestedStruct {
-					struct Inner foo; // here 
-					struct { // here as well
-						int a;
-					 }
-			 	};""
-			structEntity := (model allWithType: FamixCStruct)
-				                detect: [ :each | each name = structName ]
-				                ifNone: [ nil ].
-			self visitKey: 'body' inDictionnary: fields.
-			^ structEntity ].
-
-	""we create a new struct entity from here""
-
-	structEntity := model newStruct
-		                name: structName;
-		                sourceAnchor: (self extractSourceAnchor: aTSNode).
-
-	structAsAttributeType ifTrue: [
-		context top declaredType: structEntity ].
-
-	context push: structEntity.
-
-	self visitKey: 'body' inDictionnary: fields.
-	context pop.
-	^ structEntity"
+				                ifNone: [ nil ] ].
+	^ structEntity
 ]
 
 { #category : 'visiting' }
