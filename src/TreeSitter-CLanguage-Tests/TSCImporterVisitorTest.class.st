@@ -19,6 +19,42 @@ TSCImporterVisitorTest >> setUp [
 	importer := TSCImporterVisitor new fileName: '/test/file/name'
 ]
 
+{ #category : 'tests - struct' }
+TSCImporterVisitorTest >> testAnonymousStructAsFieldType [
+
+	| sourceCode structEntities attributeEntities |
+	sourceCode := '
+	struct WithNestedStruct {
+    	struct {
+        	int a; //WithNestedStruct.bar.a to access a
+    	} bar;
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	structEntities := importer model allWithType: FamixCStruct.
+	attributeEntities := importer model allWithType: FamixCAttribute.
+
+	self assert: structEntities size equals: 2.
+	self
+		assert:
+			(structEntities detect: [ :each | each name = 'WithNestedStruct' ])
+				attributes size
+		equals: 1.
+	self
+		assert:
+			(structEntities detect: [ :each | each name = 'WithNestedStruct' ])
+				attributes anyOne name
+		equals: 'bar'.
+	self assert: attributeEntities size equals: 2. "2 attributes: WithNestedStruct.bar and .a"
+	self
+		assert:
+			(attributeEntities detect: [ :each | each name = 'bar' ])
+				declaredType attributes anyOne name
+		equals: 'a' "assert bar.a exists"
+]
+
 { #category : 'tests' }
 TSCImporterVisitorTest >> testEnsureEntityExistForExistingEntity [
 
