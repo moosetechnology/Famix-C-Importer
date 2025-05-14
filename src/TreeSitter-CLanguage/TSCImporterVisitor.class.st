@@ -315,20 +315,24 @@ TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
 
-	| structEntity hasBody isAnonymous |
+	| structEntity hasBody isAnonymous structName |
 	isAnonymous := (fields includesKey: 'name') not.
 	hasBody := fields includesKey: 'body'.
-	"1 halt."
-	((context isNotEmpty and: [context top class = FamixCAttribute]) and: [hasBody])
-		ifTrue: [
-			structEntity := model newStruct
-				                name: '';
-				                sourceAnchor: (self extractSourceAnchor: aTSNode).
-			context top declaredType: structEntity.
-			context push: structEntity.
-			self visitKey: 'body' inDictionnary: fields.
-			context pop.
-			^ structEntity ].
+	
+	structName := ''.
+	isAnonymous ifFalse: [
+		structName := self visitKey: 'name' inDictionnary: fields ].
+
+	((context isNotEmpty and: [ context top class = FamixCAttribute ])
+		 and: [ hasBody ]) ifTrue: [
+		structEntity := model newStruct
+			                name: structName;
+			                sourceAnchor: (self extractSourceAnchor: aTSNode).
+		context top declaredType: structEntity.
+		context push: structEntity.
+		self visitKey: 'body' inDictionnary: fields.
+		context pop.
+		^ structEntity ].
 
 
 	isAnonymous ifTrue: [
@@ -339,8 +343,7 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 
 	hasBody
 		ifTrue: [ "inside a struct definition"
-			structEntity := model newStruct name:
-				                (self visitKey: 'name' inDictionnary: fields).
+			structEntity := model newStruct name: structName.
 			structEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
 			context push: structEntity ]
 		ifFalse: [ "struct_specifier from:
@@ -351,8 +354,6 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 					struct Inner foo; // here 
 			 	};
 			""we don't create new struct entity"
-			| structName |
-			structName := self visitKey: 'name' inDictionnary: fields.
 			structEntity := (model allWithType: FamixCStruct)
 				                detect: [ :each | each name = structName ]
 				                ifNone: [ nil ] ].
