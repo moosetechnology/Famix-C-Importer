@@ -205,21 +205,28 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	| fieldDelcarationEntity |
-
 	(fields includesKey: 'declarator')
 		ifTrue: [
-			fieldDelcarationEntity := model newAttribute
-				                          name:
-					                          (self
-						                           visitKey: 'declarator'
-						                           inDictionnary: fields);
-				                          sourceAnchor:
-					                          (self extractSourceAnchor: aTSNode);
-				                          parentType: context top.
+			| fieldsName |
+			fieldsName := self visitKey: 'declarator' inDictionnary: fields.
 			
-			context push: fieldDelcarationEntity.
-			self visitKey: 'type' inDictionnary: fields.
-			context pop ]
+			fieldsName isString ifTrue: [
+				fieldsName := OrderedCollection new
+					              add: fieldsName;
+					              yourself ].
+				
+			fieldsName do: [ :eachName |
+				fieldDelcarationEntity := model newAttribute
+					                          name: eachName;
+					                          sourceAnchor:
+						                          (self extractSourceAnchor: aTSNode);
+					                          parentType: context top.
+
+				context push: fieldDelcarationEntity.
+				self visitKey: 'type' inDictionnary: fields.
+				context pop 
+				
+				] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
 			self visitKey: 'type' inDictionnary: fields ]
 ]
@@ -334,24 +341,21 @@ TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
 
-	| structEntity structName hasBody isAnonymous structAsAttributeType isTypedefType |
+	| structEntity structName isAnonymous structAsAttributeType isTypedefType |
 	isAnonymous := (fields includesKey: 'name') not.
-	hasBody := fields includesKey: 'body'.
 	structAsAttributeType := context isNotEmpty and: [
 		                         context top class = FamixCAttribute ].
 	isTypedefType := context isNotEmpty and: [
 		                 context top class = FamixCAliasType ].
 
-	structName := ''.
-	isAnonymous ifFalse: [
-		structName := self visitKey: 'name' inDictionnary: fields ].
 
-	hasBody & isAnonymous & structAsAttributeType not & inDeclaration not
+
+	isAnonymous & structAsAttributeType not & inDeclaration not
 	& isTypedefType not ifTrue: [ "skip entity creation for this case: 
 			```
 			struct foo { 
 				struct {
-					int a; // here
+					int a; // here, a is promoted to outer structure
 				}
 			};
 			```
@@ -359,22 +363,20 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 		self visitKey: 'body' inDictionnary: fields.
 		^ nil ].
 
-	hasBody
+	structName := ''.
+	isAnonymous ifFalse: [
+		structName := self visitKey: 'name' inDictionnary: fields ].
+
+	(fields includesKey: 'body')
 		ifTrue: [
 			structEntity := model newStruct
 				                name: structName;
 				                sourceAnchor: (self extractSourceAnchor: aTSNode).
 
-			inDeclaration ifTrue: [ context top declaredType: structEntity ].
-
-			structAsAttributeType | isAnonymous not ifTrue: [
-				structAsAttributeType ifTrue: [
-					context top declaredType: structEntity ] ].
-
-			isAnonymous & inDeclaration ifTrue: [
+			inDeclaration | structAsAttributeType ifTrue: [
 				context top declaredType: structEntity ].
-			isAnonymous & isTypedefType ifTrue: [
-				context top aliasedType: structEntity ].
+
+			isTypedefType ifTrue: [ context top aliasedType: structEntity ].
 
 			context push: structEntity.
 			self visitKey: 'body' inDictionnary: fields.

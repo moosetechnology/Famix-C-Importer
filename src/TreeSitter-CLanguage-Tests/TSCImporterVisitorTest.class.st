@@ -650,6 +650,25 @@ TSCImporterVisitorTest >> testStructFieldStruct [
 ]
 
 { #category : 'tests - struct' }
+TSCImporterVisitorTest >> testStructMultipleFieldInOneLine [
+
+	| sourceCode attributes |
+	sourceCode := '
+	struct Person{
+		int a, b;
+		};
+	'.
+
+	importer importFromString: sourceCode.
+
+	attributes := importer model allWithType: FamixCAttribute.
+	
+	self assert: attributes size equals: 2.
+	self assert: (attributes anySatisfy: [ :each | each name = 'a' ]).
+	self assert: (attributes anySatisfy: [ :each | each name = 'b' ])
+]
+
+{ #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructName [
 
 	| sourceCode |
