@@ -650,6 +650,25 @@ TSCImporterVisitorTest >> testStructFieldStruct [
 ]
 
 { #category : 'tests - struct' }
+TSCImporterVisitorTest >> testStructMultipleFieldInOneLine [
+
+	| sourceCode attributes |
+	sourceCode := '
+	struct Person{
+		int a, b;
+		};
+	'.
+
+	importer importFromString: sourceCode.
+
+	attributes := importer model allWithType: FamixCAttribute.
+	
+	self assert: attributes size equals: 2.
+	self assert: (attributes anySatisfy: [ :each | each name = 'a' ]).
+	self assert: (attributes anySatisfy: [ :each | each name = 'b' ])
+]
+
+{ #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructName [
 
 	| sourceCode |
@@ -701,6 +720,36 @@ TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 	self
 		assert: (importer model allWithType: FamixCStruct) size
 		equals: 1
+]
+
+{ #category : 'tests - typedef' }
+TSCImporterVisitorTest >> testTypedefForAnonymousStruct [
+
+	| sourceCode |
+	sourceCode := '
+	typedef struct {
+    int id;
+	} Person;
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAliasType) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'Person'.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) anyOne aliasedType class
+		equals: FamixCStruct.
+	self
+		assert: (importer model allWithType: FamixCStruct) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCStruct) anyOne name
+		equals: ''
 ]
 
 { #category : 'tests - typedef' }
