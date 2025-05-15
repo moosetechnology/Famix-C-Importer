@@ -704,6 +704,36 @@ TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 ]
 
 { #category : 'tests - typedef' }
+TSCImporterVisitorTest >> testTypedefForAnonymousStruct [
+
+	| sourceCode |
+	sourceCode := '
+	typedef struct {
+    int id;
+	} Person;
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAliasType) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'Person'.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) anyOne aliasedType class
+		equals: FamixCStruct.
+	self
+		assert: (importer model allWithType: FamixCStruct) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCStruct) anyOne name
+		equals: ''
+]
+
+{ #category : 'tests - typedef' }
 TSCImporterVisitorTest >> testTypedefForArray [
 
 	| sourceCode |

@@ -334,18 +334,20 @@ TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
 
-	| structEntity structName hasBody isAnonymous structAsAttributeType |
+	| structEntity structName hasBody isAnonymous structAsAttributeType isTypedefType |
 	isAnonymous := (fields includesKey: 'name') not.
 	hasBody := fields includesKey: 'body'.
 	structAsAttributeType := context isNotEmpty and: [
 		                         context top class = FamixCAttribute ].
+	isTypedefType := context isNotEmpty and: [
+		                 context top class = FamixCAliasType ].
 
 	structName := ''.
 	isAnonymous ifFalse: [
 		structName := self visitKey: 'name' inDictionnary: fields ].
 
 	hasBody & isAnonymous & structAsAttributeType not & inDeclaration not
-		ifTrue: [ "skip entity creation for this case: 
+	& isTypedefType not ifTrue: [ "skip entity creation for this case: 
 			```
 			struct foo { 
 				struct {
@@ -354,8 +356,8 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 			};
 			```
 			"
-			self visitKey: 'body' inDictionnary: fields.
-			^ nil ].
+		self visitKey: 'body' inDictionnary: fields.
+		^ nil ].
 
 	hasBody
 		ifTrue: [
@@ -371,6 +373,8 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 
 			isAnonymous & inDeclaration ifTrue: [
 				context top declaredType: structEntity ].
+			isAnonymous & isTypedefType ifTrue: [
+				context top aliasedType: structEntity ].
 
 			context push: structEntity.
 			self visitKey: 'body' inDictionnary: fields.
