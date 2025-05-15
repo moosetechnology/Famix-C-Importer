@@ -172,6 +172,43 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 ]
 
 { #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testLocalVariableArray [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		char name[50] = "Alice";
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'name'
+]
+
+{ #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testLocalVariableArrayVariableLength [
+
+	| sourceCode |
+	sourceCode := '
+	void useVLA(int size) {
+    	int vla[size];
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'vla'
+]
+
+{ #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableName [
 
 	| sourceCode |
@@ -211,6 +248,25 @@ TSCImporterVisitorTest >> testLocalVariableParentFunction [
 		assert:
 		importer model allLocalVariables first parentBehaviouralEntity name
 		equals: 'parentFunction'
+]
+
+{ #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testLocalVariablePointer [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		char *message = "Hello";
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'message'
 ]
 
 { #category : 'tests - local variables' }
@@ -272,6 +328,33 @@ TSCImporterVisitorTest >> testOneLineMultipleDeclaration [
 	sourceCode := '
 	int parentFunction(){
 		int a, b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 2.
+
+	self assert:
+		(importer model allLocalVariables anySatisfy: [ :var |
+			 var name = 'a' ]).
+	self assert:
+		(importer model allLocalVariables anySatisfy: [ :var |
+			 var name = 'b' ]).
+	self
+		assert:
+		importer model allLocalVariables anyOne parentBehaviouralEntity name
+		equals: 'parentFunction'
+]
+
+{ #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testOneLineMultipleDeclarationAndInitialization [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a = 0, b = 1;
 		return 0;
 	}
 	'.
