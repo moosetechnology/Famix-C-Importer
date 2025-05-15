@@ -159,22 +159,29 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	inDeclaration := true.
 	(context isNotEmpty and: [ context top isFunction ])
 		ifTrue: [
-			| localVarEntity |
-			inDeclaration := true.
-			localVarEntity := FamixCLocalVariable new
-				                  name:
-					                  (self
-						                   visitKey: 'declarator'
-						                   inDictionnary: fields);
-				                  sourceAnchor:
-					                  (self extractSourceAnchor: aTSNode);
-				                  parentBehaviouralEntity: context top.
-				
-			model add: localVarEntity.
-			
-			context push: localVarEntity.
-			self visitKey: 'type' inDictionnary: fields.
-			context pop ]
+			| identifiersName |
+			identifiersName := self
+				                   visitKey: 'declarator'
+				                   inDictionnary: fields.
+
+			identifiersName isString ifTrue: [
+				identifiersName := OrderedCollection new
+					                   add: identifiersName;
+					                   yourself ].
+
+			identifiersName do: [ :eachIdentifierName |
+				| localVarEntity |
+				localVarEntity := FamixCLocalVariable new
+					                  name: eachIdentifierName;
+					                  sourceAnchor:
+						                  (self extractSourceAnchor: aTSNode);
+					                  parentBehaviouralEntity: context top.
+
+				model add: localVarEntity.
+
+				context push: localVarEntity.
+				self visitKey: 'type' inDictionnary: fields.
+				context pop ] ]
 		ifFalse: [
 			self visitKey: 'type' inDictionnary: fields.
 			self visitKey: 'declarator' inDictionnary: fields ].
