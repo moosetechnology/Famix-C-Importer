@@ -337,8 +337,8 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	isAnonymous ifFalse: [
 		structName := self visitKey: 'name' inDictionnary: fields ].
 
-	(((hasBody and: [ isAnonymous ]) and: [ structAsAttributeType not ])
-		 and: [ inDeclaration not ]) ifTrue: [ "skip entity creation for this case: 
+	hasBody & isAnonymous & structAsAttributeType not & inDeclaration not
+		ifTrue: [ "skip entity creation for this case: 
 			```
 			struct foo { 
 				struct {
@@ -347,8 +347,8 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 			};
 			```
 			"
-		self visitKey: 'body' inDictionnary: fields.
-		^ nil ].
+			self visitKey: 'body' inDictionnary: fields.
+			^ nil ].
 
 	hasBody
 		ifTrue: [
@@ -358,11 +358,11 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 
 			inDeclaration ifTrue: [ context top declaredType: structEntity ].
 
-			(structAsAttributeType or: [ isAnonymous not ]) ifTrue: [
+			structAsAttributeType | isAnonymous not ifTrue: [
 				structAsAttributeType ifTrue: [
 					context top declaredType: structEntity ] ].
 
-			(isAnonymous and: [ inDeclaration ]) ifTrue: [
+			isAnonymous & inDeclaration ifTrue: [
 				context top declaredType: structEntity ].
 
 			context push: structEntity.
