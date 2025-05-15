@@ -19,6 +19,74 @@ TSCImporterVisitorTest >> setUp [
 	importer := TSCImporterVisitor new fileName: '/test/file/name'
 ]
 
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testAnonymousEnumWithStruct [
+
+	| sourceCode |
+	sourceCode := '
+	struct Task {
+    	enum {
+        TODO,
+        IN_PROGRESS,
+        DONE
+    	} state;
+	};
+	'.
+
+	importer importFromString: sourceCode.
+	
+	self assert: importer model allEnums anyOne name equals: ''.
+	self assert: (importer model allWithType: FamixCAttribute) anyOne declaredType class equals: FamixCEnum.
+	self assert: (importer model allWithType: FamixCAttribute) anyOne declaredType enumValues size equals: 3
+]
+
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testAnonymousEnumWithTypedef [
+
+	| sourceCode |
+	sourceCode := '
+	typedef enum {
+    	LOW,
+    	MEDIUM
+	} Priority;
+	'.
+
+	importer importFromString: sourceCode.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'Priority'.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) anyOne aliasedType
+			class
+		equals: FamixCEnum.
+
+	self assert: importer model allEnums size equals: 1.
+	self assert: importer model allEnums anyOne name equals: ''.
+
+	self assert: importer model allEnumValues size equals: 2
+]
+
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testAnonymousEnumWithVariable [
+
+	| sourceCode |
+	sourceCode := '
+	int func(){
+		enum {
+    		OPTION_A,
+    		OPTION_B
+		} option;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	
+	self assert: importer model allEnums anyOne name equals: ''.
+	self assert: importer model allLocalVariables anyOne name equals: 'option'.
+	self assert: importer model allLocalVariables anyOne declaredType class equals: FamixCEnum.
+]
+
 { #category : 'tests - struct' }
 TSCImporterVisitorTest >> testAnonymousStructAsFieldType [
 
@@ -103,6 +171,119 @@ TSCImporterVisitorTest >> testEnsureEntityExistForNonExistingEntity [
 		assert:
 		(importer ensureEntityExist: FamixCFunction value: 'aFunction') name
 		equals: 'aFunction'
+]
+
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testEnumName [
+
+	| sourceCode |
+	sourceCode := '
+	enum Color {
+    	RED,
+    	GREEN,
+    	BLUE
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allEnums ) size
+		equals: 1.
+	self
+		assert: (importer model allEnums ) anyOne name
+		equals: 'Color'
+]
+
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testEnumSourceAnchor [
+
+	| sourceCode |
+	sourceCode := '
+	enum Color {
+    	RED,
+    	GREEN,
+    	BLUE
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: importer model allEnums anyOne sourceAnchor startPos
+		equals: 2.
+	self
+		assert: importer model allEnums anyOne sourceAnchor endPos
+		equals: 49
+]
+
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testEnumValues [
+
+	| sourceCode enumValues |
+	sourceCode := '
+	enum Color {
+    	RED,
+    	GREEN = 2
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allEnums anyOne name equals: 'Color'.
+
+	enumValues := importer model allEnums anyOne enumValues.
+	self assert: enumValues size equals: 2.
+	self assert: enumValues anyOne parentEnum name equals: 'Color'.
+
+	self assert: (enumValues anySatisfy: [ :each | each name = 'RED' ]).
+	self assert: (enumValues anySatisfy: [ :each | each name = 'GREEN' ])
+]
+
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testEnumValuesSourceAnchor [
+
+	| sourceCode |
+	sourceCode := '
+	enum Color {
+    	RED
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: importer model allEnumValues anyOne sourceAnchor startPos
+		equals: 20.
+	self
+		assert: importer model allEnumValues anyOne sourceAnchor endPos
+		equals: 23
+]
+
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testEnumWithTypedef [
+
+	| sourceCode |
+	sourceCode := '
+	typedef enum Priority {
+    	LOW,
+    	MEDIUM
+	} Priority;
+	'.
+
+	importer importFromString: sourceCode.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'Priority'.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) anyOne aliasedType
+			class
+		equals: FamixCEnum.
+
+	self assert: importer model allEnums anyOne name equals: 'Priority'.
+
+	self assert: importer model allEnumValues size equals: 2
 ]
 
 { #category : 'tests - functions' }
@@ -873,4 +1054,31 @@ TSCImporterVisitorTest >> testTypedefSourceAnchor [
 		(importer model allWithType: FamixCAliasType) anyOne sourceAnchor
 			endPos
 		equals: 20
+]
+
+{ #category : 'tests - enum' }
+TSCImporterVisitorTest >> testUsingEnum [
+
+	| sourceCode |
+	sourceCode := '
+	typedef enum priority {
+    	LOW,
+    	MEDIUM
+	} priority;
+	
+	int main(){
+		enum priority p1;
+		priority p2;
+	}
+	
+	'.
+
+	importer importFromString: sourceCode.
+	
+	self
+		assert: (importer model allEnums ) size
+		equals: 1.
+	self
+		assert: (importer model allEnums ) anyOne name
+		equals: 'priority'
 ]
