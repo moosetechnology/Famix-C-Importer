@@ -265,6 +265,33 @@ TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
 		equals: 'aLocalVar'
 ]
 
+{ #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testOneLineMultipleDeclaration [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a, b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 2.
+
+	self assert:
+		(importer model allLocalVariables anySatisfy: [ :var |
+			 var name = 'a' ]).
+	self assert:
+		(importer model allLocalVariables anySatisfy: [ :var |
+			 var name = 'b' ]).
+	self
+		assert:
+		importer model allLocalVariables anyOne parentBehaviouralEntity name
+		equals: 'parentFunction'
+]
+
 { #category : 'tests - parameters' }
 TSCImporterVisitorTest >> testParamSourceAnchor [
 

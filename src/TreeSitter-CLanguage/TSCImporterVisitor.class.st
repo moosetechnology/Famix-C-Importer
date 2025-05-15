@@ -159,22 +159,40 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	inDeclaration := true.
 	(context isNotEmpty and: [ context top isFunction ])
 		ifTrue: [
-			| localVarEntity |
-			inDeclaration := true.
-			localVarEntity := FamixCLocalVariable new
-				                  name:
-					                  (self
-						                   visitKey: 'declarator'
-						                   inDictionnary: fields);
-				                  sourceAnchor:
-					                  (self extractSourceAnchor: aTSNode);
-				                  parentBehaviouralEntity: context top.
-				
-			model add: localVarEntity.
-			
-			context push: localVarEntity.
-			self visitKey: 'type' inDictionnary: fields.
-			context pop ]
+			(fields at: 'declarator') isCollection
+				ifTrue: [ "multiple declarations in one line "
+					(fields at: 'declarator') do: [ :eachIdentifierNode |
+						| localVarEntity |
+						inDeclaration := true.
+						localVarEntity := FamixCLocalVariable new
+							                  name: (eachIdentifierNode accept: self);
+							                  sourceAnchor:
+								                  (self extractSourceAnchor:
+										                   eachIdentifierNode);
+							                  parentBehaviouralEntity: context top.
+
+						model add: localVarEntity.
+
+						context push: localVarEntity.
+						self visitKey: 'type' inDictionnary: fields.
+						context pop ] ]
+				ifFalse: [
+					| localVarEntity |
+					inDeclaration := true.
+					localVarEntity := FamixCLocalVariable new
+						                  name:
+							                  (self
+								                   visitKey: 'declarator'
+								                   inDictionnary: fields);
+						                  sourceAnchor:
+							                  (self extractSourceAnchor: aTSNode);
+						                  parentBehaviouralEntity: context top.
+
+					model add: localVarEntity.
+
+					context push: localVarEntity.
+					self visitKey: 'type' inDictionnary: fields.
+					context pop ] ]
 		ifFalse: [
 			self visitKey: 'type' inDictionnary: fields.
 			self visitKey: 'declarator' inDictionnary: fields ].
