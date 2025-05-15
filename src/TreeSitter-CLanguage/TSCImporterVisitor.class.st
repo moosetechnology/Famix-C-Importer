@@ -25,6 +25,14 @@ TSCImporterVisitor >> context: anObject [
 	context := anObject
 ]
 
+{ #category : 'as yet unclassified' }
+TSCImporterVisitor >> detect: aFamixCEntity name: aString [
+
+	^ (model allWithType: aFamixCEntity)
+		  detect: [ :each | each name = aString ]
+		  ifNone: [ nil ]
+]
+
 { #category : 'visiting' }
 TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 
@@ -198,6 +206,59 @@ TSCImporterVisitor >> visitCERROR: aTSNode withFields: fields [
        self visitKey: '<unnamedChild>' inDictionnary: fields.
    }
 
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
+	"name body"
+
+	| enumEntity enumName enumAsAttributeType isTypedefType |
+	enumName := ''.
+	(fields includesKey: 'name') ifTrue: [
+		enumName := self visitKey: 'name' inDictionnary: fields ].
+
+
+	(fields includesKey: 'body')
+		ifTrue: [
+			enumEntity := FamixCEnum new
+				              name: enumName;
+				              sourceAnchor: (self extractSourceAnchor: aTSNode).
+			model add: enumEntity.
+
+			"parent type resolution"
+			isTypedefType := context isNotEmpty and: [
+				                 context top class = FamixCAliasType ].
+			isTypedefType ifTrue: [ context top aliasedType: enumEntity ].
+
+			enumAsAttributeType := context isNotEmpty and: [
+				                       context top class = FamixCAttribute ].
+			enumAsAttributeType | inDeclaration ifTrue: [
+				context top declaredType: enumEntity ].
+
+			context push: enumEntity.
+			self visitKey: 'body' inDictionnary: fields.
+			context pop ]
+		ifFalse: [
+			enumEntity := self detect: FamixCEnum name: enumName.
+			enumEntity ifNotNil: [ context top declaredType: enumEntity ] ].
+
+
+	^ enumEntity
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCEnumerator: aTSNode withFields: fields [
+	"tokony hisy value eto fa tsy name ihany"
+
+	| enumValueEntity |
+	enumValueEntity := FamixCEnumValue new
+		                   name:
+			                   (self visitKey: 'name' inDictionnary: fields);
+		                   sourceAnchor: (self extractSourceAnchor: aTSNode);
+		                   parentEnum: context top;
+		                   yourself.
+	model add: enumValueEntity.
+	^ enumValueEntity
 ]
 
 { #category : 'visiting' }
@@ -382,9 +443,7 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 			self visitKey: 'body' inDictionnary: fields.
 			context pop ]
 		ifFalse: [ "no need to create an entity here"
-			structEntity := (model allWithType: FamixCStruct)
-				                detect: [ :each | each name = structName ]
-				                ifNone: [ nil ] ].
+			structEntity := self detect: FamixCStruct name: structName ].
 	^ structEntity
 ]
 
