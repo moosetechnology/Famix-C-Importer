@@ -212,7 +212,7 @@ TSCImporterVisitor >> visitCERROR: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 	"name body"
 
-	| enumEntity enumName enumAsAttributeType isTypedefType |
+	| enumEntity enumName enumAsAttributeType |
 	enumName := ''.
 	(fields includesKey: 'name') ifTrue: [
 		enumName := self visitKey: 'name' inDictionnary: fields ].
@@ -226,9 +226,8 @@ TSCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 			model add: enumEntity.
 
 			"parent type resolution"
-			isTypedefType := context isNotEmpty and: [
-				                 context top class = FamixCAliasType ].
-			isTypedefType ifTrue: [ context top aliasedType: enumEntity ].
+			(context isNotEmpty and: [ context top class = FamixCAliasType ])
+				ifTrue: [ context top aliasedType: enumEntity ].
 
 			enumAsAttributeType := context isNotEmpty and: [
 				                       context top class = FamixCAttribute ].
