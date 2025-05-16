@@ -87,12 +87,12 @@ TSCImporterVisitorTest >> testAnonymousEnumWithVariable [
 	self assert: importer model allLocalVariables anyOne declaredType class equals: FamixCEnum.
 ]
 
-{ #category : 'tests - struct' }
+{ #category : 'tests - union' }
 TSCImporterVisitorTest >> testAnonymousStructAsFieldType [
 
-	| sourceCode structEntities attributeEntities |
+	| sourceCode structEntities unionEntities attributeEntities |
 	sourceCode := '
-	struct WithNestedStruct {
+	union WithNestedStruct {
     	struct {
         	int a; //WithNestedStruct.bar.a to access a
     	} bar;
@@ -102,20 +102,16 @@ TSCImporterVisitorTest >> testAnonymousStructAsFieldType [
 	importer importFromString: sourceCode.
 
 	structEntities := importer model allWithType: FamixCStruct.
+	unionEntities := importer model allWithType: FamixCUnion.
 	attributeEntities := importer model allWithType: FamixCAttribute.
 
-	self assert: structEntities size equals: 2.
-	self
-		assert:
-			(structEntities detect: [ :each | each name = 'WithNestedStruct' ])
-				attributes size
-		equals: 1.
-	self
-		assert:
-			(structEntities detect: [ :each | each name = 'WithNestedStruct' ])
-				attributes anyOne name
-		equals: 'bar'.
 	self assert: attributeEntities size equals: 2. "2 attributes: WithNestedStruct.bar and .a"
+	self
+		assert: unionEntities anyOne attributes anyOne name
+		equals: 'bar'.
+	self
+		assert: unionEntities anyOne attributes anyOne declaredType class
+		equals: FamixCStruct.
 	self
 		assert:
 			(attributeEntities detect: [ :each | each name = 'bar' ])
@@ -142,6 +138,60 @@ TSCImporterVisitorTest >> testAnonymousStructDeclaration [
 	
 	self assert: structEntities size equals: 1.
 	self assert: structEntities anyOne name equals: ''.
+	self assert: attributeEntities size equals: 1.
+	self assert: attributeEntities anyOne name equals: 'a'.
+	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'
+]
+
+{ #category : 'tests - struct' }
+TSCImporterVisitorTest >> testAnonymousUnionAsFieldType [
+
+	| sourceCode structEntities unionEntities attributeEntities |
+	sourceCode := '
+	struct WithNestedStruct {
+    	union {
+        	int a; //WithNestedStruct.bar.a to access a
+    	} bar;
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	structEntities := importer model allWithType: FamixCStruct.
+	unionEntities := importer model allWithType: FamixCStruct.
+	attributeEntities := importer model allWithType: FamixCAttribute.
+	
+	self assert: attributeEntities size equals: 2. "2 attributes: WithNestedStruct.bar and .a"
+	self assert: structEntities anyOne attributes anyOne name equals: 'bar'.
+	self
+		assert: structEntities anyOne attributes anyOne declaredType class
+		equals: FamixCUnion.
+	self
+		assert:
+			(attributeEntities detect: [ :each | each name = 'bar' ])
+				declaredType attributes anyOne name
+		equals: 'a' "assert bar.a exists"
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testAnonymousUnionDeclaration [
+
+	| sourceCode unionEntities attributeEntities |
+	sourceCode := '
+	int main() { 
+		union {
+			int a;
+		} aVariable;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	unionEntities := importer model allWithType: FamixCUnion.
+	attributeEntities := importer model allWithType: FamixCAttribute.
+	
+	self assert: unionEntities size equals: 1.
+	self assert: unionEntities anyOne name equals: ''.
 	self assert: attributeEntities size equals: 1.
 	self assert: attributeEntities anyOne name equals: 'a'.
 	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'
@@ -690,6 +740,27 @@ TSCImporterVisitorTest >> testSkipStructTypeFieldAsStructEntity [
 	self assert: (structEntities count: [ :each | each name = 'Inner' ]) equals: 1.
 ]
 
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testSkipUnionTypeFieldAsUnionEntity [
+
+	| sourceCode unionEntities |
+	sourceCode := '
+	union Inner {
+    	int a;
+	};
+	union WithNestedUnion {
+    	union Inner foo; // Inner should not be considered as a new union entity 
+	};
+	'.
+	
+	importer importFromString: sourceCode.
+	unionEntities := importer model allWithType: FamixCUnion.
+	self
+		assert: unionEntities size
+		equals: 2.
+	self assert: (unionEntities count: [ :each | each name = 'Inner' ]) equals: 1.
+]
+
 { #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructFieldAnonymousStruct [
 
@@ -1054,6 +1125,216 @@ TSCImporterVisitorTest >> testTypedefSourceAnchor [
 		(importer model allWithType: FamixCAliasType) anyOne sourceAnchor
 			endPos
 		equals: 20
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionFieldAnonymousUnion [
+
+	| sourceCode |
+	sourceCode := '
+	union WithAnonymousUnion{
+		union { 
+			union { 
+				int a; // fields a is promoted to most non anonymous outer union
+			 };
+		}; 
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCUnion) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCUnion) anyOne name
+		equals: 'WithAnonymousUnion'.
+	self
+		assert: (importer model allWithType: FamixCAttribute) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAttribute) anyOne name
+		equals: 'a'.
+	self
+		assert:
+		(importer model allWithType: FamixCAttribute) anyOne parentType name
+		equals: 'WithAnonymousUnion'
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionFieldArray [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{
+		char name[50];
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute ) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAttribute) anyOne name
+		equals: 'name'
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionFieldName [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute ) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAttribute) anyOne name
+		equals: 'id'
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionFieldParent [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert:
+		(importer model allWithType: FamixCAttribute) anyOne parentType class
+		equals: FamixCUnion.
+	self
+		assert:
+		(importer model allWithType: FamixCAttribute) anyOne parentType name
+		equals: 'Person'
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionFieldPointer [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{
+		int *ptr;
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute ) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAttribute) anyOne name
+		equals: 'ptr'
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionFieldUnion [
+
+	| sourceCode |
+	sourceCode := '
+	union Inner {
+    	int a;
+	};
+	union Person{
+		union Inner inner;
+	};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAttribute) size
+		equals: 2.
+	self
+		assert:
+			(importer model detect: [ :each | each name = 'Person' ])
+				attributes anyOne name
+		equals: 'inner'
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionMultipleFieldInOneLine [
+
+	| sourceCode attributes |
+	sourceCode := '
+	union Person{
+		int a, b;
+		};
+	'.
+
+	importer importFromString: sourceCode.
+
+	attributes := importer model allWithType: FamixCAttribute.
+	
+	self assert: attributes size equals: 2.
+	self assert: (attributes anySatisfy: [ :each | each name = 'a' ]).
+	self assert: (attributes anySatisfy: [ :each | each name = 'b' ])
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionName [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCUnion) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCUnion) anyOne name
+		equals: 'Person'
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionSourceAnchor [
+
+	| sourceCode |
+	sourceCode := 'union Person{int id};'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert:
+			(importer model allWithType: FamixCUnion) anyOne sourceAnchor
+				startPos
+		equals: 0.
+	self
+		assert:
+		(importer model allWithType: FamixCUnion) anyOne sourceAnchor
+			endPos
+		equals: 20
+]
+
+{ #category : 'tests - union' }
+TSCImporterVisitorTest >> testUnionTypeVarExcludedFromModel [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{int id};
+	union Person p1; //should not create a union entity inside the model
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCUnion) size
+		equals: 1
 ]
 
 { #category : 'tests - enum' }
