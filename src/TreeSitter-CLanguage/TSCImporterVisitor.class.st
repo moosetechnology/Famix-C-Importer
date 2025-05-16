@@ -401,21 +401,31 @@ TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
 
-	| structEntity structName isAnonymous structAsAttributeType isTypedefType |
+	^ self
+		  visitCStructuredType: aTSNode
+		  withFields: fields
+		  type: FamixCStruct
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFamixCStructuredTypeClass [
+	"name body"
+
+	| structuredTypeEntity structuredTypeName isAnonymous asAttributeType asTypedefType |
 	isAnonymous := (fields includesKey: 'name') not.
-	structAsAttributeType := context isNotEmpty and: [
-		                         context top class = FamixCAttribute ].
-	isTypedefType := context isNotEmpty and: [
+	asAttributeType := context isNotEmpty and: [
+		                   context top class = FamixCAttribute ].
+	asTypedefType := context isNotEmpty and: [
 		                 context top class = FamixCAliasType ].
 
 
 
-	isAnonymous & structAsAttributeType not & inDeclaration not
-	& isTypedefType not ifTrue: [ "skip entity creation for this case: 
+	isAnonymous & asAttributeType not & inDeclaration not
+	& asTypedefType not ifTrue: [ "skip entity creation for this case: 
 			```
 			struct foo { 
 				struct {
-					int a; // here, a is promoted to outer structure
+					int a; // here, a is promoted to outer structure or union
 				}
 			};
 			```
@@ -423,27 +433,33 @@ TSCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 		self visitKey: 'body' inDictionnary: fields.
 		^ nil ].
 
-	structName := ''.
+	structuredTypeName := ''.
 	isAnonymous ifFalse: [
-		structName := self visitKey: 'name' inDictionnary: fields ].
+		structuredTypeName := self visitKey: 'name' inDictionnary: fields ].
 
 	(fields includesKey: 'body')
 		ifTrue: [
-			structEntity := model newStruct
-				                name: structName;
-				                sourceAnchor: (self extractSourceAnchor: aTSNode).
+			structuredTypeEntity := aFamixCStructuredTypeClass new.
+			
+			structuredTypeEntity
+				name: structuredTypeName;
+				sourceAnchor: (self extractSourceAnchor: aTSNode).
+			model add: structuredTypeEntity.
 
-			inDeclaration | structAsAttributeType ifTrue: [
-				context top declaredType: structEntity ].
+			inDeclaration | asAttributeType ifTrue: [
+				context top declaredType: structuredTypeEntity ].
 
-			isTypedefType ifTrue: [ context top aliasedType: structEntity ].
+			asTypedefType ifTrue: [
+				context top aliasedType: structuredTypeEntity ].
 
-			context push: structEntity.
+			context push: structuredTypeEntity.
 			self visitKey: 'body' inDictionnary: fields.
 			context pop ]
 		ifFalse: [ "no need to create an entity here"
-			structEntity := self detect: FamixCStruct name: structName ].
-	^ structEntity
+			structuredTypeEntity := self
+				                        detect: aFamixCStructuredTypeClass
+				                        name: structuredTypeName ].
+	^ structuredTypeEntity
 ]
 
 { #category : 'visiting' }
@@ -473,4 +489,14 @@ TSCImporterVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
 		context top sourceAnchor: fileAnchor 
 		].
 	^ aTSNode textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCUnionSpecifier: aTSNode withFields: fields [
+	"name body"
+
+	^ self
+		  visitCStructuredType: aTSNode
+		  withFields: fields
+		  type: FamixCUnion
 ]
