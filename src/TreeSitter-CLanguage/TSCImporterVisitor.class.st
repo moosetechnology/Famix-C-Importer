@@ -159,6 +159,15 @@ TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCComment: aTSNode withFields: fields [
+	"no fields"
+
+	^ model add:
+		  (FamixCComment new sourceAnchor:
+			   (self extractSourceAnchor: aTSNode))
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 

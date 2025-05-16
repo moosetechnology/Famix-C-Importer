@@ -197,6 +197,34 @@ TSCImporterVisitorTest >> testAnonymousUnionDeclaration [
 	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'
 ]
 
+{ #category : 'tests - comments' }
+TSCImporterVisitorTest >> testCommentMultipleLine [
+
+	| sourceCode |
+	sourceCode := '
+	/* 
+	a multiple line comment
+	*/
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allComments size equals: 1.
+]
+
+{ #category : 'tests - comments' }
+TSCImporterVisitorTest >> testCommentSingleLine [
+
+	| sourceCode |
+	sourceCode := '
+	// a comment
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allComments size equals: 1.
+]
+
 { #category : 'tests' }
 TSCImporterVisitorTest >> testEnsureEntityExistForExistingEntity [
 
