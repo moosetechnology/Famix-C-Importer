@@ -581,6 +581,35 @@ TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
 ]
 
 { #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testNestedLocalVariable [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int levl0;
+		{
+			int lvl1;
+			{
+				int lvl2; 
+			}
+		}
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 3.
+	self assert:
+		importer model allLocalVariables anyOne parentBehaviouralEntity
+			isFunction.
+	self
+		assert:
+		importer model allLocalVariables anyOne parentBehaviouralEntity name
+		equals: 'parentFunction'
+]
+
+{ #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testOneLineMultipleDeclaration [
 
 	| sourceCode |
