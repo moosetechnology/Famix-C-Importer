@@ -68,9 +68,13 @@ TSCImporterVisitor >> import: aFileReference [
 	aFileReference exists ifFalse: [
 		self error: aFileReference fullName , ' does not exist' ].
 
-	^ aFileReference isFile
+	aFileReference isFile
 		ifTrue: [ self importFromFile: aFileReference ]
-		ifFalse: [ self importFromFolder: aFileReference ]
+		ifFalse: [ self importFromFolder: aFileReference ].
+		
+	self resolveSymbols.
+	
+	^ model
 ]
 
 { #category : 'importer' }
@@ -144,6 +148,11 @@ TSCImporterVisitor >> parseString: aString [
 	^ (parser parseString: aString) rootNode
 ]
 
+{ #category : 'as yet unclassified' }
+TSCImporterVisitor >> resolveSymbols [
+	self flag: 'TODO'
+]
+
 { #category : 'accessing' }
 TSCImporterVisitor >> sourceCode: anObject [
 
@@ -193,11 +202,15 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 					                  sourceAnchor:
 						                  (self extractSourceAnchor: aTSNode);
 					                  parentBehaviouralEntity: context top.
-
+					
 				model add: localVarEntity.
-
+				
 				context push: localVarEntity.
-				self visitKey: 'type' inDictionnary: fields.
+				
+				localVarEntity
+					attributeAt: #declaredType
+					put: (self visitKey: 'type' inDictionnary: fields).
+					
 				context pop ] ]
 		ifFalse: [
 			self visitKey: 'type' inDictionnary: fields.
@@ -404,6 +417,12 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 
 	^ self visitKey: 'declarator' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
+
+	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }

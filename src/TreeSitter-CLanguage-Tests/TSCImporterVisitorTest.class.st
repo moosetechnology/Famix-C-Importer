@@ -562,6 +562,103 @@ TSCImporterVisitorTest >> testLocalVariableSourceAnchor [
 ]
 
 { #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testLocalVariableType [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'
+]
+
+{ #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testLocalVariableTypeAnonymousStruct [
+
+	| sourceCode |
+	sourceCode := '
+	
+	int parentFunction(){
+		struct { int id; } aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ]) class
+		equals: FamixCStruct.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ]) name
+		equals: ''
+]
+
+{ #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testLocalVariableTypeStruct [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person { int id; };
+	int parentFunction(){
+		struct Person aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ]) class
+		equals: FamixCStruct.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ]) name
+		equals: 'Person'
+]
+
+{ #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testLocalVariableTypeTypedef [
+
+	| sourceCode |
+	sourceCode := '
+	typedef int Integer;
+	int parentFunction(){
+		Integer aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'Integer'
+]
+
+{ #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
 
 	| sourceCode |
@@ -661,6 +758,35 @@ TSCImporterVisitorTest >> testOneLineMultipleDeclarationAndInitialization [
 		assert:
 		importer model allLocalVariables anyOne parentBehaviouralEntity name
 		equals: 'parentFunction'
+]
+
+{ #category : 'tests - local variables' }
+TSCImporterVisitorTest >> testOneLineMultipleDeclarationType [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a, b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 2.
+
+	self
+		assert:
+			((importer model allLocalVariables detect: [ :var | var name = 'a' ])
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'. 
+	self
+		assert:
+			((importer model allLocalVariables detect: [ :var | var name = 'b' ])
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'
 ]
 
 { #category : 'tests - parameters' }
