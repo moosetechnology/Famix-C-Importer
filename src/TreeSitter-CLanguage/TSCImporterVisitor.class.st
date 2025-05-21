@@ -291,12 +291,12 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 		ifTrue: [
 			| fieldsName |
 			fieldsName := self visitKey: 'declarator' inDictionnary: fields.
-			
+
 			fieldsName isString ifTrue: [
 				fieldsName := OrderedCollection new
 					              add: fieldsName;
 					              yourself ].
-				
+
 			fieldsName do: [ :eachName |
 				fieldDelcarationEntity := model newAttribute
 					                          name: eachName;
@@ -305,10 +305,10 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 					                          parentType: context top.
 
 				context push: fieldDelcarationEntity.
-				self visitKey: 'type' inDictionnary: fields.
-				context pop 
-				
-				] ]
+				fieldDelcarationEntity
+					attributeAt: #declaredType
+					put: (self visitKey: 'type' inDictionnary: fields).
+				context pop ] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
 			self visitKey: 'type' inDictionnary: fields ]
 ]

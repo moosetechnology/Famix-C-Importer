@@ -561,7 +561,7 @@ TSCImporterVisitorTest >> testLocalVariableSourceAnchor [
 	self assert: importer model allLocalVariables first sourceAnchor endPos equals: 28.
 ]
 
-{ #category : 'tests - local variables' }
+{ #category : 'tests - type' }
 TSCImporterVisitorTest >> testLocalVariableType [
 
 	| sourceCode |
@@ -582,7 +582,7 @@ TSCImporterVisitorTest >> testLocalVariableType [
 		equals: 'int'
 ]
 
-{ #category : 'tests - local variables' }
+{ #category : 'tests - type' }
 TSCImporterVisitorTest >> testLocalVariableTypeAnonymousStruct [
 
 	| sourceCode |
@@ -609,7 +609,7 @@ TSCImporterVisitorTest >> testLocalVariableTypeAnonymousStruct [
 		equals: ''
 ]
 
-{ #category : 'tests - local variables' }
+{ #category : 'tests - type' }
 TSCImporterVisitorTest >> testLocalVariableTypeStruct [
 
 	| sourceCode |
@@ -636,7 +636,7 @@ TSCImporterVisitorTest >> testLocalVariableTypeStruct [
 		equals: 'Person'
 ]
 
-{ #category : 'tests - local variables' }
+{ #category : 'tests - type' }
 TSCImporterVisitorTest >> testLocalVariableTypeTypedef [
 
 	| sourceCode |
@@ -760,7 +760,7 @@ TSCImporterVisitorTest >> testOneLineMultipleDeclarationAndInitialization [
 		equals: 'parentFunction'
 ]
 
-{ #category : 'tests - local variables' }
+{ #category : 'tests - type' }
 TSCImporterVisitorTest >> testOneLineMultipleDeclarationType [
 
 	| sourceCode |
@@ -1084,6 +1084,23 @@ TSCImporterVisitorTest >> testStructFieldStruct [
 		equals: 'inner'
 ]
 
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testStructFieldType [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: ((importer model allWithType: FamixCAttribute) anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'
+]
+
 { #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructMultipleFieldInOneLine [
 
@@ -1101,6 +1118,23 @@ TSCImporterVisitorTest >> testStructMultipleFieldInOneLine [
 	self assert: attributes size equals: 2.
 	self assert: (attributes anySatisfy: [ :each | each name = 'a' ]).
 	self assert: (attributes anySatisfy: [ :each | each name = 'b' ])
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testStructMultipleFieldInOneLineType [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{int a, b;};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert:
+			(((importer model allWithType: FamixCAttribute) detect: [ :each |
+				  each name = 'b' ]) attributeAt: #declaredType ifAbsent: [ nil ])
+		equals: 'int'
 ]
 
 { #category : 'tests - struct' }
@@ -1420,6 +1454,23 @@ TSCImporterVisitorTest >> testUnionFieldPointer [
 	self
 		assert: (importer model allWithType: FamixCAttribute) anyOne name
 		equals: 'ptr'
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testUnionFieldType [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: ((importer model allWithType: FamixCAttribute) anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'
 ]
 
 { #category : 'tests - union' }
