@@ -41,6 +41,12 @@ TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 		  ifNone: [ model add: (aFamixCEntity new name: aString) ]
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> entityNamed: aName in: aCollection [
+
+	^ aCollection detect: [ :each | each name = aName ] ifNone: [ nil ]
+]
+
 { #category : 'visiting' }
 TSCImporterVisitor >> extractSourceAnchor: aTSNode [
 
@@ -127,6 +133,21 @@ TSCImporterVisitor >> initialize [
 	context := Stack new.
 	model := FamixCModel new.
 	inDeclaration := false
+]
+
+{ #category : 'testing' }
+TSCImporterVisitor >> isDeclarationContext: aTSNode [
+
+	^ #( 'function_declarator' 'declaration' 'init_declarator'
+	     'parameter_declaration' ) includes: aTSNode type
+]
+
+{ #category : 'as yet unclassified' }
+TSCImporterVisitor >> lookupVariable: aName [
+
+	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+		^ self entityNamed: aName in: context top localVariables ].
+	^ nil
 ]
 
 { #category : 'accessing' }
@@ -363,7 +384,18 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	^ aTSNode textFromSourceText: sourceCode
+	| text |
+	text := aTSNode textFromSourceText: sourceCode.
+
+	(self isDeclarationContext: aTSNode parent) ifFalse: [ 
+		"I am not in a declaration context so there is an access here"
+		model add: (FamixCAccess new
+				 accessor: context top;
+				 variable: (self lookupVariable: text);
+				 yourself).
+		self flag: 'TODO: The variable needs to be resolved' ].
+
+	^ text
 ]
 
 { #category : 'visiting' }

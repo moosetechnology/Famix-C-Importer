@@ -11,6 +11,12 @@ Class {
 	#package : 'TreeSitter-CLanguage-Tests'
 }
 
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> entityNamed: aName in: aCollection [
+
+	^ aCollection detect: [ :each | each name = aName ] ifNone: [ nil ]
+]
+
 { #category : 'running' }
 TSCImporterVisitorTest >> setUp [
 
@@ -476,6 +482,53 @@ TSCImporterVisitorTest >> testFunctionPrototypeReturnType [
 
 	self assert: (importer model allFunctions anyOne attributeAt: #declaredType
 				 ifAbsent: [ nil ]) equals: 'void'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableAccess [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a;
+		a = 3; 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne accessor isFunction.
+	self assert: importer model allAccesses anyOne accessor name equals: 'parentFunction'.
+	self assert: importer model allAccesses anyOne variable name equals: 'a'.
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableAccessMultipleFunction [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction1(){
+		int a1;
+		a1 = 3; 
+		return 0;
+	}
+	int parentFunction2(){
+		int a2;
+		a2 = 3; 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 2.
+	self
+		assert:
+			(self entityNamed: 'a2' in: importer model allLocalVariables)
+				accessors first name
+		equals: 'parentFunction2'
 ]
 
 { #category : 'tests - local variables' }
