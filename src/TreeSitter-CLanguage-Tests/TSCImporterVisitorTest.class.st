@@ -395,6 +395,23 @@ TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 	self assert: importer model allFunctions anyOne name equals: 'func'
 ]
 
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testFunctionDefinitionReturnType [
+
+	| sourceCode |
+	
+	sourceCode := '
+	void func(){
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: (importer model allFunctions anyOne attributeAt: #declaredType
+				 ifAbsent: [ nil ]) equals: 'void'
+]
+
 { #category : 'tests - functions' }
 TSCImporterVisitorTest >> testFunctionDefinitionWithoutDeclaration [
 
@@ -428,6 +445,37 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 	self
 		assert: importer model allFunctions anyOne sourceAnchor endPos
 		equals: 13
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testFunctionPrototypeAndDefinitionReturnType [
+
+	| sourceCode |
+	
+	sourceCode := '
+	void func();
+	void func(){}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: (importer model allFunctions anyOne attributeAt: #declaredType
+				 ifAbsent: [ nil ]) equals: 'void'
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testFunctionPrototypeReturnType [
+
+	| sourceCode |
+	
+	sourceCode := '
+	void func();
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: (importer model allFunctions anyOne attributeAt: #declaredType
+				 ifAbsent: [ nil ]) equals: 'void'
 ]
 
 { #category : 'tests - local variables' }
@@ -561,6 +609,103 @@ TSCImporterVisitorTest >> testLocalVariableSourceAnchor [
 	self assert: importer model allLocalVariables first sourceAnchor endPos equals: 28.
 ]
 
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testLocalVariableType [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testLocalVariableTypeAnonymousStruct [
+
+	| sourceCode |
+	sourceCode := '
+	
+	int parentFunction(){
+		struct { int id; } aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ]) class
+		equals: FamixCStruct.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ]) name
+		equals: ''
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testLocalVariableTypeStruct [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person { int id; };
+	int parentFunction(){
+		struct Person aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ]) class
+		equals: FamixCStruct.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ]) name
+		equals: 'Person'
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testLocalVariableTypeTypedef [
+
+	| sourceCode |
+	sourceCode := '
+	typedef int Integer;
+	int parentFunction(){
+		Integer aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: (importer model allLocalVariables anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'Integer'
+]
+
 { #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
 
@@ -661,6 +806,35 @@ TSCImporterVisitorTest >> testOneLineMultipleDeclarationAndInitialization [
 		assert:
 		importer model allLocalVariables anyOne parentBehaviouralEntity name
 		equals: 'parentFunction'
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testOneLineMultipleDeclarationType [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a, b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 2.
+
+	self
+		assert:
+			((importer model allLocalVariables detect: [ :var | var name = 'a' ])
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'. 
+	self
+		assert:
+			((importer model allLocalVariables detect: [ :var | var name = 'b' ])
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'
 ]
 
 { #category : 'tests - parameters' }
@@ -958,6 +1132,23 @@ TSCImporterVisitorTest >> testStructFieldStruct [
 		equals: 'inner'
 ]
 
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testStructFieldType [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: ((importer model allWithType: FamixCAttribute) anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'
+]
+
 { #category : 'tests - struct' }
 TSCImporterVisitorTest >> testStructMultipleFieldInOneLine [
 
@@ -975,6 +1166,23 @@ TSCImporterVisitorTest >> testStructMultipleFieldInOneLine [
 	self assert: attributes size equals: 2.
 	self assert: (attributes anySatisfy: [ :each | each name = 'a' ]).
 	self assert: (attributes anySatisfy: [ :each | each name = 'b' ])
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testStructMultipleFieldInOneLineType [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{int a, b;};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert:
+			(((importer model allWithType: FamixCAttribute) detect: [ :each |
+				  each name = 'b' ]) attributeAt: #declaredType ifAbsent: [ nil ])
+		equals: 'int'
 ]
 
 { #category : 'tests - struct' }
@@ -1294,6 +1502,23 @@ TSCImporterVisitorTest >> testUnionFieldPointer [
 	self
 		assert: (importer model allWithType: FamixCAttribute) anyOne name
 		equals: 'ptr'
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testUnionFieldType [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: ((importer model allWithType: FamixCAttribute) anyOne
+				 attributeAt: #declaredType
+				 ifAbsent: [ nil ])
+		equals: 'int'
 ]
 
 { #category : 'tests - union' }

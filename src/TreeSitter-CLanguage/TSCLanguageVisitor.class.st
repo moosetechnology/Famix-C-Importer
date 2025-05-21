@@ -34,7 +34,7 @@ TSCLanguageVisitor >> doesNotUnderstand: aMessage [
 	(aMessage selector beginsWith: 'visitC')
 		ifFalse: [ super doesNotUnderstand: aMessage ].
 		
-	self class
+	TSCLanguageVisitor instanceSide 
 		compile: (self createVisitMethod: aMessage )
 		classified: #visiting.
 		
@@ -175,6 +175,13 @@ TSCLanguageVisitor >> visitCExpressionStatement: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCFalse: aTSNode withFields: fields [
+ ^ {
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
  ^ {
        self visitKey: 'type' inDictionnary: fields.
@@ -185,6 +192,14 @@ TSCLanguageVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCLanguageVisitor >> visitCFieldDeclarationList: aTSNode withFields: fields [
+ ^ {
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCFieldDesignator: aTSNode withFields: fields [
  ^ {
        self visitKey: '<unnamedChild>' inDictionnary: fields.
    }
@@ -234,6 +249,15 @@ TSCLanguageVisitor >> visitCIdentifier: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCIfStatement: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'condition' inDictionnary: fields.
+       self visitKey: 'consequence' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCInitDeclarator: aTSNode withFields: fields [
  ^ {
        self visitKey: 'declarator' inDictionnary: fields.
@@ -246,6 +270,15 @@ TSCLanguageVisitor >> visitCInitDeclarator: aTSNode withFields: fields [
 TSCLanguageVisitor >> visitCInitializerList: aTSNode withFields: fields [
  ^ {
        self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCInitializerPair: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'designator' inDictionnary: fields.
+       self visitKey: 'value' inDictionnary: fields.
    }
 
 ]
@@ -291,6 +324,14 @@ TSCLanguageVisitor >> visitCParenthesizedDeclarator: aTSNode withFields: fields 
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCParenthesizedExpression: aTSNode withFields: fields [
+ ^ {
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
  ^ {
        self visitKey: 'declarator' inDictionnary: fields.
@@ -307,9 +348,61 @@ TSCLanguageVisitor >> visitCPointerExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCPreprocArg: aTSNode withFields: fields [
+ ^ {
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCPreprocDef: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'name' inDictionnary: fields.
+       self visitKey: 'value' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCPreprocElse: aTSNode withFields: fields [
+ ^ {
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCPreprocFunctionDef: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'name' inDictionnary: fields.
+       self visitKey: 'parameters' inDictionnary: fields.
+       self visitKey: 'value' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCPreprocIfdef: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'name' inDictionnary: fields.
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
+       self visitKey: 'alternative' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCPreprocInclude: aTSNode withFields: fields [
  ^ {
        self visitKey: 'path' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCPreprocParams: aTSNode withFields: fields [
+ ^ {
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
    }
 
 ]
@@ -393,6 +486,13 @@ TSCLanguageVisitor >> visitCTranslationUnit: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCTrue: aTSNode withFields: fields [
+ ^ {
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
  ^ {
        self visitKey: 'type' inDictionnary: fields.
@@ -413,6 +513,14 @@ TSCLanguageVisitor >> visitCTypeDescriptor: aTSNode withFields: fields [
 { #category : 'visiting' }
 TSCLanguageVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
  ^ {
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCUnaryExpression: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'argument' inDictionnary: fields.
    }
 
 ]

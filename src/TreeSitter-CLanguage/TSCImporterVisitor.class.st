@@ -68,9 +68,13 @@ TSCImporterVisitor >> import: aFileReference [
 	aFileReference exists ifFalse: [
 		self error: aFileReference fullName , ' does not exist' ].
 
-	^ aFileReference isFile
+	aFileReference isFile
 		ifTrue: [ self importFromFile: aFileReference ]
-		ifFalse: [ self importFromFolder: aFileReference ]
+		ifFalse: [ self importFromFolder: aFileReference ].
+		
+	self resolveSymbols.
+	
+	^ model
 ]
 
 { #category : 'importer' }
@@ -144,6 +148,11 @@ TSCImporterVisitor >> parseString: aString [
 	^ (parser parseString: aString) rootNode
 ]
 
+{ #category : 'as yet unclassified' }
+TSCImporterVisitor >> resolveSymbols [
+	self flag: 'TODO'
+]
+
 { #category : 'accessing' }
 TSCImporterVisitor >> sourceCode: anObject [
 
@@ -171,9 +180,10 @@ TSCImporterVisitor >> visitCComment: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
-	"check if it is a declaration inside a function, for local variable"
-
 	inDeclaration := true.
+	self flag:
+		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
+	"check if it is a declaration inside a function, for local variable"
 	(context isNotEmpty and: [ context top isFunction ])
 		ifTrue: [
 			| identifiersName |
@@ -193,15 +203,21 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 					                  sourceAnchor:
 						                  (self extractSourceAnchor: aTSNode);
 					                  parentBehaviouralEntity: context top.
-
 				model add: localVarEntity.
-
 				context push: localVarEntity.
-				self visitKey: 'type' inDictionnary: fields.
+				localVarEntity
+					attributeAt: #declaredType
+					put: (self visitKey: 'type' inDictionnary: fields).
 				context pop ] ]
 		ifFalse: [
-			self visitKey: 'type' inDictionnary: fields.
-			self visitKey: 'declarator' inDictionnary: fields ].
+			| entity |
+			entity := self visitKey: 'declarator' inDictionnary: fields.
+			entity class = FamixCFunction
+				ifTrue: [
+					entity
+						attributeAt: #declaredType
+						put: (self visitKey: 'type' inDictionnary: fields) ]
+				ifFalse: [ self visitKey: 'type' inDictionnary: fields ] ].
 
 
 
@@ -278,12 +294,12 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 		ifTrue: [
 			| fieldsName |
 			fieldsName := self visitKey: 'declarator' inDictionnary: fields.
-			
+
 			fieldsName isString ifTrue: [
 				fieldsName := OrderedCollection new
 					              add: fieldsName;
 					              yourself ].
-				
+
 			fieldsName do: [ :eachName |
 				fieldDelcarationEntity := model newAttribute
 					                          name: eachName;
@@ -292,10 +308,10 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 					                          parentType: context top.
 
 				context push: fieldDelcarationEntity.
-				self visitKey: 'type' inDictionnary: fields.
-				context pop 
-				
-				] ]
+				fieldDelcarationEntity
+					attributeAt: #declaredType
+					put: (self visitKey: 'type' inDictionnary: fields).
+				context pop ] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
 			self visitKey: 'type' inDictionnary: fields ]
 ]
@@ -335,7 +351,9 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
 
 	context push: fnEntity.
-	self visitKey: 'type' inDictionnary: fields.
+	fnEntity
+		attributeAt: #declaredType
+		put: (self visitKey: 'type' inDictionnary: fields).
 	self visitKey: 'body' inDictionnary: fields.
 
 	context pop
@@ -404,6 +422,12 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 
 	^ self visitKey: 'declarator' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
+
+	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
