@@ -395,6 +395,23 @@ TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 	self assert: importer model allFunctions anyOne name equals: 'func'
 ]
 
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testFunctionDefinitionReturnType [
+
+	| sourceCode |
+	
+	sourceCode := '
+	void func(){
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: (importer model allFunctions anyOne attributeAt: #declaredType
+				 ifAbsent: [ nil ]) equals: 'void'
+]
+
 { #category : 'tests - functions' }
 TSCImporterVisitorTest >> testFunctionDefinitionWithoutDeclaration [
 
@@ -428,6 +445,37 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 	self
 		assert: importer model allFunctions anyOne sourceAnchor endPos
 		equals: 13
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testFunctionPrototypeAndDefinitionReturnType [
+
+	| sourceCode |
+	
+	sourceCode := '
+	void func();
+	void func(){}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: (importer model allFunctions anyOne attributeAt: #declaredType
+				 ifAbsent: [ nil ]) equals: 'void'
+]
+
+{ #category : 'tests - type' }
+TSCImporterVisitorTest >> testFunctionPrototypeReturnType [
+
+	| sourceCode |
+	
+	sourceCode := '
+	void func();
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: (importer model allFunctions anyOne attributeAt: #declaredType
+				 ifAbsent: [ nil ]) equals: 'void'
 ]
 
 { #category : 'tests - local variables' }

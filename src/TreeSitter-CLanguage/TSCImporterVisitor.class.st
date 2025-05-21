@@ -180,9 +180,10 @@ TSCImporterVisitor >> visitCComment: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
-	"check if it is a declaration inside a function, for local variable"
-
 	inDeclaration := true.
+	self flag:
+		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
+	"check if it is a declaration inside a function, for local variable"
 	(context isNotEmpty and: [ context top isFunction ])
 		ifTrue: [
 			| identifiersName |
@@ -202,19 +203,21 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 					                  sourceAnchor:
 						                  (self extractSourceAnchor: aTSNode);
 					                  parentBehaviouralEntity: context top.
-					
 				model add: localVarEntity.
-				
 				context push: localVarEntity.
-				
 				localVarEntity
 					attributeAt: #declaredType
 					put: (self visitKey: 'type' inDictionnary: fields).
-					
 				context pop ] ]
 		ifFalse: [
-			self visitKey: 'type' inDictionnary: fields.
-			self visitKey: 'declarator' inDictionnary: fields ].
+			| entity |
+			entity := self visitKey: 'declarator' inDictionnary: fields.
+			entity class = FamixCFunction
+				ifTrue: [
+					entity
+						attributeAt: #declaredType
+						put: (self visitKey: 'type' inDictionnary: fields) ]
+				ifFalse: [ self visitKey: 'type' inDictionnary: fields ] ].
 
 
 
@@ -348,7 +351,9 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
 
 	context push: fnEntity.
-	self visitKey: 'type' inDictionnary: fields.
+	fnEntity
+		attributeAt: #declaredType
+		put: (self visitKey: 'type' inDictionnary: fields).
 	self visitKey: 'body' inDictionnary: fields.
 
 	context pop
