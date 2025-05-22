@@ -11,7 +11,7 @@ Class {
 	#package : 'TreeSitter-CLanguage-Tests'
 }
 
-{ #category : 'tests - accesses' }
+{ #category : 'tests' }
 TSCImporterVisitorTest >> entityNamed: aName in: aCollection [
 
 	^ aCollection detect: [ :each | each name = aName ] ifNone: [ nil ]
@@ -501,6 +501,26 @@ TSCImporterVisitorTest >> testLocalVariableAccess [
 	self assert: importer model allAccesses size equals: 1.
 	self assert: importer model allAccesses anyOne accessor isFunction.
 	self assert: importer model allAccesses anyOne accessor name equals: 'parentFunction'.
+	self assert: importer model allAccesses anyOne variable name equals: 'a'.
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableAccessInsideFunction [
+
+	| sourceCode |
+	sourceCode := '
+	int main(){
+		int a = 3;
+		printf("%d", a)
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne accessor isFunction.
+	self assert: importer model allAccesses anyOne accessor name equals: 'main'.
 	self assert: importer model allAccesses anyOne variable name equals: 'a'.
 ]
 

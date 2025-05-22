@@ -25,6 +25,14 @@ TSCImporterVisitor >> context: anObject [
 	context := anObject
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> currentEntity [
+
+	^ context isNotEmpty
+		  ifTrue: [ context top ]
+		  ifFalse: [ nil ]
+]
+
 { #category : 'as yet unclassified' }
 TSCImporterVisitor >> detect: aFamixCEntity name: aString [
 
@@ -136,10 +144,11 @@ TSCImporterVisitor >> initialize [
 ]
 
 { #category : 'testing' }
-TSCImporterVisitor >> isDeclarationContext: aTSNode [
+TSCImporterVisitor >> isAccessingContext: aTSNode [
 
-	^ #( 'function_declarator' 'declaration' 'init_declarator'
-	     'parameter_declaration' ) includes: aTSNode type
+	^ #( 'assignment_expression' 'expression_statement'
+	     'return_statement' 'field_expression' 'binary_expression'
+	     'argument_list' ) includes: aTSNode type
 ]
 
 { #category : 'as yet unclassified' }
@@ -387,13 +396,14 @@ TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	| text |
 	text := aTSNode textFromSourceText: sourceCode.
 
-	(self isDeclarationContext: aTSNode parent) ifFalse: [ 
-		"I am not in a declaration context so there is an access here"
-		model add: (FamixCAccess new
-				 accessor: context top;
-				 variable: (self lookupVariable: text);
-				 yourself).
-		self flag: 'TODO: The variable needs to be resolved' ].
+	((self isAccessingContext: aTSNode parent) and: [
+		 self currentEntity isNotNil and: [ self currentEntity isFunction ] ])
+		ifTrue: [ "I am not in a declaration context so there is avariable access here"
+			model add: (FamixCAccess new
+					 accessor: context top;
+					 variable: (self lookupVariable: text);
+					 yourself).
+			self flag: 'TODO: need to handle access outside functions' ].
 
 	^ text
 ]
