@@ -102,7 +102,10 @@ TSCImporterVisitor >> importFromFile: aFileReference [
 
 	(acceptedFiles includes: aFileReference extensions first)
 		ifTrue: [
-			fileName := aFileReference fullName.
+			fileName := aFileReference basename.
+			model
+				rootFolder: aFileReference parent;
+				name: fileName.
 
 			sourceCode := aFileReference contents.
 
