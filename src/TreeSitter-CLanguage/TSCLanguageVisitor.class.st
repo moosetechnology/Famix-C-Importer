@@ -535,6 +535,14 @@ TSCLanguageVisitor >> visitCUnionSpecifier: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'argument' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitKey: aKey inDictionnary: childrenDictionnary [
 	| child |
 	child := childrenDictionnary at: aKey ifAbsent: [ ^nil ].

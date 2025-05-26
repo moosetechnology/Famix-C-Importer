@@ -25,12 +25,21 @@ TSCImporterVisitor >> context: anObject [
 	context := anObject
 ]
 
+{ #category : 'private-entity-creation' }
+TSCImporterVisitor >> createWriteAccessTo: variable from: anAssignmentNode [
+
+	^ model newAccess
+		  variable: variable;
+		  accessor: self currentEntity;
+		  isWrite: true;
+		  sourceAnchor: (self extractSourceAnchor: anAssignmentNode);
+		  yourself
+]
+
 { #category : 'accessing' }
 TSCImporterVisitor >> currentEntity [
 
-	^ context isNotEmpty
-		  ifTrue: [ context top ]
-		  ifFalse: [ nil ]
+	^ context top
 ]
 
 { #category : 'as yet unclassified' }
@@ -61,7 +70,8 @@ TSCImporterVisitor >> extractSourceAnchor: aTSNode [
 	^ FamixCIndexedFileAnchor new
 		  startPos: aTSNode startByte;
 		  endPos: aTSNode endByte;
-		  fileName: fileName
+		  fileName: fileName;
+		  mooseModel: model
 ]
 
 { #category : 'accessing' }
@@ -85,9 +95,7 @@ TSCImporterVisitor >> import: aFileReference [
 	aFileReference isFile
 		ifTrue: [ self importFromFile: aFileReference ]
 		ifFalse: [ self importFromFolder: aFileReference ].
-		
-	self resolveSymbols.
-	
+
 	^ model
 ]
 
@@ -146,20 +154,10 @@ TSCImporterVisitor >> initialize [
 	inDeclaration := false
 ]
 
-{ #category : 'testing' }
-TSCImporterVisitor >> isAccessingContext: aTSNode [
-
-	^ #( 'assignment_expression' 'expression_statement'
-	     'return_statement' 'field_expression' 'binary_expression'
-	     'argument_list' ) includes: aTSNode type
-]
-
 { #category : 'as yet unclassified' }
-TSCImporterVisitor >> lookupVariable: aName [
+TSCImporterVisitor >> lookupVariable: aName in: aFamixCFunction [
 
-	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
-		^ self entityNamed: aName in: context top localVariables ].
-	^ nil
+	^ self entityNamed: aName in: aFamixCFunction localVariables
 ]
 
 { #category : 'accessing' }
@@ -181,11 +179,6 @@ TSCImporterVisitor >> parseString: aString [
 	^ (parser parseString: aString) rootNode
 ]
 
-{ #category : 'as yet unclassified' }
-TSCImporterVisitor >> resolveSymbols [
-	self flag: 'TODO'
-]
-
 { #category : 'accessing' }
 TSCImporterVisitor >> sourceCode: anObject [
 
@@ -198,6 +191,21 @@ TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 
 	self visitKey: 'size' inDictionnary: fields.
 	^ self visitKey: 'declarator' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields [
+
+	| leftVarName |
+	leftVarName := self visitKey: 'left' inDictionnary: fields.
+
+	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+		| variable |
+		variable := self lookupVariable: leftVarName in: context top.
+		self createWriteAccessTo: variable from: aTSNode ].
+
+
+	self visitKey: 'right' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
@@ -350,6 +358,13 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCFieldExpression: aTSNode withFields: fields [
+
+	self visitKey: 'field' inDictionnary: fields.
+	^ self visitKey: 'argument' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCFieldIdentifier: aTSNode withFields: fields [
 	"no fields"
 
@@ -396,19 +411,7 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	| text |
-	text := aTSNode textFromSourceText: sourceCode.
-
-	((self isAccessingContext: aTSNode parent) and: [
-		 self currentEntity isNotNil and: [ self currentEntity isFunction ] ])
-		ifTrue: [ "I am not in a declaration context so there is avariable access here"
-			model add: (FamixCAccess new
-					 accessor: context top;
-					 variable: (self lookupVariable: text);
-					 yourself).
-			self flag: 'TODO: need to handle access outside functions' ].
-
-	^ text
+	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
@@ -541,6 +544,13 @@ TSCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFa
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCSubscriptExpression: aTSNode withFields: fields [
+
+	self visitKey: 'index' inDictionnary: fields.
+	^ self visitKey: 'argument' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
 	"type declarator"
 
@@ -577,4 +587,18 @@ TSCImporterVisitor >> visitCUnionSpecifier: aTSNode withFields: fields [
 		  visitCStructuredType: aTSNode
 		  withFields: fields
 		  type: FamixCUnion
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
+
+	| varName |
+	varName := self visitKey: 'argument' inDictionnary: fields.
+	
+	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+		| variable |
+		variable := self lookupVariable: varName in: context top.
+		self createWriteAccessTo: variable from: aTSNode ].
+	
+	^ varName
 ]

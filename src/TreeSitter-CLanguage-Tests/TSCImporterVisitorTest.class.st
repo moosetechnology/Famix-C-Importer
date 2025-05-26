@@ -504,46 +504,6 @@ TSCImporterVisitorTest >> testFunctionPrototypeReturnType [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableAccess [
-
-	| sourceCode |
-	sourceCode := '
-	int parentFunction(){
-		int a;
-		a = 3; 
-		return 0;
-	}
-	'.
-
-	importer importFromString: sourceCode.
-
-	self assert: importer model allAccesses size equals: 1.
-	self assert: importer model allAccesses anyOne accessor isFunction.
-	self assert: importer model allAccesses anyOne accessor name equals: 'parentFunction'.
-	self assert: importer model allAccesses anyOne variable name equals: 'a'.
-]
-
-{ #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableAccessInsideFunction [
-
-	| sourceCode |
-	sourceCode := '
-	int main(){
-		int a = 3;
-		printf("%d", a)
-		return 0;
-	}
-	'.
-
-	importer importFromString: sourceCode.
-
-	self assert: importer model allAccesses size equals: 1.
-	self assert: importer model allAccesses anyOne accessor isFunction.
-	self assert: importer model allAccesses anyOne accessor name equals: 'main'.
-	self assert: importer model allAccesses anyOne variable name equals: 'a'.
-]
-
-{ #category : 'tests - accesses' }
 TSCImporterVisitorTest >> testLocalVariableAccessMultipleFunction [
 
 	| sourceCode |
@@ -811,6 +771,127 @@ TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
 	self
 		assert: importer model allLocalVariables anyOne name
 		equals: 'aLocalVar'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableWriteAccess [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a;
+		a = 3; 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne accessor isFunction.
+	self
+		assert: importer model allAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self
+		assert: importer model allAccesses anyOne variable name
+		equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableWriteAccessArray [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a[5];
+		a[0] = 3; 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne accessor isFunction.
+	self
+		assert: importer model allAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self
+		assert: importer model allAccesses anyOne variable name
+		equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableWriteAccessField [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		struct Point { int x; int y; };
+		struct Point a;
+		a.x = 100; 
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne accessor isFunction.
+	self
+		assert: importer model allAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self
+		assert: importer model allAccesses anyOne variable name
+		equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableWriteAccessIncrement [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a;
+		a++; 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne accessor isFunction.
+	self
+		assert: importer model allAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self
+		assert: importer model allAccesses anyOne variable name
+		equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableWriteAccessSourceAnchor [
+
+	| sourceCode |
+	sourceCode := '
+	int fn(){
+		int a;
+		a = 3; 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: importer model allAccesses anyOne variable name
+		equals: 'a'.
+	self
+		assert: importer model allAccesses anyOne sourceAnchor startPos
+		equals: 23.
+	self
+		assert: importer model allAccesses anyOne sourceAnchor endPos
+		equals: 28
 ]
 
 { #category : 'tests - local variables' }
