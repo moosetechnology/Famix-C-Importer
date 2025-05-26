@@ -141,6 +141,14 @@ TSCImporterVisitor >> model: anObject [
 	model := anObject
 ]
 
+{ #category : 'instance creation' }
+TSCImporterVisitor >> newEntityTypingFor: aFamixCTypeEntity [
+
+	^ model newEntityTyping
+		  declaredType: aFamixCTypeEntity;
+		  yourself
+]
+
 { #category : 'parsing' }
 TSCImporterVisitor >> parseString: aString [
 	"return the source code AST"
@@ -245,26 +253,27 @@ TSCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 
 	(fields includesKey: 'body')
 		ifTrue: [
-			enumEntity := FamixCEnum new
-				              name: enumName;
-				              sourceAnchor: (self extractSourceAnchor: aTSNode).
-			model add: enumEntity.
+				enumEntity := FamixCEnum new
+					              name: enumName;
+					              sourceAnchor: (self extractSourceAnchor: aTSNode).
+				model add: enumEntity.
 
-			"parent type resolution"
-			(context isNotEmpty and: [ context top class = FamixCAliasType ])
-				ifTrue: [ context top aliasedType: enumEntity ].
+				"parent type resolution"
+				(context isNotEmpty and: [ context top class = FamixCAliasType ])
+					ifTrue: [ context top aliasedType: enumEntity ].
 
-			enumAsAttributeType := context isNotEmpty and: [
-				                       context top class = FamixCAttribute ].
-			enumAsAttributeType | inDeclaration ifTrue: [
-				context top declaredType: enumEntity ].
+				enumAsAttributeType := context isNotEmpty and: [
+					                       context top class = FamixCAttribute ].
+				enumAsAttributeType | inDeclaration ifTrue: [
+					context top typing: (self newEntityTypingFor: enumEntity) ].
 
-			context push: enumEntity.
-			self visitKey: 'body' inDictionnary: fields.
-			context pop ]
+				context push: enumEntity.
+				self visitKey: 'body' inDictionnary: fields.
+				context pop ]
 		ifFalse: [
-			enumEntity := self detect: FamixCEnum name: enumName.
-			enumEntity ifNotNil: [ context top declaredType: enumEntity ] ].
+				enumEntity := self detect: FamixCEnum name: enumName.
+				enumEntity ifNotNil: [
+					context top typing: (self newEntityTypingFor: enumEntity) ] ].
 
 
 	^ enumEntity
@@ -463,8 +472,8 @@ TSCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFa
 			};
 			```
 			"
-		self visitKey: 'body' inDictionnary: fields.
-		^ nil ].
+			self visitKey: 'body' inDictionnary: fields.
+			^ nil ].
 
 	structuredTypeName := ''.
 	isAnonymous ifFalse: [
@@ -472,26 +481,26 @@ TSCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFa
 
 	(fields includesKey: 'body')
 		ifTrue: [
-			structuredTypeEntity := aFamixCStructuredTypeClass new.
-			
-			structuredTypeEntity
-				name: structuredTypeName;
-				sourceAnchor: (self extractSourceAnchor: aTSNode).
-			model add: structuredTypeEntity.
+				structuredTypeEntity := aFamixCStructuredTypeClass new.
 
-			inDeclaration | asAttributeType ifTrue: [
-				context top declaredType: structuredTypeEntity ].
+				structuredTypeEntity
+					name: structuredTypeName;
+					sourceAnchor: (self extractSourceAnchor: aTSNode).
+				model add: structuredTypeEntity.
 
-			asTypedefType ifTrue: [
-				context top aliasedType: structuredTypeEntity ].
+				inDeclaration | asAttributeType ifTrue: [
+						context top typing: (self newEntityTypingFor: structuredTypeEntity ) ].
 
-			context push: structuredTypeEntity.
-			self visitKey: 'body' inDictionnary: fields.
-			context pop ]
+				asTypedefType ifTrue: [
+					context top aliasedType: structuredTypeEntity ].
+
+				context push: structuredTypeEntity.
+				self visitKey: 'body' inDictionnary: fields.
+				context pop ]
 		ifFalse: [ "no need to create an entity here"
-			structuredTypeEntity := self
-				                        detect: aFamixCStructuredTypeClass
-				                        name: structuredTypeName ].
+				structuredTypeEntity := self
+					                        detect: aFamixCStructuredTypeClass
+					                        name: structuredTypeName ].
 	^ structuredTypeEntity
 ]
 
