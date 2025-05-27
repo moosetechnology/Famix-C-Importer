@@ -13,6 +13,12 @@ Class {
 	#package : 'TreeSitter-CLanguage'
 }
 
+{ #category : 'importer' }
+TSCImporterVisitor >> acceptedExtensions [
+
+	^ #( 'c' 'h' )
+]
+
 { #category : 'accessing' }
 TSCImporterVisitor >> context [
 
@@ -112,25 +118,20 @@ TSCImporterVisitor >> import: aFileReference [
 
 { #category : 'importer' }
 TSCImporterVisitor >> importFromFile: aFileReference [
-	"accept both .c and .h file"
-
 	"check if it's a .c or .h file"
 
-	| acceptedFiles |
-	acceptedFiles := #( 'c' 'h' ).
-
-	(acceptedFiles includes: aFileReference extensions first)
+	(self acceptedExtensions includes: aFileReference extensions first)
 		ifTrue: [
-			fileName := aFileReference basename.
-			model
-				rootFolder: aFileReference parent;
-				name: fileName.
+				fileName := aFileReference basename.
+				model
+					rootFolder: aFileReference parent;
+					name: fileName.
 
-			sourceCode := aFileReference contents.
+				sourceCode := aFileReference contents.
 
-			(self parseString: sourceCode) accept: self.
+				(self parseString: sourceCode) accept: self.
 
-			^ model ]
+				^ model ]
 		ifFalse: [ self error: 'only .c and .h are accepted' ]
 ]
 
