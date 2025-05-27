@@ -42,7 +42,7 @@ TSCImporterVisitor >> currentEntity [
 	^ context top
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 TSCImporterVisitor >> detect: aFamixCEntity name: aString [
 
 	^ (model allWithType: aFamixCEntity)
@@ -51,7 +51,18 @@ TSCImporterVisitor >> detect: aFamixCEntity name: aString [
 ]
 
 { #category : 'visiting' }
-TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
+TSCImporterVisitor >> ensureAsOrderedCollection: anObject [
+
+	^ anObject class = OrderedCollection
+		  ifTrue: [ anObject ]
+		  ifFalse: [
+				  OrderedCollection new
+					  add: anObject;
+					  yourself ]
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> ensureEntityExist: aFamixCEntity name: aString [
 
 	^ (model allWithType: aFamixCEntity)
 		  detect: [ :each | each name = aString ]
@@ -154,7 +165,7 @@ TSCImporterVisitor >> initialize [
 	inDeclaration := false
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 TSCImporterVisitor >> lookupVariable: aName in: aFamixCFunction [
 
 	^ self entityNamed: aName in: aFamixCFunction localVariables
@@ -235,38 +246,34 @@ TSCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"check if it is a declaration inside a function, for local variable"
 	(context isNotEmpty and: [ context top isFunction ])
 		ifTrue: [
-			| identifiersName |
-			identifiersName := self
-				                   visitKey: 'declarator'
-				                   inDictionnary: fields.
+				| identifiersName |
+				identifiersName := self ensureAsOrderedCollection:
+					                   (self
+						                    visitKey: 'declarator'
+						                    inDictionnary: fields).
 
-			identifiersName isString ifTrue: [
-				identifiersName := OrderedCollection new
-					                   add: identifiersName;
-					                   yourself ].
-
-			identifiersName do: [ :eachIdentifierName |
-				| localVarEntity |
-				localVarEntity := FamixCLocalVariable new
-					                  name: eachIdentifierName;
-					                  sourceAnchor:
-						                  (self extractSourceAnchor: aTSNode);
-					                  parentBehaviouralEntity: context top.
-				model add: localVarEntity.
-				context push: localVarEntity.
-				localVarEntity
-					attributeAt: #declaredType
-					put: (self visitKey: 'type' inDictionnary: fields).
-				context pop ] ]
+				identifiersName do: [ :eachIdentifierName |
+						| localVarEntity |
+						localVarEntity := FamixCLocalVariable new
+							                  name: eachIdentifierName;
+							                  sourceAnchor:
+								                  (self extractSourceAnchor: aTSNode);
+							                  parentBehaviouralEntity: context top.
+						model add: localVarEntity.
+						context push: localVarEntity.
+						localVarEntity
+							attributeAt: #declaredType
+							put: (self visitKey: 'type' inDictionnary: fields).
+						context pop ] ]
 		ifFalse: [
-			| entity |
-			entity := self visitKey: 'declarator' inDictionnary: fields.
-			entity class = FamixCFunction
-				ifTrue: [
-					entity
-						attributeAt: #declaredType
-						put: (self visitKey: 'type' inDictionnary: fields) ]
-				ifFalse: [ self visitKey: 'type' inDictionnary: fields ] ].
+				| entity |
+				entity := self visitKey: 'declarator' inDictionnary: fields.
+				entity class = FamixCFunction
+					ifTrue: [
+							entity
+								attributeAt: #declaredType
+								put: (self visitKey: 'type' inDictionnary: fields) ]
+					ifFalse: [ self visitKey: 'type' inDictionnary: fields ] ].
 
 
 
@@ -342,26 +349,22 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 	| fieldDelcarationEntity |
 	(fields includesKey: 'declarator')
 		ifTrue: [
-			| fieldsName |
-			fieldsName := self visitKey: 'declarator' inDictionnary: fields.
+				| fieldsName |
+				fieldsName := self ensureAsOrderedCollection:
+					              (self visitKey: 'declarator' inDictionnary: fields).
 
-			fieldsName isString ifTrue: [
-				fieldsName := OrderedCollection new
-					              add: fieldsName;
-					              yourself ].
+				fieldsName do: [ :eachName |
+						fieldDelcarationEntity := model newAttribute
+							                          name: eachName;
+							                          sourceAnchor:
+								                          (self extractSourceAnchor: aTSNode);
+							                          parentType: context top.
 
-			fieldsName do: [ :eachName |
-				fieldDelcarationEntity := model newAttribute
-					                          name: eachName;
-					                          sourceAnchor:
-						                          (self extractSourceAnchor: aTSNode);
-					                          parentType: context top.
-
-				context push: fieldDelcarationEntity.
-				fieldDelcarationEntity
-					attributeAt: #declaredType
-					put: (self visitKey: 'type' inDictionnary: fields).
-				context pop ] ]
+						context push: fieldDelcarationEntity.
+						fieldDelcarationEntity
+							attributeAt: #declaredType
+							put: (self visitKey: 'type' inDictionnary: fields).
+						context pop ] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
 			self visitKey: 'type' inDictionnary: fields ]
 ]
@@ -387,7 +390,7 @@ TSCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 	| fnName fnEntity |
 	fnName := self visitKey: 'declarator' inDictionnary: fields.
 
-	fnEntity := self ensureEntityExist: FamixCFunction value: fnName.
+	fnEntity := self ensureEntityExist: FamixCFunction name: fnName.
 	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
 
 	context push: fnEntity.
@@ -457,22 +460,16 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 
 	"before visiting all parameters, we need to check if they have already been added to the model from their function prototype"
 
-	| firstKey parentFunctionEntity |
 	fields isEmpty ifTrue: [ ^ self ].
 
-	parentFunctionEntity := context top.
-	parentFunctionEntity parameters isNotEmpty ifTrue: [ "parameters already in the model"
+	context top parameters isNotEmpty ifTrue: [ "parameters already in the model"
 		^ self ].
 
-	firstKey := fields keys first.
-	(fields at: firstKey) isCollection
-		ifTrue: [
-			(fields at: firstKey) do: [ :eachParameterDeclaration |
-				self
-					visitCParameterDeclaration: eachParameterDeclaration
-					withFields: eachParameterDeclaration collectFieldNameOfNamedChild ] ]
-		ifFalse: [ super visitCParameterList: aTSNode withFields: fields ]
-		
+	(self ensureAsOrderedCollection: (fields at: fields keys first)) do: [
+			:eachParamDeclaration |
+			self
+				visitCParameterDeclaration: eachParamDeclaration
+				withFields: eachParamDeclaration collectFieldNameOfNamedChild ]
 ]
 
 { #category : 'visiting' }
@@ -578,13 +575,8 @@ TSCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	| fileAnchor |
 	context isNotEmpty ifTrue: [
-		fileAnchor := FamixCIndexedFileAnchor new.
-		fileAnchor startPos: aTSNode startByte.
-		fileAnchor endPos: aTSNode endByte.
-		context top sourceAnchor: fileAnchor 
-		].
+		context top sourceAnchor: (self extractSourceAnchor: aTSNode) ].
 	^ aTSNode textFromSourceText: sourceCode
 ]
 
