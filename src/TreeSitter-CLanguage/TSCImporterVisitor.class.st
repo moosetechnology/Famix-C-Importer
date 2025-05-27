@@ -25,6 +25,23 @@ TSCImporterVisitor >> context: anObject [
 	context := anObject
 ]
 
+{ #category : 'private-entity-creation' }
+TSCImporterVisitor >> createWriteAccessTo: variable from: anAssignmentNode [
+
+	^ model newAccess
+		  variable: variable;
+		  accessor: self currentEntity;
+		  isWrite: true;
+		  sourceAnchor: (self extractSourceAnchor: anAssignmentNode);
+		  yourself
+]
+
+{ #category : 'accessing' }
+TSCImporterVisitor >> currentEntity [
+
+	^ context top
+]
+
 { #category : 'as yet unclassified' }
 TSCImporterVisitor >> detect: aFamixCEntity name: aString [
 
@@ -41,13 +58,20 @@ TSCImporterVisitor >> ensureEntityExist: aFamixCEntity value: aString [
 		  ifNone: [ model add: (aFamixCEntity new name: aString) ]
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> entityNamed: aName in: aCollection [
+
+	^ aCollection detect: [ :each | each name = aName ] ifNone: [ nil ]
+]
+
 { #category : 'visiting' }
 TSCImporterVisitor >> extractSourceAnchor: aTSNode [
 
 	^ FamixCIndexedFileAnchor new
 		  startPos: aTSNode startByte;
 		  endPos: aTSNode endByte;
-		  fileName: fileName
+		  fileName: fileName;
+		  mooseModel: model
 ]
 
 { #category : 'accessing' }
@@ -71,9 +95,7 @@ TSCImporterVisitor >> import: aFileReference [
 	aFileReference isFile
 		ifTrue: [ self importFromFile: aFileReference ]
 		ifFalse: [ self importFromFolder: aFileReference ].
-		
-	self resolveSymbols.
-	
+
 	^ model
 ]
 
@@ -88,7 +110,10 @@ TSCImporterVisitor >> importFromFile: aFileReference [
 
 	(acceptedFiles includes: aFileReference extensions first)
 		ifTrue: [
-			fileName := aFileReference fullName.
+			fileName := aFileReference basename.
+			model
+				rootFolder: aFileReference parent;
+				name: fileName.
 
 			sourceCode := aFileReference contents.
 
@@ -129,6 +154,12 @@ TSCImporterVisitor >> initialize [
 	inDeclaration := false
 ]
 
+{ #category : 'as yet unclassified' }
+TSCImporterVisitor >> lookupVariable: aName in: aFamixCFunction [
+
+	^ self entityNamed: aName in: aFamixCFunction localVariables
+]
+
 { #category : 'accessing' }
 TSCImporterVisitor >> model [
 
@@ -141,16 +172,19 @@ TSCImporterVisitor >> model: anObject [
 	model := anObject
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> newEntityTypingFor: aFamixCTypeEntity [
+
+	^ model newEntityTyping
+		  declaredType: aFamixCTypeEntity;
+		  yourself
+]
+
 { #category : 'parsing' }
 TSCImporterVisitor >> parseString: aString [
 	"return the source code AST"
 
 	^ (parser parseString: aString) rootNode
-]
-
-{ #category : 'as yet unclassified' }
-TSCImporterVisitor >> resolveSymbols [
-	self flag: 'TODO'
 ]
 
 { #category : 'accessing' }
@@ -165,6 +199,21 @@ TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 
 	self visitKey: 'size' inDictionnary: fields.
 	^ self visitKey: 'declarator' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields [
+
+	| leftVarName |
+	leftVarName := self visitKey: 'left' inDictionnary: fields.
+
+	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+		| variable |
+		variable := self lookupVariable: leftVarName in: context top.
+		self createWriteAccessTo: variable from: aTSNode ].
+
+
+	self visitKey: 'right' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
@@ -245,26 +294,27 @@ TSCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 
 	(fields includesKey: 'body')
 		ifTrue: [
-			enumEntity := FamixCEnum new
-				              name: enumName;
-				              sourceAnchor: (self extractSourceAnchor: aTSNode).
-			model add: enumEntity.
+				enumEntity := FamixCEnum new
+					              name: enumName;
+					              sourceAnchor: (self extractSourceAnchor: aTSNode).
+				model add: enumEntity.
 
-			"parent type resolution"
-			(context isNotEmpty and: [ context top class = FamixCAliasType ])
-				ifTrue: [ context top aliasedType: enumEntity ].
+				"parent type resolution"
+				(context isNotEmpty and: [ context top class = FamixCAliasType ])
+					ifTrue: [ context top aliasedType: enumEntity ].
 
-			enumAsAttributeType := context isNotEmpty and: [
-				                       context top class = FamixCAttribute ].
-			enumAsAttributeType | inDeclaration ifTrue: [
-				context top declaredType: enumEntity ].
+				enumAsAttributeType := context isNotEmpty and: [
+					                       context top class = FamixCAttribute ].
+				enumAsAttributeType | inDeclaration ifTrue: [
+					context top typing: (self newEntityTypingFor: enumEntity) ].
 
-			context push: enumEntity.
-			self visitKey: 'body' inDictionnary: fields.
-			context pop ]
+				context push: enumEntity.
+				self visitKey: 'body' inDictionnary: fields.
+				context pop ]
 		ifFalse: [
-			enumEntity := self detect: FamixCEnum name: enumName.
-			enumEntity ifNotNil: [ context top declaredType: enumEntity ] ].
+				enumEntity := self detect: FamixCEnum name: enumName.
+				enumEntity ifNotNil: [
+					context top typing: (self newEntityTypingFor: enumEntity) ] ].
 
 
 	^ enumEntity
@@ -314,6 +364,13 @@ TSCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 				context pop ] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
 			self visitKey: 'type' inDictionnary: fields ]
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCFieldExpression: aTSNode withFields: fields [
+
+	self visitKey: 'field' inDictionnary: fields.
+	^ self visitKey: 'argument' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
@@ -480,7 +537,7 @@ TSCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFa
 			model add: structuredTypeEntity.
 
 			inDeclaration | asAttributeType ifTrue: [
-				context top declaredType: structuredTypeEntity ].
+				context top typing: (self newEntityTypingFor: structuredTypeEntity) ].
 
 			asTypedefType ifTrue: [
 				context top aliasedType: structuredTypeEntity ].
@@ -493,6 +550,13 @@ TSCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFa
 				                        detect: aFamixCStructuredTypeClass
 				                        name: structuredTypeName ].
 	^ structuredTypeEntity
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCSubscriptExpression: aTSNode withFields: fields [
+
+	self visitKey: 'index' inDictionnary: fields.
+	^ self visitKey: 'argument' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
@@ -532,4 +596,18 @@ TSCImporterVisitor >> visitCUnionSpecifier: aTSNode withFields: fields [
 		  visitCStructuredType: aTSNode
 		  withFields: fields
 		  type: FamixCUnion
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
+
+	| varName |
+	varName := self visitKey: 'argument' inDictionnary: fields.
+	
+	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+		| variable |
+		variable := self lookupVariable: varName in: context top.
+		self createWriteAccessTo: variable from: aTSNode ].
+	
+	^ varName
 ]
