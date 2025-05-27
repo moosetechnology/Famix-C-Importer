@@ -172,6 +172,14 @@ TSCImporterVisitor >> model: anObject [
 	model := anObject
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> newEntityTypingFor: aFamixCTypeEntity [
+
+	^ model newEntityTyping
+		  declaredType: aFamixCTypeEntity;
+		  yourself
+]
+
 { #category : 'parsing' }
 TSCImporterVisitor >> parseString: aString [
 	"return the source code AST"
@@ -286,26 +294,27 @@ TSCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 
 	(fields includesKey: 'body')
 		ifTrue: [
-			enumEntity := FamixCEnum new
-				              name: enumName;
-				              sourceAnchor: (self extractSourceAnchor: aTSNode).
-			model add: enumEntity.
+				enumEntity := FamixCEnum new
+					              name: enumName;
+					              sourceAnchor: (self extractSourceAnchor: aTSNode).
+				model add: enumEntity.
 
-			"parent type resolution"
-			(context isNotEmpty and: [ context top class = FamixCAliasType ])
-				ifTrue: [ context top aliasedType: enumEntity ].
+				"parent type resolution"
+				(context isNotEmpty and: [ context top class = FamixCAliasType ])
+					ifTrue: [ context top aliasedType: enumEntity ].
 
-			enumAsAttributeType := context isNotEmpty and: [
-				                       context top class = FamixCAttribute ].
-			enumAsAttributeType | inDeclaration ifTrue: [
-				context top declaredType: enumEntity ].
+				enumAsAttributeType := context isNotEmpty and: [
+					                       context top class = FamixCAttribute ].
+				enumAsAttributeType | inDeclaration ifTrue: [
+					context top typing: (self newEntityTypingFor: enumEntity) ].
 
-			context push: enumEntity.
-			self visitKey: 'body' inDictionnary: fields.
-			context pop ]
+				context push: enumEntity.
+				self visitKey: 'body' inDictionnary: fields.
+				context pop ]
 		ifFalse: [
-			enumEntity := self detect: FamixCEnum name: enumName.
-			enumEntity ifNotNil: [ context top declaredType: enumEntity ] ].
+				enumEntity := self detect: FamixCEnum name: enumName.
+				enumEntity ifNotNil: [
+					context top typing: (self newEntityTypingFor: enumEntity) ] ].
 
 
 	^ enumEntity
@@ -528,7 +537,7 @@ TSCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFa
 			model add: structuredTypeEntity.
 
 			inDeclaration | asAttributeType ifTrue: [
-				context top declaredType: structuredTypeEntity ].
+				context top typing: (self newEntityTypingFor: structuredTypeEntity) ].
 
 			asTypedefType ifTrue: [
 				context top aliasedType: structuredTypeEntity ].
