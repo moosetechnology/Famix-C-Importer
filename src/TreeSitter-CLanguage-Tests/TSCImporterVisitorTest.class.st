@@ -253,11 +253,11 @@ TSCImporterVisitorTest >> testEnsureEntityExistForExistingEntity [
 	importer model newFunctionNamed: 'aFunction'.
 
 	self assert:
-		(importer ensureEntityExist: FamixCFunction value: 'aFunction')
+		(importer ensureEntityExist: FamixCFunction name: 'aFunction')
 			isFunction.
 	self
 		assert:
-		(importer ensureEntityExist: FamixCFunction value: 'aFunction') name
+		(importer ensureEntityExist: FamixCFunction name: 'aFunction') name
 		equals: 'aFunction'
 ]
 
@@ -265,11 +265,11 @@ TSCImporterVisitorTest >> testEnsureEntityExistForExistingEntity [
 TSCImporterVisitorTest >> testEnsureEntityExistForNonExistingEntity [
 
 	self assert:
-		(importer ensureEntityExist: FamixCFunction value: 'aFunction')
+		(importer ensureEntityExist: FamixCFunction name: 'aFunction')
 			isFunction.
 	self
 		assert:
-		(importer ensureEntityExist: FamixCFunction value: 'aFunction') name
+		(importer ensureEntityExist: FamixCFunction name: 'aFunction') name
 		equals: 'aFunction'
 ]
 
