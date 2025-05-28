@@ -7,7 +7,8 @@ Class {
 		'context',
 		'sourceCode',
 		'fileName',
-		'inDeclaration'
+		'inDeclaration',
+		'inReadAccessContext'
 	],
 	#category : 'TreeSitter-CLanguage',
 	#package : 'TreeSitter-CLanguage'
@@ -29,6 +30,17 @@ TSCImporterVisitor >> context [
 TSCImporterVisitor >> context: anObject [
 
 	context := anObject
+]
+
+{ #category : 'private-entity-creation' }
+TSCImporterVisitor >> createReadAccessTo: variable from: aTSNode [
+
+	^ model newAccess
+		  variable: variable;
+		  accessor: self currentEntity;
+		  isWrite: false;
+		  sourceAnchor: (self extractSourceAnchor: aTSNode);
+		  yourself
 ]
 
 { #category : 'private-entity-creation' }
@@ -153,6 +165,12 @@ TSCImporterVisitor >> importFromString: aString [
 	^ model
 ]
 
+{ #category : 'as yet unclassified' }
+TSCImporterVisitor >> inFunctionContext [
+
+	^ context isNotEmpty and: [ context top isFunction ]
+]
+
 { #category : 'initialization' }
 TSCImporterVisitor >> initialize [
 
@@ -163,7 +181,8 @@ TSCImporterVisitor >> initialize [
 
 	context := Stack new.
 	model := FamixCModel new.
-	inDeclaration := false
+	inDeclaration := false.
+	inReadAccessContext := false
 ]
 
 { #category : 'accessing' }
@@ -206,6 +225,14 @@ TSCImporterVisitor >> sourceCode: anObject [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCArgumentList: aTSNode withFields: fields [
+
+	inReadAccessContext := true.
+	super visitCArgumentList: aTSNode withFields: fields.
+	inReadAccessContext := false
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 	"declarator size"
 
@@ -219,13 +246,35 @@ TSCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields [
 	| leftVarName |
 	leftVarName := self visitKey: 'left' inDictionnary: fields.
 
-	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
-		| variable |
-		variable := self lookupVariable: leftVarName in: context top.
-		self createWriteAccessTo: variable from: aTSNode ].
+	self inFunctionContext ifTrue: [
+			| variable |
+			variable := self lookupVariable: leftVarName in: context top.
+			self createWriteAccessTo: variable from: aTSNode ].
 
+	(self inFunctionContext and: [
+		 (fields at: 'right') type = 'identifier' ])
+		ifTrue: [ " 
+			void main(){
+				int a, b;
+				a = b; // there is a read access for b
+			}
+			"
+				| rightVar |
+				rightVar := self
+					            lookupVariable:
+					            (self visitKey: 'right' inDictionnary: fields)
+					            in: context top.
+				self createReadAccessTo: rightVar from: aTSNode ]
+		ifFalse: [ "if the right operator is not an identifier, it will be handled further down"
+			self visitKey: 'right' inDictionnary: fields ]
+]
 
-	self visitKey: 'right' inDictionnary: fields
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
+
+	inReadAccessContext := true.
+	super visitCBinaryExpression: aTSNode withFields: fields.
+	inReadAccessContext := false
 ]
 
 { #category : 'visiting' }
@@ -424,7 +473,16 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	^ aTSNode textFromSourceText: sourceCode
+	| identifier |
+	identifier := aTSNode textFromSourceText: sourceCode.
+	
+	(inReadAccessContext and: [
+		 context isNotEmpty and: [ context top isFunction ] ]) ifTrue: [
+			| variable |
+			variable := self lookupVariable: identifier in: context top.
+			self createReadAccessTo: variable from: aTSNode ].
+		
+	^ identifier
 ]
 
 { #category : 'visiting' }
@@ -483,6 +541,14 @@ TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
 
 	^ aTSNode textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCReturnStatement: aTSNode withFields: fields [
+
+	inReadAccessContext := true.
+	super visitCReturnStatement: aTSNode withFields: fields.
+	inReadAccessContext := false
 ]
 
 { #category : 'visiting' }
