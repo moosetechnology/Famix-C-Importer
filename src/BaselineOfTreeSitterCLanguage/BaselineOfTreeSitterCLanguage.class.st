@@ -20,7 +20,7 @@ BaselineOfTreeSitterCLanguage >> defineDependencies: spec [
 
 	spec baseline: 'TreeSitter' with: [ 
 		spec repository:
-			'github://Evref-BL/Pharo-Tree-Sitter:main/src' ]
+			'github://Evref-BL/Pharo-Tree-Sitter:v1.0.2' ]
 ]
 
 { #category : 'baselines' }
