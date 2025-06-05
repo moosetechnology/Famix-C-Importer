@@ -746,6 +746,28 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInReturnSttmnt [
 ]
 
 { #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessParenthesizedExpression [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int parentFunction(){
+		int b = 3;
+		if(b){}
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'b'
+]
+
+{ #category : 'tests - accesses' }
 TSCImporterVisitorTest >> testLocalVariableReadAccessPointer [
 
 	| sourceCode readAccesses |

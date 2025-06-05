@@ -527,6 +527,15 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCParenthesizedExpression: aTSNode withFields: fields [
+	"<unnamedChild>"
+
+	| expression |
+	expression := self visitKey: '<unnamedChild>' inDictionnary: fields.
+	self createReadAccessIfVariableTo: expression from: aTSNode
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 
 	^ self visitKey: 'declarator' inDictionnary: fields
