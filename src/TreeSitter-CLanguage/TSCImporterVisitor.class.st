@@ -7,8 +7,7 @@ Class {
 		'context',
 		'sourceCode',
 		'fileName',
-		'inDeclaration',
-		'inReadAccessContext'
+		'inDeclaration'
 	],
 	#category : 'TreeSitter-CLanguage',
 	#package : 'TreeSitter-CLanguage'
@@ -191,7 +190,6 @@ TSCImporterVisitor >> initialize [
 	context := Stack new.
 	model := FamixCModel new.
 	inDeclaration := false.
-	inReadAccessContext := false
 ]
 
 { #category : 'accessing' }
