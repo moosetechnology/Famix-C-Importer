@@ -709,10 +709,9 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInComplexReturnSttmnt [
 	sourceCode := '
 	void parentFunction(){
 	   int a = 1;
-		return func1(func2(3 + a + 1)) + 2;
+		return func1(func2(3 + a + 1, 3)) + 2;
 	}
 	'.
-	self skip.
 	importer importFromString: sourceCode.
 	readAccesses := importer model allAccesses select: [ :each |
 		                each isRead ].
