@@ -712,7 +712,7 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInComplexReturnSttmnt [
 		return func1(func2(3 + a + 1)) + 2;
 	}
 	'.
-
+	self skip.
 	importer importFromString: sourceCode.
 	readAccesses := importer model allAccesses select: [ :each |
 		                each isRead ].

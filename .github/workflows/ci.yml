@@ -15,20 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Move tree-sitter lib
-        shell: bash
-        run: |
-          cd ressources/lib
-          sudo mv libtree-sitter-v0.25.3.so /usr/local/lib/libtree-sitter.so
-          cd ../..
-      
-      - name: Move C lib grammar
-        shell: bash
-        run: |
-          cd ressources/lib
-          sudo mv libtree-sitter-c-v0.25.3.so /usr/local/lib/libtree-sitter-c.so
-          cd ../..
-
       - uses: hpi-swa/setup-smalltalkCI@v1
         with:
           smalltalk-image: ${{ matrix.smalltalk }}

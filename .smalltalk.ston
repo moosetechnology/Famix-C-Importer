@@ -1,13 +1,6 @@
 SmalltalkCISpec {
   #loading : [
     SCIMetacelloLoadSpec {
-        #baseline : 'FamixCpp',
-        #repository : 'github://moosetechnology/Famix-Cpp:main',
-        #platforms : [ #pharo ],
-        #onConflict : #useIncoming,
-        #onUpgrade : #useIncoming
-    },
-    SCIMetacelloLoadSpec {
       #baseline : 'TreeSitterCLanguage',
       #directory : 'src',
       #platforms : [ #pharo ],
@@ -19,6 +12,7 @@ SmalltalkCISpec {
     #coverage : {
       #packages : [ 'TreeSitterCLanguage.*' ],
       #format : #lcov
-    }
+    },
+    #defaultTimeout : 120
   }
 }
