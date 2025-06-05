@@ -177,7 +177,7 @@ TSCImporterVisitor >> initialize [
 	super initialize.
 
 	parser := TSParser new.
-	parser language: TSLanguage cLanguage.
+	parser language: TSLanguage cLang.
 
 	context := Stack new.
 	model := FamixCModel new.
