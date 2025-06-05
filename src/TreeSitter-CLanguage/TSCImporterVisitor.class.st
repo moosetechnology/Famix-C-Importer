@@ -33,11 +33,11 @@ TSCImporterVisitor >> context: anObject [
 ]
 
 { #category : 'private-entity-creation' }
-TSCImporterVisitor >> createReadAccessTo: variable from: aTSNode [
+TSCImporterVisitor >> createReadAccessTo: variableName from: aTSNode [
 
 	^ model newAccess
-		  variable: variable;
-		  accessor: self currentEntity;
+		  variable: (self lookupVariable: variableName in: context top);
+		  accessor: context top;
 		  isWrite: false;
 		  sourceAnchor: (self extractSourceAnchor: aTSNode);
 		  yourself
@@ -271,10 +271,18 @@ TSCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
+	"left right"
 
-	inReadAccessContext := true.
-	super visitCBinaryExpression: aTSNode withFields: fields.
-	inReadAccessContext := false
+	| left right |
+	
+	left := self visitKey: 'left' inDictionnary: fields.
+	right := self visitKey: 'right' inDictionnary: fields.
+
+	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+			left isString ifTrue: [
+				self createReadAccessTo: left from: aTSNode ].
+			right isString ifTrue: [
+				self createReadAccessTo: right from: aTSNode ] ]
 ]
 
 { #category : 'visiting' }
@@ -473,16 +481,7 @@ TSCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 TSCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	| identifier |
-	identifier := aTSNode textFromSourceText: sourceCode.
-	
-	(inReadAccessContext and: [
-		 context isNotEmpty and: [ context top isFunction ] ]) ifTrue: [
-			| variable |
-			variable := self lookupVariable: identifier in: context top.
-			self createReadAccessTo: variable from: aTSNode ].
-		
-	^ identifier
+	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
