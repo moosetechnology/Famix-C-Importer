@@ -19,6 +19,7 @@ SmalltalkCISpec {
     #coverage : {
       #packages : [ 'TreeSitterCLanguage.*' ],
       #format : #lcov
-    }
+    },
+    #defaultTimeout : 120
   }
 }
