@@ -32,6 +32,15 @@ TSCImporterVisitor >> context: anObject [
 	context := anObject
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
+
+	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+			aVariableName isString ifTrue: [
+				^ self createReadAccessTo: aVariableName from: aTSNode ] ].
+	^ nil
+]
+
 { #category : 'private-entity-creation' }
 TSCImporterVisitor >> createReadAccessTo: variableName from: aTSNode [
 
@@ -226,10 +235,15 @@ TSCImporterVisitor >> sourceCode: anObject [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCArgumentList: aTSNode withFields: fields [
+	"<unnamedChild>"
 
-	inReadAccessContext := true.
-	super visitCArgumentList: aTSNode withFields: fields.
-	inReadAccessContext := false
+	| argumentList |
+	argumentList := self ensureAsOrderedCollection:
+		                (self
+			                 visitKey: '<unnamedChild>'
+			                 inDictionnary: fields).
+	argumentList do: [ :eachArgument |
+		self createReadAccessIfVariableTo: eachArgument from: aTSNode ]
 ]
 
 { #category : 'visiting' }
@@ -242,31 +256,18 @@ TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields [
+	"left right"
 
-	| leftVarName |
-	leftVarName := self visitKey: 'left' inDictionnary: fields.
-
+	| left right |
+	left := self visitKey: 'left' inDictionnary: fields.
 	self inFunctionContext ifTrue: [
 			| variable |
-			variable := self lookupVariable: leftVarName in: context top.
+			variable := self lookupVariable: left in: context top.
 			self createWriteAccessTo: variable from: aTSNode ].
 
-	(self inFunctionContext and: [
-		 (fields at: 'right') type = 'identifier' ])
-		ifTrue: [ " 
-			void main(){
-				int a, b;
-				a = b; // there is a read access for b
-			}
-			"
-				| rightVar |
-				rightVar := self
-					            lookupVariable:
-					            (self visitKey: 'right' inDictionnary: fields)
-					            in: context top.
-				self createReadAccessTo: rightVar from: aTSNode ]
-		ifFalse: [ "if the right operator is not an identifier, it will be handled further down"
-			self visitKey: 'right' inDictionnary: fields ]
+
+	right := self visitKey: 'right' inDictionnary: fields.
+	self createReadAccessIfVariableTo: right from: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -276,13 +277,10 @@ TSCImporterVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
 	| left right |
 	
 	left := self visitKey: 'left' inDictionnary: fields.
-	right := self visitKey: 'right' inDictionnary: fields.
+	self createReadAccessIfVariableTo: left from: aTSNode.
 
-	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
-			left isString ifTrue: [
-				self createReadAccessTo: left from: aTSNode ].
-			right isString ifTrue: [
-				self createReadAccessTo: right from: aTSNode ] ]
+	right := self visitKey: 'right' inDictionnary: fields.
+	self createReadAccessIfVariableTo: right from: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -544,10 +542,14 @@ TSCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCReturnStatement: aTSNode withFields: fields [
+	"<unnamedChild>"
 
-	inReadAccessContext := true.
-	super visitCReturnStatement: aTSNode withFields: fields.
-	inReadAccessContext := false
+	| returnedExpr |
+	returnedExpr := self
+		                 visitKey: '<unnamedChild>'
+		                 inDictionnary: fields.
+
+	self createReadAccessIfVariableTo: returnedExpr from: aTSNode
 ]
 
 { #category : 'visiting' }
