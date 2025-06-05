@@ -533,6 +533,13 @@ TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCPointerExpression: aTSNode withFields: fields [
+	"argument"
+
+	^ self visitKey: 'argument' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
 
 	^ aTSNode textFromSourceText: sourceCode

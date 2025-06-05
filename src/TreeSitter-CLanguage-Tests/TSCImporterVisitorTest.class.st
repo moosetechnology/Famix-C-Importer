@@ -745,6 +745,30 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInReturnSttmnt [
 	self assert: readAccesses anyOne variable name equals: 'a'
 ]
 
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessPointer [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int parentFunction(){
+		int *a;
+		int b;
+		a = &b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'b'
+]
+
 { #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableSkipFileScopeVariable [
 
