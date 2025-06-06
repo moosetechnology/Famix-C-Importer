@@ -628,6 +628,169 @@ TSCImporterVisitorTest >> testLocalVariablePointer [
 		equals: 'message'
 ]
 
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessInArgumentList [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	void fn(int param1, int param2){};
+	void parentFunction(){
+	   int a = 1;
+	   int b = 2;
+		fn(a, b);
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 2.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert:
+		(readAccesses anySatisfy: [ :access | access variable name = 'a' ]).
+	self assert:
+		(readAccesses anySatisfy: [ :access | access variable name = 'b' ])
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessInAssignmentExpression [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int parentFunction(){
+		int a, b;
+		a = b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'b'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessInBinaryExpression [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int parentFunction(){
+		int a;
+		int b = 3 + a + 1; //here
+		if(a<1){} //here
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 2.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessInComplexReturnSttmnt [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	void parentFunction(){
+	   int a = 1;
+		return func1(func2(3 + a + 1, 3)) + 2;
+	}
+	'.
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessInReturnSttmnt [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	void parentFunction(){
+	   int a = 1;
+		return a;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessParenthesizedExpression [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int parentFunction(){
+		int b = 3;
+		if(b){}
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'b'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableReadAccessPointer [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int parentFunction(){
+		int *a;
+		int b;
+		a = &b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'b'
+]
+
 { #category : 'tests - local variables' }
 TSCImporterVisitorTest >> testLocalVariableSkipFileScopeVariable [
 
@@ -789,6 +952,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccess [
 
 	self assert: importer model allAccesses size equals: 1.
 	self assert: importer model allAccesses anyOne accessor isFunction.
+	self assert: importer model allAccesses anyOne isWrite.
 	self
 		assert: importer model allAccesses anyOne accessor name
 		equals: 'parentFunction'.
@@ -867,6 +1031,32 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessIncrement [
 	self
 		assert: importer model allAccesses anyOne variable name
 		equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+TSCImporterVisitorTest >> testLocalVariableWriteAccessOneLine [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a, b;
+		a = b = 3; 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 2.
+	self assert: importer model allAccesses anyOne accessor isFunction.
+	self assert: importer model allAccesses anyOne isWrite.
+	self
+		assert: importer model allAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: (importer model allAccesses anySatisfy: [ :each |
+			 each variable name = 'a' ]).
+	self assert: (importer model allAccesses anySatisfy: [ :each |
+			 each variable name = 'b' ])
 ]
 
 { #category : 'tests - accesses' }

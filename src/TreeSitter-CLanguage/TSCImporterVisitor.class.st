@@ -31,6 +31,26 @@ TSCImporterVisitor >> context: anObject [
 	context := anObject
 ]
 
+{ #category : 'accessing' }
+TSCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
+
+	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+			aVariableName isString ifTrue: [
+				^ self createReadAccessTo: aVariableName from: aTSNode ] ].
+	^ nil
+]
+
+{ #category : 'private-entity-creation' }
+TSCImporterVisitor >> createReadAccessTo: variableName from: aTSNode [
+
+	^ model newAccess
+		  variable: (self lookupVariable: variableName in: context top);
+		  accessor: context top;
+		  isWrite: false;
+		  sourceAnchor: (self extractSourceAnchor: aTSNode);
+		  yourself
+]
+
 { #category : 'private-entity-creation' }
 TSCImporterVisitor >> createWriteAccessTo: variable from: anAssignmentNode [
 
@@ -153,17 +173,23 @@ TSCImporterVisitor >> importFromString: aString [
 	^ model
 ]
 
+{ #category : 'as yet unclassified' }
+TSCImporterVisitor >> inFunctionContext [
+
+	^ context isNotEmpty and: [ context top isFunction ]
+]
+
 { #category : 'initialization' }
 TSCImporterVisitor >> initialize [
 
 	super initialize.
 
 	parser := TSParser new.
-	parser language: TSLanguage cLanguage.
+	parser language: TSLanguage cLang.
 
 	context := Stack new.
 	model := FamixCModel new.
-	inDeclaration := false
+	inDeclaration := false.
 ]
 
 { #category : 'accessing' }
@@ -206,6 +232,19 @@ TSCImporterVisitor >> sourceCode: anObject [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCArgumentList: aTSNode withFields: fields [
+	"<unnamedChild>"
+
+	| argumentList |
+	argumentList := self ensureAsOrderedCollection:
+		                (self
+			                 visitKey: '<unnamedChild>'
+			                 inDictionnary: fields).
+	argumentList do: [ :eachArgument |
+		self createReadAccessIfVariableTo: eachArgument from: aTSNode ]
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 	"declarator size"
 
@@ -215,17 +254,31 @@ TSCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 
 { #category : 'visiting' }
 TSCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields [
+	"left right"
 
-	| leftVarName |
-	leftVarName := self visitKey: 'left' inDictionnary: fields.
+	| left right |
+	left := self visitKey: 'left' inDictionnary: fields.
+	self inFunctionContext ifTrue: [
+			| variable |
+			variable := self lookupVariable: left in: context top.
+			self createWriteAccessTo: variable from: aTSNode ].
 
-	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
-		| variable |
-		variable := self lookupVariable: leftVarName in: context top.
-		self createWriteAccessTo: variable from: aTSNode ].
 
+	right := self visitKey: 'right' inDictionnary: fields.
+	self createReadAccessIfVariableTo: right from: aTSNode
+]
 
-	self visitKey: 'right' inDictionnary: fields
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
+	"left right"
+
+	| left right |
+	
+	left := self visitKey: 'left' inDictionnary: fields.
+	self createReadAccessIfVariableTo: left from: aTSNode.
+
+	right := self visitKey: 'right' inDictionnary: fields.
+	self createReadAccessIfVariableTo: right from: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -474,15 +527,43 @@ TSCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCParenthesizedExpression: aTSNode withFields: fields [
+	"<unnamedChild>"
+
+	| expression |
+	expression := self visitKey: '<unnamedChild>' inDictionnary: fields.
+	self createReadAccessIfVariableTo: expression from: aTSNode
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 
 	^ self visitKey: 'declarator' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
+TSCImporterVisitor >> visitCPointerExpression: aTSNode withFields: fields [
+	"argument"
+
+	^ self visitKey: 'argument' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
 TSCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
 
 	^ aTSNode textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCReturnStatement: aTSNode withFields: fields [
+	"<unnamedChild>"
+
+	| returnedExpr |
+	returnedExpr := self
+		                 visitKey: '<unnamedChild>'
+		                 inDictionnary: fields.
+
+	self createReadAccessIfVariableTo: returnedExpr from: aTSNode
 ]
 
 { #category : 'visiting' }
