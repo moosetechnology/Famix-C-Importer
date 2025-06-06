@@ -470,6 +470,48 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 		equals: 13
 ]
 
+{ #category : 'tests - invocations' }
+TSCImporterVisitorTest >> testFunctionInvocationSignature [
+
+	| sourceCode invocation |
+	sourceCode := '
+	void func();
+	int main(){
+		func();
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	invocation := (importer model allWithType:
+		               FamixCDereferencedInvocation) anyOne.
+
+	self assert: invocation signature equals: 'func()'
+]
+
+{ #category : 'tests - invocations' }
+TSCImporterVisitorTest >> testFunctionOutgoingInvocations [
+
+	| sourceCode invocation |
+	sourceCode := '
+	void func();
+	int main(){
+		func();
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	invocation := (self
+		               entityNamed: 'main'
+		               in: importer model allFunctions) outgoingInvocations
+		              anyOne.
+	
+	self assert: invocation signature equals: 'func()'
+]
+
 { #category : 'tests - type' }
 TSCImporterVisitorTest >> testFunctionPrototypeAndDefinitionReturnType [
 

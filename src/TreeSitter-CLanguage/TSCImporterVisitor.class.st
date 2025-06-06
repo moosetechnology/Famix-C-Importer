@@ -31,6 +31,14 @@ TSCImporterVisitor >> context: anObject [
 	context := anObject
 ]
 
+{ #category : 'private-entity-creation' }
+TSCImporterVisitor >> createDereferencedInvocation: aTSNode [
+
+	^ model add: (FamixCDereferencedInvocation new
+			 signature: (aTSNode textFromSourceText: sourceCode);
+			 sender: context top)
+]
+
 { #category : 'accessing' }
 TSCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
 
@@ -173,7 +181,7 @@ TSCImporterVisitor >> importFromString: aString [
 	^ model
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 TSCImporterVisitor >> inFunctionContext [
 
 	^ context isNotEmpty and: [ context top isFunction ]
@@ -279,6 +287,15 @@ TSCImporterVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
 
 	right := self visitKey: 'right' inDictionnary: fields.
 	self createReadAccessIfVariableTo: right from: aTSNode
+]
+
+{ #category : 'visiting' }
+TSCImporterVisitor >> visitCCallExpression: aTSNode withFields: fields [
+	"function arguments"
+
+	self createDereferencedInvocation: aTSNode.
+
+	^ super visitCCallExpression: aTSNode withFields: fields
 ]
 
 { #category : 'visiting' }
