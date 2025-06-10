@@ -977,6 +977,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessArray [
 
 	self assert: importer model allAccesses size equals: 1.
 	self assert: importer model allAccesses anyOne accessor isFunction.
+	self assert: importer model allAccesses anyOne isWrite.
 	self
 		assert: importer model allAccesses anyOne accessor name
 		equals: 'parentFunction'.
@@ -1000,6 +1001,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessField [
 	importer importFromString: sourceCode.
 
 	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne isWrite.
 	self assert: importer model allAccesses anyOne accessor isFunction.
 	self
 		assert: importer model allAccesses anyOne accessor name
@@ -1024,6 +1026,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessIncrement [
 	importer importFromString: sourceCode.
 
 	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne isWrite.
 	self assert: importer model allAccesses anyOne accessor isFunction.
 	self
 		assert: importer model allAccesses anyOne accessor name
@@ -1049,7 +1052,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessOneLine [
 
 	self assert: importer model allAccesses size equals: 2.
 	self assert: importer model allAccesses anyOne accessor isFunction.
-	self assert: importer model allAccesses anyOne isWrite.
+	self assert: (importer model allAccesses allSatisfy: [ :each | each isWrite ]).
 	self
 		assert: importer model allAccesses anyOne accessor name
 		equals: 'parentFunction'.
@@ -1076,6 +1079,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessSourceAnchor [
 	self
 		assert: importer model allAccesses anyOne variable name
 		equals: 'a'.
+	self assert: importer model allAccesses anyOne isWrite.
 	self
 		assert: importer model allAccesses anyOne sourceAnchor startPos
 		equals: 23.
