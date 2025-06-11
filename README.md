@@ -9,7 +9,7 @@ The model is created from the parsed AST by the tree-sitter parser. We use [Phar
 
 ```Smalltalk
 Metacello new
-	baseline: 'TreeSitterCLanguage';
-	repository: 'github://moosetechnology/TreeSitterCLanguage:master/src';
+	baseline: 'Famix-C-Importer';
+	repository: 'github://moosetechnology/Famix-C-Importer:master/src';
 	load.
 ```
