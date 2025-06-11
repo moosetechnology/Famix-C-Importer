@@ -1,7 +1,7 @@
 SmalltalkCISpec {
   #loading : [
     SCIMetacelloLoadSpec {
-      #baseline : 'TreeSitterCLanguage',
+      #baseline : 'FamixCImporter',
       #directory : 'src',
       #platforms : [ #pharo ],
       #onConflict : #useIncoming,
@@ -10,7 +10,7 @@ SmalltalkCISpec {
   ],
   #testing : {
     #coverage : {
-      #packages : [ 'TreeSitterCLanguage.*' ],
+      #packages : [ 'FamixCImporter.*' ],
       #format : #lcov
     },
     #defaultTimeout : 120

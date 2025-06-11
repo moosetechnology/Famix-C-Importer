@@ -2,17 +2,17 @@
 A TSCImporterVisitorTest is a test class for testing the behavior of TSCImporterVisitor
 "
 Class {
-	#name : 'TSCImporterVisitorTest',
+	#name : 'FamixCImporterModelTest',
 	#superclass : 'TestCase',
 	#instVars : [
 		'importer'
 	],
-	#category : 'TreeSitter-CLanguage-Tests',
-	#package : 'TreeSitter-CLanguage-Tests'
+	#category : 'Famix-C-Importer-Tests',
+	#package : 'Famix-C-Importer-Tests'
 }
 
 { #category : 'asserting' }
-TSCImporterVisitorTest >> assertProperty: aSymbol of: aFamixCEntity equals: anObject [
+FamixCImporterModelTest >> assertProperty: aSymbol of: aFamixCEntity equals: anObject [
 
 	self
 		assert: (aFamixCEntity attributeAt: aSymbol ifAbsent: [ nil ])
@@ -20,7 +20,7 @@ TSCImporterVisitorTest >> assertProperty: aSymbol of: aFamixCEntity equals: anOb
 ]
 
 { #category : 'asserting' }
-TSCImporterVisitorTest >> assertPropertyClass: aSymbol of: aFamixCEntity equals: aFamixCClass [
+FamixCImporterModelTest >> assertPropertyClass: aSymbol of: aFamixCEntity equals: aFamixCClass [
 
 	self
 		assert: (aFamixCEntity attributeAt: aSymbol ifAbsent: [ nil ]) class
@@ -28,21 +28,21 @@ TSCImporterVisitorTest >> assertPropertyClass: aSymbol of: aFamixCEntity equals:
 ]
 
 { #category : 'tests' }
-TSCImporterVisitorTest >> entityNamed: aName in: aCollection [
+FamixCImporterModelTest >> entityNamed: aName in: aCollection [
 
 	^ aCollection detect: [ :each | each name = aName ] ifNone: [ nil ]
 ]
 
 { #category : 'running' }
-TSCImporterVisitorTest >> setUp [
+FamixCImporterModelTest >> setUp [
 
 	super setUp.
 
-	importer := TSCImporterVisitor new fileName: '/test/file/name'
+	importer := FamixCImporter new fileName: '/test/file/name'
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testAnonymousEnumWithStruct [
+FamixCImporterModelTest >> testAnonymousEnumWithStruct [
 
 	| sourceCode |
 	sourceCode := '
@@ -63,7 +63,7 @@ TSCImporterVisitorTest >> testAnonymousEnumWithStruct [
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testAnonymousEnumWithTypedef [
+FamixCImporterModelTest >> testAnonymousEnumWithTypedef [
 
 	| sourceCode |
 	sourceCode := '
@@ -90,7 +90,7 @@ TSCImporterVisitorTest >> testAnonymousEnumWithTypedef [
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testAnonymousEnumWithVariable [
+FamixCImporterModelTest >> testAnonymousEnumWithVariable [
 
 	| sourceCode |
 	sourceCode := '
@@ -110,7 +110,7 @@ TSCImporterVisitorTest >> testAnonymousEnumWithVariable [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testAnonymousStructAsFieldType [
+FamixCImporterModelTest >> testAnonymousStructAsFieldType [
 
 	| sourceCode structEntities unionEntities attributeEntities |
 	sourceCode := '
@@ -142,7 +142,7 @@ TSCImporterVisitorTest >> testAnonymousStructAsFieldType [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testAnonymousStructDeclaration [
+FamixCImporterModelTest >> testAnonymousStructDeclaration [
 
 	| sourceCode structEntities attributeEntities |
 	sourceCode := '
@@ -166,7 +166,7 @@ TSCImporterVisitorTest >> testAnonymousStructDeclaration [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testAnonymousUnionAsFieldType [
+FamixCImporterModelTest >> testAnonymousUnionAsFieldType [
 
 	| sourceCode structEntities unionEntities attributeEntities |
 	sourceCode := '
@@ -196,7 +196,7 @@ TSCImporterVisitorTest >> testAnonymousUnionAsFieldType [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testAnonymousUnionDeclaration [
+FamixCImporterModelTest >> testAnonymousUnionDeclaration [
 
 	| sourceCode unionEntities attributeEntities |
 	sourceCode := '
@@ -220,7 +220,7 @@ TSCImporterVisitorTest >> testAnonymousUnionDeclaration [
 ]
 
 { #category : 'tests - comments' }
-TSCImporterVisitorTest >> testCommentMultipleLine [
+FamixCImporterModelTest >> testCommentMultipleLine [
 
 	| sourceCode |
 	sourceCode := '
@@ -235,7 +235,7 @@ TSCImporterVisitorTest >> testCommentMultipleLine [
 ]
 
 { #category : 'tests - comments' }
-TSCImporterVisitorTest >> testCommentSingleLine [
+FamixCImporterModelTest >> testCommentSingleLine [
 
 	| sourceCode |
 	sourceCode := '
@@ -248,7 +248,7 @@ TSCImporterVisitorTest >> testCommentSingleLine [
 ]
 
 { #category : 'tests' }
-TSCImporterVisitorTest >> testEnsureEntityExistForExistingEntity [
+FamixCImporterModelTest >> testEnsureEntityExistForExistingEntity [
 
 	importer model newFunctionNamed: 'aFunction'.
 
@@ -262,7 +262,7 @@ TSCImporterVisitorTest >> testEnsureEntityExistForExistingEntity [
 ]
 
 { #category : 'tests' }
-TSCImporterVisitorTest >> testEnsureEntityExistForNonExistingEntity [
+FamixCImporterModelTest >> testEnsureEntityExistForNonExistingEntity [
 
 	self assert:
 		(importer ensureEntityExist: FamixCFunction name: 'aFunction')
@@ -274,7 +274,7 @@ TSCImporterVisitorTest >> testEnsureEntityExistForNonExistingEntity [
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testEnumName [
+FamixCImporterModelTest >> testEnumName [
 
 	| sourceCode |
 	sourceCode := '
@@ -296,7 +296,7 @@ TSCImporterVisitorTest >> testEnumName [
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testEnumSourceAnchor [
+FamixCImporterModelTest >> testEnumSourceAnchor [
 
 	| sourceCode |
 	sourceCode := '
@@ -318,7 +318,7 @@ TSCImporterVisitorTest >> testEnumSourceAnchor [
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testEnumValues [
+FamixCImporterModelTest >> testEnumValues [
 
 	| sourceCode enumValues |
 	sourceCode := '
@@ -341,7 +341,7 @@ TSCImporterVisitorTest >> testEnumValues [
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testEnumValuesSourceAnchor [
+FamixCImporterModelTest >> testEnumValuesSourceAnchor [
 
 	| sourceCode |
 	sourceCode := '
@@ -361,7 +361,7 @@ TSCImporterVisitorTest >> testEnumValuesSourceAnchor [
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testEnumWithTypedef [
+FamixCImporterModelTest >> testEnumWithTypedef [
 
 	| sourceCode |
 	sourceCode := '
@@ -387,7 +387,7 @@ TSCImporterVisitorTest >> testEnumWithTypedef [
 ]
 
 { #category : 'tests - functions' }
-TSCImporterVisitorTest >> testFunctionDeclarationWithoutDefinition [
+FamixCImporterModelTest >> testFunctionDeclarationWithoutDefinition [
 
 	| sourceCode |
 	
@@ -401,7 +401,7 @@ TSCImporterVisitorTest >> testFunctionDeclarationWithoutDefinition [
 ]
 
 { #category : 'tests - functions' }
-TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
+FamixCImporterModelTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 
 	| sourceCode |
 	sourceCode := '
@@ -418,7 +418,7 @@ TSCImporterVisitorTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testFunctionDefinitionReturnType [
+FamixCImporterModelTest >> testFunctionDefinitionReturnType [
 
 	| sourceCode |
 	sourceCode := '
@@ -436,7 +436,7 @@ TSCImporterVisitorTest >> testFunctionDefinitionReturnType [
 ]
 
 { #category : 'tests - functions' }
-TSCImporterVisitorTest >> testFunctionDefinitionWithoutDeclaration [
+FamixCImporterModelTest >> testFunctionDefinitionWithoutDeclaration [
 
 	| sourceCode |
 	
@@ -453,7 +453,7 @@ TSCImporterVisitorTest >> testFunctionDefinitionWithoutDeclaration [
 ]
 
 { #category : 'tests - functions' }
-TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
+FamixCImporterModelTest >> testFunctionIdentifierStartEndPosition [
 
 	| sourceCode |
 	sourceCode := 'void func(){}'. "this function starts at index 0 and ends at 13"
@@ -471,7 +471,7 @@ TSCImporterVisitorTest >> testFunctionIdentifierStartEndPosition [
 ]
 
 { #category : 'tests - invocations' }
-TSCImporterVisitorTest >> testFunctionInvocationSignature [
+FamixCImporterModelTest >> testFunctionInvocationSignature [
 
 	| sourceCode invocation |
 	sourceCode := '
@@ -491,7 +491,7 @@ TSCImporterVisitorTest >> testFunctionInvocationSignature [
 ]
 
 { #category : 'tests - invocations' }
-TSCImporterVisitorTest >> testFunctionOutgoingInvocations [
+FamixCImporterModelTest >> testFunctionOutgoingInvocations [
 
 	| sourceCode invocation |
 	sourceCode := '
@@ -513,7 +513,7 @@ TSCImporterVisitorTest >> testFunctionOutgoingInvocations [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testFunctionPrototypeAndDefinitionReturnType [
+FamixCImporterModelTest >> testFunctionPrototypeAndDefinitionReturnType [
 
 	| sourceCode |
 	sourceCode := '
@@ -530,7 +530,7 @@ TSCImporterVisitorTest >> testFunctionPrototypeAndDefinitionReturnType [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testFunctionPrototypeReturnType [
+FamixCImporterModelTest >> testFunctionPrototypeReturnType [
 
 	| sourceCode |
 	sourceCode := '
@@ -546,7 +546,7 @@ TSCImporterVisitorTest >> testFunctionPrototypeReturnType [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableAccessMultipleFunction [
+FamixCImporterModelTest >> testLocalVariableAccessMultipleFunction [
 
 	| sourceCode |
 	sourceCode := '
@@ -573,7 +573,7 @@ TSCImporterVisitorTest >> testLocalVariableAccessMultipleFunction [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testLocalVariableArray [
+FamixCImporterModelTest >> testLocalVariableArray [
 
 	| sourceCode |
 	sourceCode := '
@@ -592,7 +592,7 @@ TSCImporterVisitorTest >> testLocalVariableArray [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testLocalVariableArrayVariableLength [
+FamixCImporterModelTest >> testLocalVariableArrayVariableLength [
 
 	| sourceCode |
 	sourceCode := '
@@ -610,7 +610,7 @@ TSCImporterVisitorTest >> testLocalVariableArrayVariableLength [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testLocalVariableName [
+FamixCImporterModelTest >> testLocalVariableName [
 
 	| sourceCode |
 	sourceCode := '
@@ -629,7 +629,7 @@ TSCImporterVisitorTest >> testLocalVariableName [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testLocalVariableParentFunction [
+FamixCImporterModelTest >> testLocalVariableParentFunction [
 
 	| sourceCode |
 	sourceCode := '
@@ -652,7 +652,7 @@ TSCImporterVisitorTest >> testLocalVariableParentFunction [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testLocalVariablePointer [
+FamixCImporterModelTest >> testLocalVariablePointer [
 
 	| sourceCode |
 	sourceCode := '
@@ -671,7 +671,7 @@ TSCImporterVisitorTest >> testLocalVariablePointer [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableReadAccessInArgumentList [
+FamixCImporterModelTest >> testLocalVariableReadAccessInArgumentList [
 
 	| sourceCode readAccesses |
 	sourceCode := '
@@ -698,7 +698,7 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInArgumentList [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableReadAccessInAssignmentExpression [
+FamixCImporterModelTest >> testLocalVariableReadAccessInAssignmentExpression [
 
 	| sourceCode readAccesses |
 	sourceCode := '
@@ -721,7 +721,7 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInAssignmentExpression [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableReadAccessInBinaryExpression [
+FamixCImporterModelTest >> testLocalVariableReadAccessInBinaryExpression [
 
 	| sourceCode readAccesses |
 	sourceCode := '
@@ -745,7 +745,7 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInBinaryExpression [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableReadAccessInComplexReturnSttmnt [
+FamixCImporterModelTest >> testLocalVariableReadAccessInComplexReturnSttmnt [
 
 	| sourceCode readAccesses |
 	sourceCode := '
@@ -766,7 +766,7 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInComplexReturnSttmnt [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableReadAccessInReturnSttmnt [
+FamixCImporterModelTest >> testLocalVariableReadAccessInReturnSttmnt [
 
 	| sourceCode readAccesses |
 	sourceCode := '
@@ -788,7 +788,7 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessInReturnSttmnt [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableReadAccessParenthesizedExpression [
+FamixCImporterModelTest >> testLocalVariableReadAccessParenthesizedExpression [
 
 	| sourceCode readAccesses |
 	sourceCode := '
@@ -810,7 +810,7 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessParenthesizedExpression [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableReadAccessPointer [
+FamixCImporterModelTest >> testLocalVariableReadAccessPointer [
 
 	| sourceCode readAccesses |
 	sourceCode := '
@@ -834,7 +834,7 @@ TSCImporterVisitorTest >> testLocalVariableReadAccessPointer [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testLocalVariableSkipFileScopeVariable [
+FamixCImporterModelTest >> testLocalVariableSkipFileScopeVariable [
 
 	| sourceCode |
 	sourceCode := '
@@ -850,7 +850,7 @@ TSCImporterVisitorTest >> testLocalVariableSkipFileScopeVariable [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testLocalVariableSourceAnchor [
+FamixCImporterModelTest >> testLocalVariableSourceAnchor [
 	
 	| sourceCode |
 	sourceCode := '
@@ -867,7 +867,7 @@ TSCImporterVisitorTest >> testLocalVariableSourceAnchor [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testLocalVariableType [
+FamixCImporterModelTest >> testLocalVariableType [
 
 	| sourceCode |
 	sourceCode := '
@@ -887,7 +887,7 @@ TSCImporterVisitorTest >> testLocalVariableType [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testLocalVariableTypeAnonymousStruct [
+FamixCImporterModelTest >> testLocalVariableTypeAnonymousStruct [
 
 	| sourceCode |
 	sourceCode := '
@@ -913,7 +913,7 @@ TSCImporterVisitorTest >> testLocalVariableTypeAnonymousStruct [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testLocalVariableTypeStruct [
+FamixCImporterModelTest >> testLocalVariableTypeStruct [
 
 	| sourceCode |
 	sourceCode := '
@@ -939,7 +939,7 @@ TSCImporterVisitorTest >> testLocalVariableTypeStruct [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testLocalVariableTypeTypedef [
+FamixCImporterModelTest >> testLocalVariableTypeTypedef [
 
 	| sourceCode |
 	sourceCode := '
@@ -960,7 +960,7 @@ TSCImporterVisitorTest >> testLocalVariableTypeTypedef [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
+FamixCImporterModelTest >> testLocalVariableWithInitDeclarator [
 
 	| sourceCode |
 	sourceCode := '
@@ -979,7 +979,7 @@ TSCImporterVisitorTest >> testLocalVariableWithInitDeclarator [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableWriteAccess [
+FamixCImporterModelTest >> testLocalVariableWriteAccess [
 
 	| sourceCode |
 	sourceCode := '
@@ -1004,7 +1004,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccess [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableWriteAccessArray [
+FamixCImporterModelTest >> testLocalVariableWriteAccessArray [
 
 	| sourceCode |
 	sourceCode := '
@@ -1029,7 +1029,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessArray [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableWriteAccessField [
+FamixCImporterModelTest >> testLocalVariableWriteAccessField [
 
 	| sourceCode |
 	sourceCode := '
@@ -1054,7 +1054,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessField [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableWriteAccessIncrement [
+FamixCImporterModelTest >> testLocalVariableWriteAccessIncrement [
 
 	| sourceCode |
 	sourceCode := '
@@ -1079,7 +1079,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessIncrement [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableWriteAccessOneLine [
+FamixCImporterModelTest >> testLocalVariableWriteAccessOneLine [
 
 	| sourceCode |
 	sourceCode := '
@@ -1105,7 +1105,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessOneLine [
 ]
 
 { #category : 'tests - accesses' }
-TSCImporterVisitorTest >> testLocalVariableWriteAccessSourceAnchor [
+FamixCImporterModelTest >> testLocalVariableWriteAccessSourceAnchor [
 
 	| sourceCode |
 	sourceCode := '
@@ -1131,7 +1131,7 @@ TSCImporterVisitorTest >> testLocalVariableWriteAccessSourceAnchor [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testNestedLocalVariable [
+FamixCImporterModelTest >> testNestedLocalVariable [
 
 	| sourceCode |
 	sourceCode := '
@@ -1160,7 +1160,7 @@ TSCImporterVisitorTest >> testNestedLocalVariable [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testOneLineMultipleDeclaration [
+FamixCImporterModelTest >> testOneLineMultipleDeclaration [
 
 	| sourceCode |
 	sourceCode := '
@@ -1187,7 +1187,7 @@ TSCImporterVisitorTest >> testOneLineMultipleDeclaration [
 ]
 
 { #category : 'tests - local variables' }
-TSCImporterVisitorTest >> testOneLineMultipleDeclarationAndInitialization [
+FamixCImporterModelTest >> testOneLineMultipleDeclarationAndInitialization [
 
 	| sourceCode |
 	sourceCode := '
@@ -1214,7 +1214,7 @@ TSCImporterVisitorTest >> testOneLineMultipleDeclarationAndInitialization [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testOneLineMultipleDeclarationType [
+FamixCImporterModelTest >> testOneLineMultipleDeclarationType [
 
 	| sourceCode |
 	sourceCode := '
@@ -1242,7 +1242,7 @@ TSCImporterVisitorTest >> testOneLineMultipleDeclarationType [
 ]
 
 { #category : 'tests - parameters' }
-TSCImporterVisitorTest >> testParamSourceAnchor [
+FamixCImporterModelTest >> testParamSourceAnchor [
 
 	| sourceCode |
 	sourceCode := 'int func(int param1);'. "the parameter declaration starts at 9 and ends at 19"
@@ -1258,7 +1258,7 @@ TSCImporterVisitorTest >> testParamSourceAnchor [
 ]
 
 { #category : 'tests - parameters' }
-TSCImporterVisitorTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDefinition [
+FamixCImporterModelTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDefinition [
 	"parameters that are declared in function prototype and in definition should not be added two times in the model"
 
 	| sourceCode paramNames |
@@ -1281,7 +1281,7 @@ TSCImporterVisitorTest >> testParameterAddedTwoTimesWithFunctionDeclarationAndDe
 ]
 
 { #category : 'tests - parameters' }
-TSCImporterVisitorTest >> testParameterName [
+FamixCImporterModelTest >> testParameterName [
 
 	| sourceCode |
 	sourceCode := '
@@ -1295,7 +1295,7 @@ TSCImporterVisitorTest >> testParameterName [
 ]
 
 { #category : 'tests - parameters' }
-TSCImporterVisitorTest >> testParameterNameWithFunction [
+FamixCImporterModelTest >> testParameterNameWithFunction [
 
 	| sourceCode paramNames |
 	sourceCode := '
@@ -1313,7 +1313,7 @@ TSCImporterVisitorTest >> testParameterNameWithFunction [
 ]
 
 { #category : 'tests - parameters' }
-TSCImporterVisitorTest >> testParameterParentFunction [
+FamixCImporterModelTest >> testParameterParentFunction [
 
 	| sourceCode |
 	sourceCode := '
@@ -1327,7 +1327,7 @@ TSCImporterVisitorTest >> testParameterParentFunction [
 ]
 
 { #category : 'tests - parameters' }
-TSCImporterVisitorTest >> testParametersWithTheSameNameButInDifferentFunction [
+FamixCImporterModelTest >> testParametersWithTheSameNameButInDifferentFunction [
 
 	| sourceCode paramNames |
 	sourceCode := '
@@ -1346,7 +1346,7 @@ TSCImporterVisitorTest >> testParametersWithTheSameNameButInDifferentFunction [
 ]
 
 { #category : 'tests' }
-TSCImporterVisitorTest >> testParseStringReturnsATSNode [
+FamixCImporterModelTest >> testParseStringReturnsATSNode [
 
 	| rootNode |
 	rootNode := importer parseString: 'int maint(){}'.
@@ -1355,7 +1355,7 @@ TSCImporterVisitorTest >> testParseStringReturnsATSNode [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testSkipStructTypeFieldAsStructEntity [
+FamixCImporterModelTest >> testSkipStructTypeFieldAsStructEntity [
 
 	| sourceCode structEntities |
 	sourceCode := '
@@ -1376,7 +1376,7 @@ TSCImporterVisitorTest >> testSkipStructTypeFieldAsStructEntity [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testSkipUnionTypeFieldAsUnionEntity [
+FamixCImporterModelTest >> testSkipUnionTypeFieldAsUnionEntity [
 
 	| sourceCode unionEntities |
 	sourceCode := '
@@ -1397,7 +1397,7 @@ TSCImporterVisitorTest >> testSkipUnionTypeFieldAsUnionEntity [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructFieldAnonymousStruct [
+FamixCImporterModelTest >> testStructFieldAnonymousStruct [
 
 	| sourceCode |
 	sourceCode := '
@@ -1431,7 +1431,7 @@ TSCImporterVisitorTest >> testStructFieldAnonymousStruct [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructFieldArray [
+FamixCImporterModelTest >> testStructFieldArray [
 
 	| sourceCode |
 	sourceCode := '
@@ -1451,7 +1451,7 @@ TSCImporterVisitorTest >> testStructFieldArray [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructFieldName [
+FamixCImporterModelTest >> testStructFieldName [
 
 	| sourceCode |
 	sourceCode := '
@@ -1469,7 +1469,7 @@ TSCImporterVisitorTest >> testStructFieldName [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructFieldParent [
+FamixCImporterModelTest >> testStructFieldParent [
 
 	| sourceCode |
 	sourceCode := '
@@ -1492,7 +1492,7 @@ TSCImporterVisitorTest >> testStructFieldParent [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructFieldPointer [
+FamixCImporterModelTest >> testStructFieldPointer [
 
 	| sourceCode |
 	sourceCode := '
@@ -1512,7 +1512,7 @@ TSCImporterVisitorTest >> testStructFieldPointer [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructFieldStruct [
+FamixCImporterModelTest >> testStructFieldStruct [
 
 	| sourceCode |
 	sourceCode := '
@@ -1537,7 +1537,7 @@ TSCImporterVisitorTest >> testStructFieldStruct [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testStructFieldType [
+FamixCImporterModelTest >> testStructFieldType [
 
 	| sourceCode |
 	sourceCode := '
@@ -1553,7 +1553,7 @@ TSCImporterVisitorTest >> testStructFieldType [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructMultipleFieldInOneLine [
+FamixCImporterModelTest >> testStructMultipleFieldInOneLine [
 
 	| sourceCode attributes |
 	sourceCode := '
@@ -1572,7 +1572,7 @@ TSCImporterVisitorTest >> testStructMultipleFieldInOneLine [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testStructMultipleFieldInOneLineType [
+FamixCImporterModelTest >> testStructMultipleFieldInOneLineType [
 
 	| sourceCode |
 	sourceCode := '
@@ -1590,7 +1590,7 @@ TSCImporterVisitorTest >> testStructMultipleFieldInOneLineType [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructName [
+FamixCImporterModelTest >> testStructName [
 
 	| sourceCode |
 	sourceCode := '
@@ -1608,7 +1608,7 @@ TSCImporterVisitorTest >> testStructName [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructSourceAnchor [
+FamixCImporterModelTest >> testStructSourceAnchor [
 
 	| sourceCode |
 	sourceCode := 'struct Person{int id};'.
@@ -1628,7 +1628,7 @@ TSCImporterVisitorTest >> testStructSourceAnchor [
 ]
 
 { #category : 'tests - struct' }
-TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
+FamixCImporterModelTest >> testStructTypeVarExcludedFromModel [
 
 	| sourceCode |
 	sourceCode := '
@@ -1644,7 +1644,7 @@ TSCImporterVisitorTest >> testStructTypeVarExcludedFromModel [
 ]
 
 { #category : 'tests - typedef' }
-TSCImporterVisitorTest >> testTypedefForAnonymousStruct [
+FamixCImporterModelTest >> testTypedefForAnonymousStruct [
 
 	| sourceCode |
 	sourceCode := '
@@ -1674,7 +1674,7 @@ TSCImporterVisitorTest >> testTypedefForAnonymousStruct [
 ]
 
 { #category : 'tests - typedef' }
-TSCImporterVisitorTest >> testTypedefForArray [
+FamixCImporterModelTest >> testTypedefForArray [
 
 	| sourceCode |
 	sourceCode := '
@@ -1693,7 +1693,7 @@ TSCImporterVisitorTest >> testTypedefForArray [
 ]
 
 { #category : 'tests - typedef' }
-TSCImporterVisitorTest >> testTypedefForPointer [
+FamixCImporterModelTest >> testTypedefForPointer [
 
 	| sourceCode |
 	sourceCode := '
@@ -1713,7 +1713,7 @@ TSCImporterVisitorTest >> testTypedefForPointer [
 ]
 
 { #category : 'tests - typedef' }
-TSCImporterVisitorTest >> testTypedefForStruct [
+FamixCImporterModelTest >> testTypedefForStruct [
 
 	| sourceCode |
 	sourceCode := '
@@ -1739,7 +1739,7 @@ TSCImporterVisitorTest >> testTypedefForStruct [
 ]
 
 { #category : 'tests - typedef' }
-TSCImporterVisitorTest >> testTypedefLongLong [
+FamixCImporterModelTest >> testTypedefLongLong [
 
 	| sourceCode |
 	sourceCode := '
@@ -1757,7 +1757,7 @@ TSCImporterVisitorTest >> testTypedefLongLong [
 ]
 
 { #category : 'tests - typedef' }
-TSCImporterVisitorTest >> testTypedefName [
+FamixCImporterModelTest >> testTypedefName [
 
 	| sourceCode |
 	sourceCode := '
@@ -1775,7 +1775,7 @@ TSCImporterVisitorTest >> testTypedefName [
 ]
 
 { #category : 'tests - typedef' }
-TSCImporterVisitorTest >> testTypedefSourceAnchor [
+FamixCImporterModelTest >> testTypedefSourceAnchor [
 
 	| sourceCode |
 	"              0                  20"
@@ -1797,7 +1797,7 @@ TSCImporterVisitorTest >> testTypedefSourceAnchor [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionFieldAnonymousUnion [
+FamixCImporterModelTest >> testUnionFieldAnonymousUnion [
 
 	| sourceCode |
 	sourceCode := '
@@ -1831,7 +1831,7 @@ TSCImporterVisitorTest >> testUnionFieldAnonymousUnion [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionFieldArray [
+FamixCImporterModelTest >> testUnionFieldArray [
 
 	| sourceCode |
 	sourceCode := '
@@ -1851,7 +1851,7 @@ TSCImporterVisitorTest >> testUnionFieldArray [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionFieldName [
+FamixCImporterModelTest >> testUnionFieldName [
 
 	| sourceCode |
 	sourceCode := '
@@ -1869,7 +1869,7 @@ TSCImporterVisitorTest >> testUnionFieldName [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionFieldParent [
+FamixCImporterModelTest >> testUnionFieldParent [
 
 	| sourceCode |
 	sourceCode := '
@@ -1889,7 +1889,7 @@ TSCImporterVisitorTest >> testUnionFieldParent [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionFieldPointer [
+FamixCImporterModelTest >> testUnionFieldPointer [
 
 	| sourceCode |
 	sourceCode := '
@@ -1909,7 +1909,7 @@ TSCImporterVisitorTest >> testUnionFieldPointer [
 ]
 
 { #category : 'tests - type' }
-TSCImporterVisitorTest >> testUnionFieldType [
+FamixCImporterModelTest >> testUnionFieldType [
 
 	| sourceCode |
 	sourceCode := '
@@ -1925,7 +1925,7 @@ TSCImporterVisitorTest >> testUnionFieldType [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionFieldUnion [
+FamixCImporterModelTest >> testUnionFieldUnion [
 
 	| sourceCode |
 	sourceCode := '
@@ -1950,7 +1950,7 @@ TSCImporterVisitorTest >> testUnionFieldUnion [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionMultipleFieldInOneLine [
+FamixCImporterModelTest >> testUnionMultipleFieldInOneLine [
 
 	| sourceCode attributes |
 	sourceCode := '
@@ -1969,7 +1969,7 @@ TSCImporterVisitorTest >> testUnionMultipleFieldInOneLine [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionName [
+FamixCImporterModelTest >> testUnionName [
 
 	| sourceCode |
 	sourceCode := '
@@ -1987,7 +1987,7 @@ TSCImporterVisitorTest >> testUnionName [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionSourceAnchor [
+FamixCImporterModelTest >> testUnionSourceAnchor [
 
 	| sourceCode |
 	sourceCode := 'union Person{int id};'.
@@ -2007,7 +2007,7 @@ TSCImporterVisitorTest >> testUnionSourceAnchor [
 ]
 
 { #category : 'tests - union' }
-TSCImporterVisitorTest >> testUnionTypeVarExcludedFromModel [
+FamixCImporterModelTest >> testUnionTypeVarExcludedFromModel [
 
 	| sourceCode |
 	sourceCode := '
@@ -2023,7 +2023,7 @@ TSCImporterVisitorTest >> testUnionTypeVarExcludedFromModel [
 ]
 
 { #category : 'tests - enum' }
-TSCImporterVisitorTest >> testUsingEnum [
+FamixCImporterModelTest >> testUsingEnum [
 
 	| sourceCode |
 	sourceCode := '
