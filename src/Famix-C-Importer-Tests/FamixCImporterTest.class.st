@@ -9,14 +9,13 @@ Class {
 	#package : 'Famix-C-Importer-Tests'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : 'file management' }
 FamixCImporterTest >> createFile: aFilename content: aString [
 
 	| file |
-	
-	file := FileSystem disk workingDirectory / aFilename.
+	file := self tempFolder / aFilename.
 	file writeStreamDo: [ :stream | stream nextPutAll: aString ].
-	
+
 	^ file
 ]
 
@@ -26,6 +25,21 @@ FamixCImporterTest >> setUp [
 	super setUp.
 
 	importer := FamixCImporter new
+]
+
+{ #category : 'running' }
+FamixCImporterTest >> tearDown [
+
+	self tempFolder deleteAll.
+	super tearDown
+]
+
+{ #category : 'file management' }
+FamixCImporterTest >> tempFolder [
+	|path|
+	path := FileSystem disk workingDirectory / 'famix-c-importer-temp'.
+	path ensureCreateDirectory.
+	^ path
 ]
 
 { #category : 'importer' }
