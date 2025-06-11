@@ -1,12 +1,12 @@
 Class {
-	#name : 'BaselineOfTreeSitterCLanguage',
+	#name : 'BaselineOfFamixCImporter',
 	#superclass : 'BaselineOf',
-	#category : 'BaselineOfTreeSitterCLanguage',
-	#package : 'BaselineOfTreeSitterCLanguage'
+	#category : 'BaselineOfFamixCImporter',
+	#package : 'BaselineOfFamixCImporter'
 }
 
 { #category : 'baselines' }
-BaselineOfTreeSitterCLanguage >> baseline: spec [
+BaselineOfFamixCImporter >> baseline: spec [
 
 	<baseline>
 	spec for: #common do: [
@@ -16,7 +16,7 @@ BaselineOfTreeSitterCLanguage >> baseline: spec [
 ]
 
 { #category : 'baselines' }
-BaselineOfTreeSitterCLanguage >> defineDependencies: spec [
+BaselineOfFamixCImporter >> defineDependencies: spec [
 
 	spec
 		baseline: 'TreeSitter'
@@ -28,19 +28,19 @@ BaselineOfTreeSitterCLanguage >> defineDependencies: spec [
 ]
 
 { #category : 'baselines' }
-BaselineOfTreeSitterCLanguage >> defineGroups: spec [
+BaselineOfFamixCImporter >> defineGroups: spec [
 
 	spec
 		group: 'default'
-		with: #( 'TreeSitter-CLanguage' 'TreeSitter-CLanguage-Tests' )
+		with: #( 'Famix-C-Importer' 'Famix-C-Importer-Tests' )
 ]
 
 { #category : 'baselines' }
-BaselineOfTreeSitterCLanguage >> definePackages: spec [
+BaselineOfFamixCImporter >> definePackages: spec [
 
 	spec
-		package: 'TreeSitter-CLanguage'
+		package: 'Famix-C-Importer'
 		with: [ spec requires: #( 'TreeSitter' 'FamixCpp' ) ];
-		package: 'TreeSitter-CLanguage-Tests'
-		with: [ spec requires: #( 'TreeSitter-CLanguage' ) ]
+		package: 'Famix-C-Importer-Tests'
+		with: [ spec requires: #( 'Famix-C-Importer' ) ]
 ]

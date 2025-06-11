@@ -1,16 +1,16 @@
 Class {
-	#name : 'TSCImporterTest',
+	#name : 'FamixCImporterTest',
 	#superclass : 'TestCase',
 	#instVars : [
 		'importer',
 		'model'
 	],
-	#category : 'TreeSitter-CLanguage-Tests',
-	#package : 'TreeSitter-CLanguage-Tests'
+	#category : 'Famix-C-Importer-Tests',
+	#package : 'Famix-C-Importer-Tests'
 }
 
 { #category : 'as yet unclassified' }
-TSCImporterTest >> createFile: aFilename content: aString [
+FamixCImporterTest >> createFile: aFilename content: aString [
 
 	| file |
 	
@@ -21,21 +21,21 @@ TSCImporterTest >> createFile: aFilename content: aString [
 ]
 
 { #category : 'primitives - path' }
-TSCImporterTest >> deleteFile: aFileReference [
+FamixCImporterTest >> deleteFile: aFileReference [
 
 	aFileReference exists ifTrue: [ aFileReference delete ]
 ]
 
 { #category : 'running' }
-TSCImporterTest >> setUp [
+FamixCImporterTest >> setUp [
 
 	super setUp.
 
-	importer := TSCImporterVisitor new
+	importer := FamixCImporter new
 ]
 
 { #category : 'importer' }
-TSCImporterTest >> testImportFromCFile [
+FamixCImporterTest >> testImportFromCFile [
 
 	| tempCFile |
 	
@@ -50,7 +50,7 @@ TSCImporterTest >> testImportFromCFile [
 ]
 
 { #category : 'importer' }
-TSCImporterTest >> testImportFromHeaderFile [
+FamixCImporterTest >> testImportFromHeaderFile [
 
 	| tempHeaderFile |
 	
@@ -63,7 +63,7 @@ TSCImporterTest >> testImportFromHeaderFile [
 ]
 
 { #category : 'importer' }
-TSCImporterTest >> testImportFromString [
+FamixCImporterTest >> testImportFromString [
 
 	model := importer importFromString: 'int maint()'.
 	self assert: model isMooseModel

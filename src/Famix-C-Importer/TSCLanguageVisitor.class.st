@@ -1,8 +1,8 @@
 Class {
 	#name : 'TSCLanguageVisitor',
 	#superclass : 'TSVisitor',
-	#category : 'TreeSitter-CLanguage',
-	#package : 'TreeSitter-CLanguage'
+	#category : 'Famix-C-Importer',
+	#package : 'Famix-C-Importer'
 }
 
 { #category : 'reflective operations' }
