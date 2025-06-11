@@ -24,12 +24,12 @@ FamixCImporterTest >> setUp [
 
 	super setUp.
 
-	importer := FamixCImporter new
+	importer := FamixCImporterVisitor new
 ]
 
 { #category : 'running' }
 FamixCImporterTest >> tearDown [
-
+	
 	self tempFolder deleteAll.
 	super tearDown
 ]
@@ -52,6 +52,21 @@ FamixCImporterTest >> testImportFromCFile [
 	model := importer importFromFile: tempCFile.
 
 	self assert: model isMooseModel
+]
+
+{ #category : 'importer' }
+FamixCImporterTest >> testImportFromFolder [
+
+	| headerFiles cFiles |
+		
+	model := importer import: '/Users/toky/code-examples-to-parse/scrcpy'.
+
+	headerFiles := model allWithType: FamixCPreprocHeaderFile.
+	cFiles := model allWithType: FamixCPreprocCompilationUnit.
+  1 halt.
+	self assert: model isMooseModel.
+	self assert: headerFiles size equals: 1.
+	self assert: cFiles size equals: 2
 ]
 
 { #category : 'importer' }
