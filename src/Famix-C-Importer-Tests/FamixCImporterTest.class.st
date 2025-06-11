@@ -20,12 +20,6 @@ FamixCImporterTest >> createFile: aFilename content: aString [
 	^ file
 ]
 
-{ #category : 'primitives - path' }
-FamixCImporterTest >> deleteFile: aFileReference [
-
-	aFileReference exists ifTrue: [ aFileReference delete ]
-]
-
 { #category : 'running' }
 FamixCImporterTest >> setUp [
 
@@ -38,28 +32,22 @@ FamixCImporterTest >> setUp [
 FamixCImporterTest >> testImportFromCFile [
 
 	| tempCFile |
-	
 	tempCFile := self
 		             createFile: 'temp.c'
 		             content: 'int main(){return 0;}'.
 	model := importer importFromFile: tempCFile.
-	
-	self assert: model isMooseModel.
-	
-	self deleteFile: tempCFile
+
+	self assert: model isMooseModel
 ]
 
 { #category : 'importer' }
 FamixCImporterTest >> testImportFromHeaderFile [
 
 	| tempHeaderFile |
-	
 	tempHeaderFile := self createFile: 'temp.h' content: 'int func();'.
 	model := importer importFromFile: tempHeaderFile.
 
-	self assert: model isMooseModel.
-
-	self deleteFile: tempHeaderFile
+	self assert: model isMooseModel
 ]
 
 { #category : 'importer' }
