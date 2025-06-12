@@ -10,7 +10,7 @@ SmalltalkCISpec {
   ],
   #testing : {
     #coverage : {
-      #packages : [ 'FamixCImporter.*' ],
+      #packages : [ 'Famix-C-Importer' ],
       #format : #lcov
     },
     #defaultTimeout : 120
