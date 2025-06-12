@@ -9,21 +9,14 @@ Class {
 	#package : 'Famix-C-Importer-Tests'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : 'file management' }
 FamixCImporterTest >> createFile: aFilename content: aString [
 
 	| file |
-	
-	file := FileSystem disk workingDirectory / aFilename.
+	file := self tempFolder / aFilename.
 	file writeStreamDo: [ :stream | stream nextPutAll: aString ].
-	
+
 	^ file
-]
-
-{ #category : 'primitives - path' }
-FamixCImporterTest >> deleteFile: aFileReference [
-
-	aFileReference exists ifTrue: [ aFileReference delete ]
 ]
 
 { #category : 'running' }
@@ -31,35 +24,62 @@ FamixCImporterTest >> setUp [
 
 	super setUp.
 
-	importer := FamixCImporter new
+	importer := FamixCImporterVisitor new
+]
+
+{ #category : 'running' }
+FamixCImporterTest >> tearDown [
+	
+	self tempFolder deleteAll.
+	super tearDown
+]
+
+{ #category : 'file management' }
+FamixCImporterTest >> tempFolder [
+	|path|
+	path := FileSystem disk workingDirectory / 'famix-c-importer-temp'.
+	path ensureCreateDirectory.
+	^ path
 ]
 
 { #category : 'importer' }
 FamixCImporterTest >> testImportFromCFile [
 
 	| tempCFile |
-	
 	tempCFile := self
 		             createFile: 'temp.c'
 		             content: 'int main(){return 0;}'.
 	model := importer importFromFile: tempCFile.
-	
-	self assert: model isMooseModel.
-	
-	self deleteFile: tempCFile
+
+	self assert: model isMooseModel
+]
+
+{ #category : 'importer' }
+FamixCImporterTest >> testImportFromFolder [
+
+	| headerFiles cFiles |
+	self skip.
+	model := importer import: '/Users/toky/code-examples-to-parse/module'.
+
+	headerFiles := model allWithType: FamixCPreprocHeaderFile.
+	cFiles := model allWithType: FamixCPreprocCompilationUnit.
+
+	self assert: model name equals: 'module'.
+	self
+		assert: model rootFolder
+		equals: '/Users/toky/code-examples-to-parse/module'.
+	self assert: headerFiles size equals: 1.
+	self assert: cFiles size equals: 2
 ]
 
 { #category : 'importer' }
 FamixCImporterTest >> testImportFromHeaderFile [
 
 	| tempHeaderFile |
-	
 	tempHeaderFile := self createFile: 'temp.h' content: 'int func();'.
 	model := importer importFromFile: tempHeaderFile.
 
-	self assert: model isMooseModel.
-
-	self deleteFile: tempHeaderFile
+	self assert: model isMooseModel
 ]
 
 { #category : 'importer' }
