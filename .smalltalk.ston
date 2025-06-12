@@ -10,7 +10,7 @@ SmalltalkCISpec {
   ],
   #testing : {
     #coverage : {
-      #classes : [ 'FamixCImporterVisitor' ],
+      #classes : [ '#FamixCImporterVisitor' ],
       #format : #lcov
     },
     #defaultTimeout : 120
