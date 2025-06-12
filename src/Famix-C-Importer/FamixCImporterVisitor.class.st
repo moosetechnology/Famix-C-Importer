@@ -140,6 +140,12 @@ FamixCImporterVisitor >> import: aFileName [
 	fileReference exists ifFalse: [
 		self error: fileReference fullName , ' does not exist' ].
 
+	model
+		name: fileReference basename;
+		rootFolder: (fileReference isFile
+				 ifTrue: [ fileReference parent ]
+				 ifFalse: [ aFileName ]).
+
 	self importFileReference: fileReference.
 
 	^ model
@@ -176,14 +182,6 @@ FamixCImporterVisitor >> importFromFile: aFileReference [
 	(self parseString: sourceCode) accept: self.
 
 	^ model
-]
-
-{ #category : 'importer' }
-FamixCImporterVisitor >> importFromFolder: aFileReference [
-
-	model
-		name: aFileReference basename;
-		rootFolder: aFileReference
 ]
 
 { #category : 'importer' }

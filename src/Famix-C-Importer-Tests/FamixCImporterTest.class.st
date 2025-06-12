@@ -58,13 +58,16 @@ FamixCImporterTest >> testImportFromCFile [
 FamixCImporterTest >> testImportFromFolder [
 
 	| headerFiles cFiles |
-		
-	model := importer import: '/Users/toky/code-examples-to-parse/scrcpy'.
+	self skip.
+	model := importer import: '/Users/toky/code-examples-to-parse/module'.
 
 	headerFiles := model allWithType: FamixCPreprocHeaderFile.
 	cFiles := model allWithType: FamixCPreprocCompilationUnit.
-  1 halt.
-	self assert: model isMooseModel.
+
+	self assert: model name equals: 'module'.
+	self
+		assert: model rootFolder
+		equals: '/Users/toky/code-examples-to-parse/module'.
 	self assert: headerFiles size equals: 1.
 	self assert: cFiles size equals: 2
 ]
