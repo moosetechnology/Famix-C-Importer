@@ -34,9 +34,14 @@ FamixCImporterVisitor >> context: anObject [
 { #category : 'private-entity-creation' }
 FamixCImporterVisitor >> createDereferencedInvocation: aTSNode [
 
-	^ model add: (FamixCDereferencedInvocation new
-			 signature: (aTSNode textFromSourceText: sourceCode);
-			 sender: context top)
+	| invocation |
+	invocation := FamixCDereferencedInvocation new
+		              signature: (aTSNode textFromSourceText: sourceCode);
+		              sender: context top;
+		              sourceAnchor: (self extractSourceAnchor: aTSNode).
+		              
+	model add: invocation.
+	^ invocation
 ]
 
 { #category : 'accessing' }
