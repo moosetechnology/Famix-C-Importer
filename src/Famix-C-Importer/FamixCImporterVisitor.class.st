@@ -113,7 +113,7 @@ FamixCImporterVisitor >> entityNamed: aName in: aCollection [
 FamixCImporterVisitor >> extractSourceAnchor: aTSNode [
 
 	^ FamixCIndexedFileAnchor new
-		  startPos: aTSNode startByte;
+		  startPos: aTSNode startByte + 1;
 		  endPos: aTSNode endByte;
 		  fileName: fileName;
 		  mooseModel: model
@@ -502,8 +502,7 @@ FamixCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 
 	| fnName fnEntity |
 	fnName := self visitKey: 'declarator' inDictionnary: fields.
-	"fnEntity := self ensureEntityExist: FamixCFunction name: fnName."
-	fnEntity := model add: (FamixCFunction new name: fnName).
+	fnEntity := self ensureEntityExist: FamixCFunction name: fnName.
 	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
 
 	context push: fnEntity.
