@@ -63,7 +63,6 @@ FamixCImporterTest >> testImportFromFolder [
 
 	headerFiles := model allWithType: FamixCPreprocHeaderFile.
 	cFiles := model allWithType: FamixCPreprocCompilationUnit.
-
 	self assert: model name equals: 'module'.
 	self
 		assert: model rootFolder

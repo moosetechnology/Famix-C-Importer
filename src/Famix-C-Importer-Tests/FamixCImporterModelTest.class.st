@@ -311,7 +311,7 @@ FamixCImporterModelTest >> testEnumSourceAnchor [
 
 	self
 		assert: importer model allEnums anyOne sourceAnchor startPos
-		equals: 2.
+		equals: 3.
 	self
 		assert: importer model allEnums anyOne sourceAnchor endPos
 		equals: 49
@@ -354,7 +354,7 @@ FamixCImporterModelTest >> testEnumValuesSourceAnchor [
 
 	self
 		assert: importer model allEnumValues anyOne sourceAnchor startPos
-		equals: 20.
+		equals: 21.
 	self
 		assert: importer model allEnumValues anyOne sourceAnchor endPos
 		equals: 23
@@ -464,7 +464,7 @@ FamixCImporterModelTest >> testFunctionIdentifierStartEndPosition [
 	self assert: importer model allFunctions anyOne sourceAnchor isNotNil.
 	self
 		assert: importer model allFunctions anyOne sourceAnchor startPos
-		equals: 0.
+		equals: 1.
 	self
 		assert: importer model allFunctions anyOne sourceAnchor endPos
 		equals: 13
@@ -862,7 +862,7 @@ FamixCImporterModelTest >> testLocalVariableSourceAnchor [
 
 	importer importFromString: sourceCode.
 
-	self assert: importer model allLocalVariables first sourceAnchor startPos equals: 14.
+	self assert: importer model allLocalVariables first sourceAnchor startPos equals: 15.
 	self assert: importer model allLocalVariables first sourceAnchor endPos equals: 28.
 ]
 
@@ -1124,7 +1124,7 @@ FamixCImporterModelTest >> testLocalVariableWriteAccessSourceAnchor [
 	self assert: importer model allAccesses anyOne isWrite.
 	self
 		assert: importer model allAccesses anyOne sourceAnchor startPos
-		equals: 23.
+		equals: 24.
 	self
 		assert: importer model allAccesses anyOne sourceAnchor endPos
 		equals: 28
@@ -1251,7 +1251,7 @@ FamixCImporterModelTest >> testParamSourceAnchor [
 
 	self
 		assert: importer model allParameters anyOne sourceAnchor startPos
-		equals: 9.
+		equals: 10.
 	self
 		assert: importer model allParameters anyOne sourceAnchor endPos
 		equals: 19
@@ -1619,7 +1619,7 @@ FamixCImporterModelTest >> testStructSourceAnchor [
 		assert:
 			(importer model allWithType: FamixCStruct) anyOne sourceAnchor
 				startPos
-		equals: 0.
+		equals: 1.
 	self
 		assert:
 		(importer model allWithType: FamixCStruct) anyOne sourceAnchor
@@ -1788,7 +1788,7 @@ FamixCImporterModelTest >> testTypedefSourceAnchor [
 		assert:
 			(importer model allWithType: FamixCAliasType) anyOne sourceAnchor
 				startPos
-		equals: 0.
+		equals: 1.
 	self
 		assert:
 		(importer model allWithType: FamixCAliasType) anyOne sourceAnchor
@@ -1998,7 +1998,7 @@ FamixCImporterModelTest >> testUnionSourceAnchor [
 		assert:
 			(importer model allWithType: FamixCUnion) anyOne sourceAnchor
 				startPos
-		equals: 0.
+		equals: 1.
 	self
 		assert:
 		(importer model allWithType: FamixCUnion) anyOne sourceAnchor
