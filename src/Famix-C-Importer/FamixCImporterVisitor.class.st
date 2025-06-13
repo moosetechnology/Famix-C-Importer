@@ -158,15 +158,16 @@ FamixCImporterVisitor >> importFileReference: aFileReference [
 	 2. it's a directory: we will visit it's children (might be files or/and directories)
 	"
 
-	aFileReference isDirectory ifTrue: [
-			self newPreprocFolder: aFileReference.
-			aFileReference children do: [ :each |
-				self importFileReference: each ].
-			^ self ].
-
-	(self isCFile: aFileReference) ifFalse: [ ^ self ].
-
-	self importFromFile: aFileReference
+	aFileReference isFile
+		ifTrue: [
+				(self isCFile: aFileReference) ifFalse: [ ^ self ].
+				self importFromFile: aFileReference.
+				self traceCr: fileName ]
+		ifFalse: [
+				self newPreprocFolder: aFileReference.
+				aFileReference children do: [ :each |
+					self importFileReference: each ].
+				^ self ]
 ]
 
 { #category : 'importer' }
@@ -175,7 +176,8 @@ FamixCImporterVisitor >> importFromFile: aFileReference [
 	aFileReference extension = 'c'
 		ifTrue: [ self newPreprocCompilationUnit: aFileReference ]
 		ifFalse: [ self newPreprocHeaderFile: aFileReference ].
-	fileName := aFileReference basename.
+	fileName := (aFileReference relativeTo:
+		             model rootFolder asFileReference) pathString.
 
 	sourceCode := aFileReference contents.
 
@@ -500,8 +502,8 @@ FamixCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 
 	| fnName fnEntity |
 	fnName := self visitKey: 'declarator' inDictionnary: fields.
-
-	fnEntity := self ensureEntityExist: FamixCFunction name: fnName.
+	"fnEntity := self ensureEntityExist: FamixCFunction name: fnName."
+	fnEntity := model add: (FamixCFunction new name: fnName).
 	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
 
 	context push: fnEntity.
