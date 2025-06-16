@@ -169,24 +169,29 @@ FamixCImporterVisitor >> importFileReference: aFileReference [
 				self importFromFile: aFileReference.
 				self traceCr: fileName ]
 		ifFalse: [
-				self newPreprocFolder: aFileReference.
+				context push: (self newPreprocFolder: aFileReference).
 				aFileReference children do: [ :each |
 					self importFileReference: each ].
+				context pop.
 				^ self ]
 ]
 
 { #category : 'importer' }
 FamixCImporterVisitor >> importFromFile: aFileReference [
 
-	aFileReference extension = 'c'
-		ifTrue: [ self newPreprocCompilationUnit: aFileReference ]
-		ifFalse: [ self newPreprocHeaderFile: aFileReference ].
-	fileName := (aFileReference relativeTo:
-		             model rootFolder asFileReference) pathString.
+	| fileEntity |
+	fileEntity := aFileReference extension = 'c'
+		              ifTrue: [
+		              self newPreprocCompilationUnit: aFileReference ]
+		              ifFalse: [ self newPreprocHeaderFile: aFileReference ].
+		
+	fileName := self relativePath: aFileReference.
 
 	sourceCode := aFileReference contents.
 
+	context push: fileEntity.
 	(self parseString: sourceCode) accept: self.
+	context pop.
 
 	^ model
 ]
@@ -258,13 +263,21 @@ FamixCImporterVisitor >> newEntityTypingFor: aFamixCTypeEntity [
 { #category : 'instance creation' }
 FamixCImporterVisitor >> newPreprocCompilationUnit: aFileReference [
 
-	^ model add: (FamixCPreprocCompilationUnit new name: aFileReference basename)
+	^ self
+		  newPreprocFile: FamixCPreprocCompilationUnit
+		  with: aFileReference
+]
+
+{ #category : 'accessing' }
+FamixCImporterVisitor >> newPreprocFile: aClass with: aFileReference [
+
+	^ model add: (aClass new name: (self relativePath: aFileReference))
 ]
 
 { #category : 'instance creation' }
 FamixCImporterVisitor >> newPreprocFolder: aFileReference [
 
-	^ model add: (FamixCPreprocFolder new name: aFileReference basename)
+	^ self newPreprocFile: FamixCPreprocFolder with: aFileReference
 ]
 
 { #category : 'instance creation' }
@@ -278,6 +291,13 @@ FamixCImporterVisitor >> parseString: aString [
 	"return the source code AST"
 
 	^ (parser parseString: aString) rootNode
+]
+
+{ #category : 'accessing' }
+FamixCImporterVisitor >> relativePath: aFileReference [
+
+	^ (aFileReference relativeTo: model rootFolder asFileReference)
+		  pathString
 ]
 
 { #category : 'accessing' }
@@ -362,7 +382,7 @@ FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	self flag:
 		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
 	"check if it is a declaration inside a function, for local variable"
-	(context isNotEmpty and: [ context top isFunction ])
+	(context isNotEmpty and: [ context top class = FamixCFunction ])
 		ifTrue: [
 				| identifiersName |
 				identifiersName := self ensureAsOrderedCollection:
@@ -720,8 +740,6 @@ FamixCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	context isNotEmpty ifTrue: [
-		context top sourceAnchor: (self extractSourceAnchor: aTSNode) ].
 	^ aTSNode textFromSourceText: sourceCode
 ]
 
