@@ -235,6 +235,12 @@ FamixCImporterVisitor >> isCFile: aFileReference [
 ]
 
 { #category : 'accessing' }
+FamixCImporterVisitor >> isLocalLib: aTSNode [
+
+	^ aTSNode type ~= 'system_lib_string'
+]
+
+{ #category : 'accessing' }
 FamixCImporterVisitor >> lookupVariable: aName in: aFamixCFunction [
 
 	^ self entityNamed: aName in: aFamixCFunction localVariables
@@ -304,6 +310,12 @@ FamixCImporterVisitor >> relativePath: aFileReference [
 FamixCImporterVisitor >> sourceCode: anObject [
 
 	sourceCode := anObject
+]
+
+{ #category : 'parsing' }
+FamixCImporterVisitor >> textFromSourceText: aTSNode [
+
+	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
