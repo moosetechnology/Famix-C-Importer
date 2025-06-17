@@ -560,7 +560,7 @@ FamixCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	^ aTSNode textFromSourceText: sourceCode
+	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -632,9 +632,23 @@ FamixCImporterVisitor >> visitCPointerExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+FamixCImporterVisitor >> visitCPreprocInclude: aTSNode withFields: fields [
+
+	| includeEntity |
+	includeEntity := FamixCPreprocInclude new
+		                 attributeAt: #path
+		                 put: (self visitKey: 'path' inDictionnary: fields);
+		                 isLocal: (self isLocalLib: (fields at: 'path')).
+
+
+	model add: includeEntity.
+	^ includeEntity
+]
+
+{ #category : 'visiting' }
 FamixCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
 
-	^ aTSNode textFromSourceText: sourceCode
+	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -647,6 +661,18 @@ FamixCImporterVisitor >> visitCReturnStatement: aTSNode withFields: fields [
 		                 inDictionnary: fields.
 
 	self createReadAccessIfVariableTo: returnedExpr from: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCImporterVisitor >> visitCStringContent: aTSNode withFields: fields [
+
+	^ self textFromSourceText: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCImporterVisitor >> visitCStringLiteral: aTSNode withFields: fields [
+
+	^ self visitKey: '<unnamedChild>' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
@@ -719,6 +745,12 @@ FamixCImporterVisitor >> visitCSubscriptExpression: aTSNode withFields: fields [
 
 	self visitKey: 'index' inDictionnary: fields.
 	^ self visitKey: 'argument' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
+FamixCImporterVisitor >> visitCSystemLibString: aTSNode withFields: fields [
+
+	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
