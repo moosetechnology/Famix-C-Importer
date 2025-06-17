@@ -43,6 +43,23 @@ FamixCImporterTest >> tempFolder [
 ]
 
 { #category : 'importer' }
+FamixCImporterTest >> testFromProjectPreprocInclude [
+
+	| includes |
+	self skip.
+	model := importer import:
+		         '/Users/toky/code-examples-to-parse/module/main.c'.
+
+	includes := model allWithType: FamixCPreprocInclude.
+
+	self
+		assert: (model allWithType: FamixCPreprocCompilationUnit) size
+		equals: 1.
+	self assert: includes first includedBy name equals: 'main.c'.
+	self assert: includes second includedBy name equals: 'main.c'
+]
+
+{ #category : 'importer' }
 FamixCImporterTest >> testImportFromCFile [
 
 	| tempCFile |

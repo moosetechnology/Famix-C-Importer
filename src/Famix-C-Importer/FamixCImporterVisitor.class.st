@@ -203,9 +203,14 @@ FamixCImporterVisitor >> importFromString: aString [
 	rootNode := self parseString: aString.
 	sourceCode := aString.
 	fileName := '** Not a file - Imported from a string **'.
+	
+	context push: (self
+			 newPreprocFile: FamixCPreprocCFile
+			 with: fileName asFileReference).
 
 	rootNode accept: self.
-	
+	context pop.
+
 	^ model
 ]
 
@@ -650,7 +655,9 @@ FamixCImporterVisitor >> visitCPreprocInclude: aTSNode withFields: fields [
 	includeEntity := FamixCPreprocInclude new
 		                 attributeAt: #path
 		                 put: (self visitKey: 'path' inDictionnary: fields);
-		                 isLocal: (self isLocalLib: (fields at: 'path')).
+		                 isLocal: (self isLocalLib: (fields at: 'path'));
+		                 includedBy: context top;
+		                 sourceAnchor: (self extractSourceAnchor: aTSNode).
 
 
 	model add: includeEntity.
