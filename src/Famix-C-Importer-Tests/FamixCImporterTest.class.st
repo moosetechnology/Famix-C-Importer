@@ -45,18 +45,23 @@ FamixCImporterTest >> tempFolder [
 { #category : 'importer' }
 FamixCImporterTest >> testFromProjectPreprocInclude [
 
-	| includes |
+	| localIncludes headerFile |
 	self skip.
 	model := importer import:
-		         '/Users/toky/code-examples-to-parse/module/main.c'.
+		         '/Users/toky/code-examples-to-parse/module/'.
 
-	includes := model allWithType: FamixCPreprocInclude.
+	localIncludes := (model allWithType: FamixCPreprocInclude) select: [
+		                 :each | each isLocal ].
+	headerFile := (model allWithType: FamixCPreprocHeaderFile) first.
 
+	self assert: localIncludes size equals: 1.
+	self assert: localIncludes first includedBy name equals: 'main.c'.
 	self
-		assert: (model allWithType: FamixCPreprocCompilationUnit) size
-		equals: 1.
-	self assert: includes first includedBy name equals: 'main.c'.
-	self assert: includes second includedBy name equals: 'main.c'
+		assert: localIncludes first included name
+		equals: 'module.h'.
+	self
+		assert: headerFile inclusion first class
+		equals: FamixCPreprocInclude
 ]
 
 { #category : 'importer' }
@@ -80,7 +85,7 @@ FamixCImporterTest >> testImportFromFolder [
 
 	headerFiles := model allWithType: FamixCPreprocHeaderFile.
 	cFiles := model allWithType: FamixCPreprocCompilationUnit.
-	self assert: model name equals: 'module' halt.
+	self assert: model name equals: 'module' .
 	self
 		assert: model rootFolder
 		equals: '/Users/toky/code-examples-to-parse/module'.

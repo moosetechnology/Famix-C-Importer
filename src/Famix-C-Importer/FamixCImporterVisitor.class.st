@@ -19,6 +19,12 @@ FamixCImporterVisitor >> acceptedExtensions [
 	^ #( 'c' 'h' )
 ]
 
+{ #category : 'as yet unclassified' }
+FamixCImporterVisitor >> allHeaderFiles [
+
+	^ model allWithType: FamixCPreprocHeaderFile
+]
+
 { #category : 'accessing' }
 FamixCImporterVisitor >> context [
 
@@ -152,6 +158,7 @@ FamixCImporterVisitor >> import: aFileName [
 				 ifFalse: [ aFileName ]).
 
 	self importFileReference: fileReference.
+	(FamixCResolver on: model ) resolve.
 
 	^ model
 ]
