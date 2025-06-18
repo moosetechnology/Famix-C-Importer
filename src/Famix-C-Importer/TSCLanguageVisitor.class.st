@@ -92,10 +92,26 @@ TSCLanguageVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCBreakStatement: aTSNode withFields: fields [
+ ^ {
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCCallExpression: aTSNode withFields: fields [
  ^ {
        self visitKey: 'function' inDictionnary: fields.
        self visitKey: 'arguments' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCCaseStatement: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'value' inDictionnary: fields.
+       self visitKey: '<unnamedChild>' inDictionnary: fields.
    }
 
 ]
@@ -110,8 +126,26 @@ TSCLanguageVisitor >> visitCCastExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCCommaExpression: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'left' inDictionnary: fields.
+       self visitKey: 'right' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCComment: aTSNode withFields: fields [
  ^ {
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCCompoundLiteralExpression: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'type' inDictionnary: fields.
+       self visitKey: 'value' inDictionnary: fields.
    }
 
 ]
@@ -120,6 +154,16 @@ TSCLanguageVisitor >> visitCComment: aTSNode withFields: fields [
 TSCLanguageVisitor >> visitCCompoundStatement: aTSNode withFields: fields [
  ^ {
        self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCConditionalExpression: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'condition' inDictionnary: fields.
+       self visitKey: 'consequence' inDictionnary: fields.
+       self visitKey: 'alternative' inDictionnary: fields.
    }
 
 ]
@@ -162,6 +206,13 @@ TSCLanguageVisitor >> visitCEnumerator: aTSNode withFields: fields [
 TSCLanguageVisitor >> visitCEnumeratorList: aTSNode withFields: fields [
  ^ {
        self visitKey: '<unnamedChild>' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCEscapeSequence: aTSNode withFields: fields [
+ ^ {
    }
 
 ]
@@ -218,6 +269,17 @@ TSCLanguageVisitor >> visitCFieldExpression: aTSNode withFields: fields [
 { #category : 'visiting' }
 TSCLanguageVisitor >> visitCFieldIdentifier: aTSNode withFields: fields [
  ^ {
+   }
+
+]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitCForStatement: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'initializer' inDictionnary: fields.
+       self visitKey: 'condition' inDictionnary: fields.
+       self visitKey: 'update' inDictionnary: fields.
+       self visitKey: 'body' inDictionnary: fields.
    }
 
 ]
@@ -471,6 +533,15 @@ TSCLanguageVisitor >> visitCSubscriptExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCSwitchStatement: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'condition' inDictionnary: fields.
+       self visitKey: 'body' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitCSystemLibString: aTSNode withFields: fields [
  ^ {
    }
@@ -543,6 +614,15 @@ TSCLanguageVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+TSCLanguageVisitor >> visitCWhileStatement: aTSNode withFields: fields [
+ ^ {
+       self visitKey: 'condition' inDictionnary: fields.
+       self visitKey: 'body' inDictionnary: fields.
+   }
+
+]
+
+{ #category : 'visiting' }
 TSCLanguageVisitor >> visitKey: aKey inDictionnary: childrenDictionnary [
 	| child |
 	child := childrenDictionnary at: aKey ifAbsent: [ ^nil ].
@@ -560,6 +640,7 @@ TSCLanguageVisitor >> visitNode: aTSNode [
 			($_ split: aTSNode type) do: [ :word | st << word capitalized ].
 			st << ':withFields:'.
 		].
+	
 	^ self 
 		perform: selector asSymbol 
 		with: aTSNode 

@@ -19,6 +19,12 @@ FamixCImporterVisitor >> acceptedExtensions [
 	^ #( 'c' 'h' )
 ]
 
+{ #category : 'as yet unclassified' }
+FamixCImporterVisitor >> allHeaderFiles [
+
+	^ model allWithType: FamixCPreprocHeaderFile
+]
+
 { #category : 'accessing' }
 FamixCImporterVisitor >> context [
 
@@ -47,7 +53,7 @@ FamixCImporterVisitor >> createDereferencedInvocation: aTSNode [
 { #category : 'accessing' }
 FamixCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
 
-	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+	(context isNotEmpty and: [ context top class = FamixCFunction ]) ifTrue: [
 			aVariableName isString ifTrue: [
 				^ self createReadAccessTo: aVariableName from: aTSNode ] ].
 	^ nil
@@ -152,6 +158,7 @@ FamixCImporterVisitor >> import: aFileName [
 				 ifFalse: [ aFileName ]).
 
 	self importFileReference: fileReference.
+	(FamixCResolver on: model ) resolve.
 
 	^ model
 ]
@@ -169,24 +176,31 @@ FamixCImporterVisitor >> importFileReference: aFileReference [
 				self importFromFile: aFileReference.
 				self traceCr: fileName ]
 		ifFalse: [
-				self newPreprocFolder: aFileReference.
+				aFileReference pathString ~= model rootFolder ifTrue: [
+					self newPreprocFolder: aFileReference ].
+				
 				aFileReference children do: [ :each |
 					self importFileReference: each ].
+
 				^ self ]
 ]
 
 { #category : 'importer' }
 FamixCImporterVisitor >> importFromFile: aFileReference [
 
-	aFileReference extension = 'c'
-		ifTrue: [ self newPreprocCompilationUnit: aFileReference ]
-		ifFalse: [ self newPreprocHeaderFile: aFileReference ].
-	fileName := (aFileReference relativeTo:
-		             model rootFolder asFileReference) pathString.
+	| fileEntity |
+	fileEntity := aFileReference extension = 'c'
+		              ifTrue: [
+		              self newPreprocCompilationUnit: aFileReference ]
+		              ifFalse: [ self newPreprocHeaderFile: aFileReference ].
+		
+	fileName := self relativePath: aFileReference.
 
 	sourceCode := aFileReference contents.
 
+	context push: fileEntity.
 	(self parseString: sourceCode) accept: self.
+	context pop.
 
 	^ model
 ]
@@ -198,9 +212,14 @@ FamixCImporterVisitor >> importFromString: aString [
 	rootNode := self parseString: aString.
 	sourceCode := aString.
 	fileName := '** Not a file - Imported from a string **'.
+	
+	context push: (self
+			 newPreprocFile: FamixCPreprocCFile
+			 with: fileName asFileReference).
 
 	rootNode accept: self.
-	
+	context pop.
+
 	^ model
 ]
 
@@ -227,6 +246,12 @@ FamixCImporterVisitor >> initialize [
 FamixCImporterVisitor >> isCFile: aFileReference [
 
 	^ self acceptedExtensions includes: aFileReference extension
+]
+
+{ #category : 'accessing' }
+FamixCImporterVisitor >> isLocalLib: aTSNode [
+
+	^ aTSNode type ~= 'system_lib_string'
 ]
 
 { #category : 'accessing' }
@@ -258,13 +283,21 @@ FamixCImporterVisitor >> newEntityTypingFor: aFamixCTypeEntity [
 { #category : 'instance creation' }
 FamixCImporterVisitor >> newPreprocCompilationUnit: aFileReference [
 
-	^ model add: (FamixCPreprocCompilationUnit new name: aFileReference basename)
+	^ self
+		  newPreprocFile: FamixCPreprocCompilationUnit
+		  with: aFileReference
+]
+
+{ #category : 'accessing' }
+FamixCImporterVisitor >> newPreprocFile: aClass with: aFileReference [
+
+	^ model add: (aClass new name: (self relativePath: aFileReference))
 ]
 
 { #category : 'instance creation' }
 FamixCImporterVisitor >> newPreprocFolder: aFileReference [
 
-	^ model add: (FamixCPreprocFolder new name: aFileReference basename)
+	^ self newPreprocFile: FamixCPreprocFolder with: aFileReference
 ]
 
 { #category : 'instance creation' }
@@ -281,9 +314,22 @@ FamixCImporterVisitor >> parseString: aString [
 ]
 
 { #category : 'accessing' }
+FamixCImporterVisitor >> relativePath: aFileReference [
+
+	^ (aFileReference relativeTo: model rootFolder asFileReference)
+		  pathString
+]
+
+{ #category : 'accessing' }
 FamixCImporterVisitor >> sourceCode: anObject [
 
 	sourceCode := anObject
+]
+
+{ #category : 'parsing' }
+FamixCImporterVisitor >> textFromSourceText: aTSNode [
+
+	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
@@ -362,7 +408,7 @@ FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	self flag:
 		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
 	"check if it is a declaration inside a function, for local variable"
-	(context isNotEmpty and: [ context top isFunction ])
+	(context isNotEmpty and: [ context top class = FamixCFunction ])
 		ifTrue: [
 				| identifiersName |
 				identifiersName := self ensureAsOrderedCollection:
@@ -469,20 +515,27 @@ FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 		ifTrue: [
 				| fieldsName |
 				fieldsName := self ensureAsOrderedCollection:
-					              (self visitKey: 'declarator' inDictionnary: fields).
+					              (self visitKey: 'declarator' inDictionnary: fields). "this might return a FamixCFunction"
 
 				fieldsName do: [ :eachName |
-						fieldDelcarationEntity := model newAttribute
-							                          name: eachName;
-							                          sourceAnchor:
-								                          (self extractSourceAnchor: aTSNode);
-							                          parentType: context top.
+					
+						eachName isString ifTrue: [
+							self flag: 'skip function as attribute'.
+							"for now I skip the field which is a function declartor,
+							they can be represented as an association between the structure 
+							and the function but the current meta-model does not support this as far as I know
+							"
+								fieldDelcarationEntity := model newAttribute
+									                          name: eachName;
+									                          sourceAnchor:
+										                          (self extractSourceAnchor: aTSNode);
+									                          parentType: context top.
 
-						context push: fieldDelcarationEntity.
-						fieldDelcarationEntity
-							attributeAt: #declaredType
-							put: (self visitKey: 'type' inDictionnary: fields).
-						context pop ] ]
+								context push: fieldDelcarationEntity.
+								fieldDelcarationEntity
+									attributeAt: #declaredType
+									put: (self visitKey: 'type' inDictionnary: fields).
+								context pop ] ] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
 			self visitKey: 'type' inDictionnary: fields ]
 ]
@@ -540,7 +593,7 @@ FamixCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	^ aTSNode textFromSourceText: sourceCode
+	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -590,6 +643,12 @@ FamixCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+FamixCImporterVisitor >> visitCParenthesizedDeclarator: aTSNode withFields: fields [
+
+	^ self visitKey: '<unnamedChild>' inDictionnary: fields
+]
+
+{ #category : 'visiting' }
 FamixCImporterVisitor >> visitCParenthesizedExpression: aTSNode withFields: fields [
 	"<unnamedChild>"
 
@@ -612,9 +671,25 @@ FamixCImporterVisitor >> visitCPointerExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+FamixCImporterVisitor >> visitCPreprocInclude: aTSNode withFields: fields [
+
+	| includeEntity |
+	includeEntity := FamixCPreprocInclude new
+		                 attributeAt: #path
+		                 put: (self visitKey: 'path' inDictionnary: fields);
+		                 isLocal: (self isLocalLib: (fields at: 'path'));
+		                 includedBy: context top;
+		                 sourceAnchor: (self extractSourceAnchor: aTSNode).
+
+
+	model add: includeEntity.
+	^ includeEntity
+]
+
+{ #category : 'visiting' }
 FamixCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
 
-	^ aTSNode textFromSourceText: sourceCode
+	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -627,6 +702,18 @@ FamixCImporterVisitor >> visitCReturnStatement: aTSNode withFields: fields [
 		                 inDictionnary: fields.
 
 	self createReadAccessIfVariableTo: returnedExpr from: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCImporterVisitor >> visitCStringContent: aTSNode withFields: fields [
+
+	^ self textFromSourceText: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCImporterVisitor >> visitCStringLiteral: aTSNode withFields: fields [
+
+	^ self visitKey: '<unnamedChild>' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
@@ -702,6 +789,12 @@ FamixCImporterVisitor >> visitCSubscriptExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
+FamixCImporterVisitor >> visitCSystemLibString: aTSNode withFields: fields [
+
+	^ self textFromSourceText: aTSNode
+]
+
+{ #category : 'visiting' }
 FamixCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
 	"type declarator"
 
@@ -720,8 +813,6 @@ FamixCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
 	"no fields"
 
-	context isNotEmpty ifTrue: [
-		context top sourceAnchor: (self extractSourceAnchor: aTSNode) ].
 	^ aTSNode textFromSourceText: sourceCode
 ]
 

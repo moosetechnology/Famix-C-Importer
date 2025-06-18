@@ -1354,6 +1354,26 @@ FamixCImporterModelTest >> testParseStringReturnsATSNode [
 	self assert: rootNode type equals: 'translation_unit'
 ]
 
+{ #category : 'tests - functions' }
+FamixCImporterModelTest >> testPreprocInclude [
+
+	| sourceCode includes |
+	sourceCode := '
+	#include <stdio.h>
+	#include "functions.h"
+	'.
+
+	importer importFromString: sourceCode.
+	includes := importer model allWithType: FamixCPreprocInclude.
+
+	self assert: includes size equals: 2.
+	self deny: includes first isLocal.
+	self assert: includes last isLocal.
+	self assertProperty: #path of: includes first equals: '<stdio.h>'.
+	
+	self assertProperty: #path of: includes second equals: 'functions.h'
+]
+
 { #category : 'tests - struct' }
 FamixCImporterModelTest >> testSkipStructTypeFieldAsStructEntity [
 
