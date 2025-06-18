@@ -156,9 +156,23 @@ FamixCImporterVisitor >> import: aFileName [
 		rootFolder: (fileReference isFile
 				 ifTrue: [ fileReference parent ]
 				 ifFalse: [ aFileName ]).
+				
+	UIManager default
+		displayProgress: ''
+		from: 0
+		to: 2
+		during: [ :bar |
+				bar label: 'Importing ', model rootFolder.
+				
+				self importFileReference: fileReference.
+				
+				bar current: 1.
+				bar label: 'Resolving'.
+				
+				(FamixCResolver on: model) resolve.
+				
+				bar current: 2 ].
 
-	self importFileReference: fileReference.
-	(FamixCResolver on: model ) resolve.
 
 	^ model
 ]
