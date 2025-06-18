@@ -513,20 +513,27 @@ FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 		ifTrue: [
 				| fieldsName |
 				fieldsName := self ensureAsOrderedCollection:
-					              (self visitKey: 'declarator' inDictionnary: fields).
+					              (self visitKey: 'declarator' inDictionnary: fields). "this might return a FamixCFunction"
 
 				fieldsName do: [ :eachName |
-						fieldDelcarationEntity := model newAttribute
-							                          name: eachName;
-							                          sourceAnchor:
-								                          (self extractSourceAnchor: aTSNode);
-							                          parentType: context top.
+					
+						eachName isString ifTrue: [
+							self flag: 'skip function as attribute'.
+							"for now I skip the field which is a function declartor,
+							they can be represented as an association between the structure 
+							and the function but the current meta-model does not support this as far as I know
+							"
+								fieldDelcarationEntity := model newAttribute
+									                          name: eachName;
+									                          sourceAnchor:
+										                          (self extractSourceAnchor: aTSNode);
+									                          parentType: context top.
 
-						context push: fieldDelcarationEntity.
-						fieldDelcarationEntity
-							attributeAt: #declaredType
-							put: (self visitKey: 'type' inDictionnary: fields).
-						context pop ] ]
+								context push: fieldDelcarationEntity.
+								fieldDelcarationEntity
+									attributeAt: #declaredType
+									put: (self visitKey: 'type' inDictionnary: fields).
+								context pop ] ] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
 			self visitKey: 'type' inDictionnary: fields ]
 ]
