@@ -53,7 +53,7 @@ FamixCImporterVisitor >> createDereferencedInvocation: aTSNode [
 { #category : 'accessing' }
 FamixCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
 
-	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
+	(context isNotEmpty and: [ context top class = FamixCFunction ]) ifTrue: [
 			aVariableName isString ifTrue: [
 				^ self createReadAccessTo: aVariableName from: aTSNode ] ].
 	^ nil
@@ -638,6 +638,12 @@ FamixCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 			self
 				visitCParameterDeclaration: eachParamDeclaration
 				withFields: eachParamDeclaration collectFieldNameOfNamedChild ]
+]
+
+{ #category : 'visiting' }
+FamixCImporterVisitor >> visitCParenthesizedDeclarator: aTSNode withFields: fields [
+
+	^ self visitKey: '<unnamedChild>' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
