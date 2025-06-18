@@ -176,10 +176,12 @@ FamixCImporterVisitor >> importFileReference: aFileReference [
 				self importFromFile: aFileReference.
 				self traceCr: fileName ]
 		ifFalse: [
-				context push: (self newPreprocFolder: aFileReference).
+				aFileReference pathString ~= model rootFolder ifTrue: [
+					self newPreprocFolder: aFileReference ].
+				
 				aFileReference children do: [ :each |
 					self importFileReference: each ].
-				context pop.
+
 				^ self ]
 ]
 
