@@ -94,7 +94,6 @@ FamixCResolver >> resolveTypes [
 					
 					type := each attributeAt: #declaredType ifAbsent: [ nil ].
 					famixTypeEntity := self lookupType: type.
-					
 					famixTypeEntity ifNotNil: [
 						each typing: (self newEntityTypingFor: famixTypeEntity) ] ] ]
 ]

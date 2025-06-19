@@ -240,7 +240,7 @@ FamixCImporterVisitor >> import: aFileName [
 				bar current: 1.
 				bar label: 'Resolving'.
 				
-				(FamixCResolver on: model) resolve.
+				self resolve.
 				
 				bar current: 2 ].
 
@@ -297,13 +297,15 @@ FamixCImporterVisitor >> importFromString: aString [
 	rootNode := self parseString: aString.
 	sourceCode := aString.
 	fileName := '** Not a file - Imported from a string **'.
-	
+
 	context push: (self
 			 newPreprocFile: FamixCPreprocCFile
 			 with: fileName asFileReference).
 
 	rootNode accept: self.
 	context pop.
+
+	self resolve.
 
 	^ model
 ]
@@ -414,6 +416,14 @@ FamixCImporterVisitor >> relativePath: aFileReference [
 
 	^ (aFileReference relativeTo: model rootFolder asFileReference)
 		  pathString
+]
+
+{ #category : 'navigating' }
+FamixCImporterVisitor >> resolve [
+
+	(FamixCResolver on: model) resolve.
+	
+	^ model 
 ]
 
 { #category : 'accessing' }
