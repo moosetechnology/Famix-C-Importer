@@ -67,6 +67,29 @@ FamixCImporterVisitor >> allHeaderFiles [
 	^ model allWithType: FamixCPreprocHeaderFile
 ]
 
+{ #category : 'as yet unclassified' }
+FamixCImporterVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
+	"this is only used on the first walk of the AST"
+
+	aStringOrType isString
+		ifTrue: [
+		aFamixCTypedEntity attributeAt: #declaredType put: aStringOrType ]
+		ifFalse: [ "sometimes when the type of the entity is an anonymous structural entity like struct or union so we need to directly assign it to the entity. Moreover this type is only used there.
+			e.g:
+			```
+					struct Person{ 
+						char name[];
+						struct { // this
+							int streetNo;
+							char city[];
+						 } address;
+					 };
+			```
+				
+			"
+			aFamixCTypedEntity typing: (self newEntityTypingFor: aStringOrType) ]
+]
+
 { #category : 'accessing' }
 FamixCImporterVisitor >> context [
 
@@ -481,7 +504,7 @@ FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	inDeclaration := true.
 
 	type := self visitTypeNodeInFields: fields.
-	
+
 	self flag:
 		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
 	"check if it is a declaration inside a function, for local variable"
@@ -501,18 +524,13 @@ FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 								                  (self extractSourceAnchor: aTSNode);
 							                  parentBehaviouralEntity: context top.
 						model add: localVarEntity.
-						context push: localVarEntity.
-						type isString
-							ifTrue: [ localVarEntity attributeAt: #declaredType put: type ]
-							ifFalse: [
-							localVarEntity typing: (self newEntityTypingFor: type) ].
 
-						context pop ] ]
+						self assignTypeTo: localVarEntity with: type ] ]
 		ifFalse: [
 				| entity |
 				entity := self visitKey: 'declarator' inDictionnary: fields.
 				entity class = FamixCFunction ifTrue: [
-					entity attributeAt: #declaredType put: type ] ].
+					self assignTypeTo: entity with: type ] ].
 
 
 
@@ -552,7 +570,7 @@ FamixCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 				enumAsAttributeType := context isNotEmpty and: [
 					                       context top class = FamixCAttribute ].
 				enumAsAttributeType | inDeclaration ifTrue: [
-					context top typing: (self newEntityTypingFor: enumEntity) ].
+					self assignTypeTo: context top with: enumEntity ].
 
 				context push: enumEntity.
 				self visitKey: 'body' inDictionnary: fields.
@@ -560,7 +578,7 @@ FamixCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 		ifFalse: [
 				enumEntity := self detect: FamixCEnum name: enumName.
 				enumEntity ifNotNil: [
-					context top typing: (self newEntityTypingFor: enumEntity) ] ].
+					self assignTypeTo: context top with: enumEntity ] ].
 
 
 	^ enumEntity
@@ -608,13 +626,7 @@ FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 								context push: fieldDelcarationEntity.
 
 								type := self visitTypeNodeInFields: fields.
-
-								type isString
-									ifTrue: [
-									fieldDelcarationEntity attributeAt: #declaredType put: type ]
-									ifFalse: [
-									fieldDelcarationEntity typing:
-										(self newEntityTypingFor: type) ].
+								self assignTypeTo: fieldDelcarationEntity with: type.
 
 								context pop ] ] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
@@ -662,11 +674,10 @@ FamixCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	fnEntity := self visitKey: 'declarator' inDictionnary: fields.
 
 	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
+	self assignTypeTo: fnEntity with: type.
 
 	context push: fnEntity.
-	fnEntity attributeAt: #declaredType put: type.
 	self visitKey: 'body' inDictionnary: fields.
-
 	context pop
 ]
 
@@ -698,10 +709,8 @@ FamixCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields 
 		parentBehaviouralEntity: context top;
 		name: (self visitKey: 'declarator' inDictionnary: fields);
 		sourceAnchor: (self extractSourceAnchor: aTSNode).
-
-	type isString
-		ifTrue: [ paramEntity attributeAt: #declaredType put: type ]
-		ifFalse: [ paramEntity typing: (self newEntityTypingFor: type) ].
+		
+	self assignTypeTo: paramEntity with: type.
 
 	^ paramEntity
 ]
@@ -835,8 +844,8 @@ FamixCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: 
 			};
 			```
 			"
-		self visitKey: 'body' inDictionnary: fields.
-		^ nil ].
+			self visitKey: 'body' inDictionnary: fields.
+			^ nil ].
 
 	structuredTypeName := ''.
 	isAnonymous ifFalse: [
@@ -844,24 +853,23 @@ FamixCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: 
 
 	(fields includesKey: 'body')
 		ifTrue: [
-			structuredTypeEntity := aFamixCStructuredTypeClass new.
-			
-			structuredTypeEntity
-				name: structuredTypeName;
-				sourceAnchor: (self extractSourceAnchor: aTSNode).
-			model add: structuredTypeEntity.
+				structuredTypeEntity := aFamixCStructuredTypeClass new.
 
-			inDeclaration | asAttributeType ifTrue: [
-				context top typing: (self newEntityTypingFor: structuredTypeEntity) ].
+				structuredTypeEntity
+					name: structuredTypeName;
+					sourceAnchor: (self extractSourceAnchor: aTSNode).
+				model add: structuredTypeEntity.
 
-			asTypedefType ifTrue: [
-				context top aliasedType: structuredTypeEntity ].
+				inDeclaration | asAttributeType ifTrue: [
+					self assignTypeTo: context top with: structuredTypeEntity ].
 
-			context push: structuredTypeEntity.
-			self visitKey: 'body' inDictionnary: fields.
-			context pop ]
-		ifFalse: [ "no need to create an entity here"
-			^ structuredTypeName ].
+				asTypedefType ifTrue: [
+					context top aliasedType: structuredTypeEntity ].
+
+				context push: structuredTypeEntity.
+				self visitKey: 'body' inDictionnary: fields.
+				context pop ]
+		ifFalse: [ "no need to create an entity here" ^ structuredTypeName ].
 	^ structuredTypeEntity
 ]
 
