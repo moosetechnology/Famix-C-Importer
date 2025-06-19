@@ -689,14 +689,19 @@ FamixCImporterVisitor >> visitCInitDeclarator: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
-	| paramEntity |
+	| paramEntity type |
+	
+	type := self visitTypeNodeInFields: fields.
+
 	paramEntity := model newParameter.
 	paramEntity
 		parentBehaviouralEntity: context top;
 		name: (self visitKey: 'declarator' inDictionnary: fields);
 		sourceAnchor: (self extractSourceAnchor: aTSNode).
 
-	self visitKey: 'type' inDictionnary: fields.
+	type isString
+		ifTrue: [ paramEntity attributeAt: #declaredType put: type ]
+		ifFalse: [ paramEntity typing: (self newEntityTypingFor: type) ].
 
 	^ paramEntity
 ]

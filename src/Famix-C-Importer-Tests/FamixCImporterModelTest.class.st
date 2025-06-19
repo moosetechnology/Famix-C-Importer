@@ -1321,6 +1321,31 @@ FamixCImporterModelTest >> testParameterParentFunction [
 ]
 
 { #category : 'tests - parameters' }
+FamixCImporterModelTest >> testParameterType [
+
+	| sourceCode |
+	sourceCode := '
+	int myFunc(int arg1, struct Person arg2, Point arg3);
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allParameters anyOne name equals: 'arg1'.
+	self
+		assertProperty: #declaredType
+		of: importer model allParameters first
+		equals: 'int'.
+	self
+		assertProperty: #declaredType
+		of: importer model allParameters second
+		equals: 'Person'.
+	self
+		assertProperty: #declaredType
+		of: importer model allParameters third 
+		equals: 'Point'.
+]
+
+{ #category : 'tests - parameters' }
 FamixCImporterModelTest >> testParametersWithTheSameNameButInDifferentFunction [
 
 	| sourceCode paramNames |

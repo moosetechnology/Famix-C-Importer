@@ -71,7 +71,7 @@ FamixCResolver >> resolveInvocations [
 
 { #category : 'accessing' }
 FamixCResolver >> resolveTypes [
-	self shouldBeImplemented.
+	^ true
 ]
 
 { #category : 'run' }
@@ -79,7 +79,7 @@ FamixCResolver >> resolvingSteps [
 
 	^ #( 
 			#resolveIncludes
-			"#resolveTypes"
+			#resolveTypes
 			"#resolveAccesses"
 			"#resolveInvocations"
 		)
