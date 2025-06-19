@@ -103,10 +103,14 @@ FamixCImporterModelTest >> testAnonymousEnumWithVariable [
 	'.
 
 	importer importFromString: sourceCode.
-	
+
 	self assert: importer model allEnums anyOne name equals: ''.
-	self assert: importer model allLocalVariables anyOne name equals: 'option'.
-	self assert: importer model allLocalVariables anyOne declaredType class equals: FamixCEnum.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'option'.
+	self
+		assert: importer model allLocalVariables anyOne declaredType
+		equals: importer model allEnums anyOne
 ]
 
 { #category : 'tests - union' }
@@ -162,7 +166,8 @@ FamixCImporterModelTest >> testAnonymousStructDeclaration [
 	self assert: structEntities anyOne name equals: ''.
 	self assert: attributeEntities size equals: 1.
 	self assert: attributeEntities anyOne name equals: 'a'.
-	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'
+	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'.
+	self assert: importer model allLocalVariables anyOne declaredType class equals: FamixCStruct
 ]
 
 { #category : 'tests - struct' }
@@ -429,9 +434,10 @@ FamixCImporterModelTest >> testFunctionDefinitionReturnType [
 
 	importer importFromString: sourceCode.
 
+	self assert:
+		importer model allFunctions anyOne declaredType isPrimitiveType.
 	self
-		assertProperty: #declaredType
-		of: importer model allFunctions anyOne
+		assert: importer model allFunctions anyOne declaredType name
 		equals: 'void'
 ]
 
@@ -524,9 +530,8 @@ FamixCImporterModelTest >> testFunctionPrototypeAndDefinitionReturnType [
 	importer importFromString: sourceCode.
 
 	self
-		assertProperty: #declaredType
-		of: importer model allFunctions anyOne
-		equals: 'void'
+		assert: (importer model allFunctions allSatisfy: [ :each |
+	each declaredType name = 'void' ])
 ]
 
 { #category : 'tests - type' }
@@ -540,8 +545,7 @@ FamixCImporterModelTest >> testFunctionPrototypeReturnType [
 	importer importFromString: sourceCode.
 	
 	self
-		assertProperty: #declaredType
-		of: importer model allFunctions anyOne
+		assert: importer model allFunctions anyOne declaredType name
 		equals: 'void'
 ]
 
@@ -879,10 +883,8 @@ FamixCImporterModelTest >> testLocalVariableType [
 
 	importer importFromString: sourceCode.
 
-	self assert: importer model allLocalVariables size equals: 1.
 	self
-		assertProperty: #declaredType
-		of: importer model allLocalVariables anyOne
+		assert: importer model allLocalVariables anyOne declaredType name
 		equals: 'int'
 ]
 
@@ -902,14 +904,8 @@ FamixCImporterModelTest >> testLocalVariableTypeAnonymousStruct [
 
 	self assert: importer model allLocalVariables size equals: 1.
 	self
-		assertPropertyClass: #declaredType
-		of: importer model allLocalVariables anyOne
-		equals: FamixCStruct.
-	self
-		assert: (importer model allLocalVariables anyOne
-				 attributeAt: #declaredType
-				 ifAbsent: [ nil ]) name
-		equals: ''
+		assert: importer model allLocalVariables anyOne declaredType
+		equals: (importer model allWithType: FamixCStruct) anyOne
 ]
 
 { #category : 'tests - type' }
@@ -928,13 +924,10 @@ FamixCImporterModelTest >> testLocalVariableTypeStruct [
 
 	self assert: importer model allLocalVariables size equals: 1.
 	self
-		assertPropertyClass: #declaredType
-		of: importer model allLocalVariables anyOne
+		assert: importer model allLocalVariables anyOne declaredType class
 		equals: FamixCStruct.
 	self
-		assert: (importer model allLocalVariables anyOne
-				 attributeAt: #declaredType
-				 ifAbsent: [ nil ]) name
+		assert: importer model allLocalVariables anyOne declaredType name
 		equals: 'Person'
 ]
 
@@ -953,10 +946,11 @@ FamixCImporterModelTest >> testLocalVariableTypeTypedef [
 	importer importFromString: sourceCode.
 
 	self assert: importer model allLocalVariables size equals: 1.
+
 	self
-		assertProperty: #declaredType
-		of: importer model allLocalVariables anyOne
-		equals: 'Integer'
+		assert: importer model allLocalVariables anyOne declaredType name
+		equals: 'Integer'.
+	self flag: 'TODO: test aliased type resolution'
 ]
 
 { #category : 'tests - local variables' }
@@ -1228,17 +1222,11 @@ FamixCImporterModelTest >> testOneLineMultipleDeclarationType [
 
 	self assert: importer model allLocalVariables size equals: 2.
 
-	self
-		assertProperty: #declaredType
-		of:
-		(importer model allLocalVariables detect: [ :var | var name = 'a' ])
-		equals: 'int'.
+	self assert: (importer model allLocalVariables allSatisfy: [ :each |
+			 each declaredType name = 'int' ]).
 		
-	self
-		assertProperty: #declaredType
-		of:
-		(importer model allLocalVariables detect: [ :var | var name = 'b' ])
-		equals: 'int'
+	self assert: (importer model allLocalVariables allSatisfy: [ :each |
+			 each declaredType isPrimitiveType ])
 ]
 
 { #category : 'tests - parameters' }
@@ -1327,6 +1315,31 @@ FamixCImporterModelTest >> testParameterParentFunction [
 ]
 
 { #category : 'tests - parameters' }
+FamixCImporterModelTest >> testParameterType [
+
+	| sourceCode |
+	sourceCode := '
+	int myFunc(int arg1, struct Person arg2, Point arg3);
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allParameters anyOne name equals: 'arg1'.
+	self
+		assertProperty: #declaredType
+		of: importer model allParameters first
+		equals: 'int'.
+	self
+		assertProperty: #declaredType
+		of: importer model allParameters second
+		equals: 'Person'.
+	self
+		assertProperty: #declaredType
+		of: importer model allParameters third 
+		equals: 'Point'.
+]
+
+{ #category : 'tests - parameters' }
 FamixCImporterModelTest >> testParametersWithTheSameNameButInDifferentFunction [
 
 	| sourceCode paramNames |
@@ -1372,6 +1385,28 @@ FamixCImporterModelTest >> testPreprocInclude [
 	self assertProperty: #path of: includes first equals: '<stdio.h>'.
 	
 	self assertProperty: #path of: includes second equals: 'functions.h'
+]
+
+{ #category : 'tests - primitives' }
+FamixCImporterModelTest >> testPrimitiveType [
+
+	| sourceCode |
+	sourceCode := '
+	struct Point {
+    float x;
+    float y;
+	};
+	void main(){
+		int a;
+		double b;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allPrimitiveTypes ) size
+		equals: 4.
 ]
 
 { #category : 'tests - struct' }
@@ -1566,9 +1601,13 @@ FamixCImporterModelTest >> testStructFieldType [
 
 	importer importFromString: sourceCode.
 
+	self assert:
+		(importer model allWithType: FamixCAttribute) anyOne declaredType
+			isPrimitiveType.
 	self
-		assertProperty: #declaredType
-		of: (importer model allWithType: FamixCAttribute) anyOne
+		assert:
+		(importer model allWithType: FamixCAttribute) anyOne declaredType
+			name
 		equals: 'int'
 ]
 
@@ -1601,12 +1640,10 @@ FamixCImporterModelTest >> testStructMultipleFieldInOneLineType [
 
 	importer importFromString: sourceCode.
 
-	self
-		assertProperty: #declaredType
-		of:
-			((importer model allWithType: FamixCAttribute) detect: [ :each |
-				 each name = 'b' ])
-		equals: 'int'
+
+	self assert:
+		((importer model allWithType: FamixCAttribute) allSatisfy: [ :each |
+			 each declaredType name = 'int' ])
 ]
 
 { #category : 'tests - struct' }
@@ -1937,10 +1974,10 @@ FamixCImporterModelTest >> testUnionFieldType [
 	'.
 
 	importer importFromString: sourceCode.
-
 	self
-		assertProperty: #declaredType
-		of: (importer model allWithType: FamixCAttribute) anyOne
+		assert:
+		(importer model allWithType: FamixCAttribute) anyOne declaredType
+			name
 		equals: 'int'
 ]
 

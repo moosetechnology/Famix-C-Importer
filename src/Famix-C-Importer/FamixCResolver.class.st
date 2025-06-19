@@ -29,6 +29,14 @@ FamixCResolver >> allLocalPreprocIncludes [
 ]
 
 { #category : 'accessing' }
+FamixCResolver >> lookupType: aString [
+
+	^ model allTypes
+		detect: [ :each | each name = aString ]
+		ifNone: [ nil ]
+]
+
+{ #category : 'accessing' }
 FamixCResolver >> model [
 
 	^ model
@@ -38,6 +46,14 @@ FamixCResolver >> model [
 FamixCResolver >> model: anObject [
 
 	model := anObject
+]
+
+{ #category : 'instance creation' }
+FamixCResolver >> newEntityTypingFor: aFamixCTypeEntity [
+
+	^ model newEntityTyping
+		  declaredType: aFamixCTypeEntity;
+		  yourself
 ]
 
 { #category : 'navigating' }
@@ -71,7 +87,15 @@ FamixCResolver >> resolveInvocations [
 
 { #category : 'accessing' }
 FamixCResolver >> resolveTypes [
-	self shouldBeImplemented.
+
+	(model allUsing: FamixTTypedEntity) do: [ :each |
+			each typing ifNil: [
+					| type famixTypeEntity |
+					
+					type := each attributeAt: #declaredType ifAbsent: [ nil ].
+					famixTypeEntity := self lookupType: type.
+					famixTypeEntity ifNotNil: [
+						each typing: (self newEntityTypingFor: famixTypeEntity) ] ] ]
 ]
 
 { #category : 'run' }
@@ -79,7 +103,7 @@ FamixCResolver >> resolvingSteps [
 
 	^ #( 
 			#resolveIncludes
-			"#resolveTypes"
+			#resolveTypes
 			"#resolveAccesses"
 			"#resolveInvocations"
 		)
