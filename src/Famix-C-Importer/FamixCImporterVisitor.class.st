@@ -13,6 +13,48 @@ Class {
 	#package : 'Famix-C-Importer'
 }
 
+{ #category : 'as yet unclassified' }
+FamixCImporterVisitor class >> cPrimitiveTypes [
+
+	^ #(
+		'_Bool'
+		'_Complex'
+		'char'
+		'double'
+		'double _Complex'
+		'float'
+		'float _Complex'
+		'int'
+		'long'
+		'long double'
+		'long double _Complex'
+		'long int'
+		'long long'
+		'long long int'
+		'short'
+		'short int'
+		'signed'
+		'signed char'
+		'signed int'
+		'signed long'
+		'signed long int'
+		'signed long long'
+		'signed long long int'
+		'signed short'
+		'signed short int'
+		'unsigned'
+		'unsigned char'
+		'unsigned int'
+		'unsigned long'
+		'unsigned long int'
+		'unsigned long long'
+		'unsigned long long int'
+		'unsigned short'
+		'unsigned short int'
+		'void'
+	)
+]
+
 { #category : 'importer' }
 FamixCImporterVisitor >> acceptedExtensions [
 
@@ -112,6 +154,12 @@ FamixCImporterVisitor >> ensureEntityExist: aFamixCEntity name: aString [
 	^ (model allWithType: aFamixCEntity)
 		  detect: [ :each | each name = aString ]
 		  ifNone: [ model add: (aFamixCEntity new name: aString) ]
+]
+
+{ #category : 'as yet unclassified' }
+FamixCImporterVisitor >> ensurePrimitiveTypeExist: aString [
+
+	^ self ensureEntityExist: FamixCPrimitiveType name: aString
 ]
 
 { #category : 'accessing' }
@@ -269,6 +317,17 @@ FamixCImporterVisitor >> isLocalLib: aTSNode [
 ]
 
 { #category : 'accessing' }
+FamixCImporterVisitor >> isPrimitiveType: aString [
+
+	aString isString ifFalse: [ ^ false ].
+	
+	self class cPrimitiveTypes
+		detect: [ :type | type = aString ]
+		ifFound: [ ^ true ]
+		ifNone: [ ^ false ]
+]
+
+{ #category : 'accessing' }
 FamixCImporterVisitor >> lookupVariable: aName in: aFamixCFunction [
 
 	^ self entityNamed: aName in: aFamixCFunction localVariables
@@ -418,7 +477,11 @@ FamixCImporterVisitor >> visitCComment: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
+	| type |
 	inDeclaration := true.
+
+	type := self visitTypeNodeInFields: fields.
+	
 	self flag:
 		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
 	"check if it is a declaration inside a function, for local variable"
@@ -439,19 +502,17 @@ FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 							                  parentBehaviouralEntity: context top.
 						model add: localVarEntity.
 						context push: localVarEntity.
-						localVarEntity
-							attributeAt: #declaredType
-							put: (self visitKey: 'type' inDictionnary: fields).
+						type isString
+							ifTrue: [ localVarEntity attributeAt: #declaredType put: type ]
+							ifFalse: [
+							localVarEntity typing: (self newEntityTypingFor: type) ].
+
 						context pop ] ]
 		ifFalse: [
 				| entity |
 				entity := self visitKey: 'declarator' inDictionnary: fields.
-				entity class = FamixCFunction
-					ifTrue: [
-							entity
-								attributeAt: #declaredType
-								put: (self visitKey: 'type' inDictionnary: fields) ]
-					ifFalse: [ self visitKey: 'type' inDictionnary: fields ] ].
+				entity class = FamixCFunction ifTrue: [
+					entity attributeAt: #declaredType put: type ] ].
 
 
 
@@ -524,7 +585,7 @@ FamixCImporterVisitor >> visitCEnumerator: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
-	| fieldDelcarationEntity |
+	| fieldDelcarationEntity type |
 	(fields includesKey: 'declarator')
 		ifTrue: [
 				| fieldsName |
@@ -532,10 +593,9 @@ FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 					              (self visitKey: 'declarator' inDictionnary: fields). "this might return a FamixCFunction"
 
 				fieldsName do: [ :eachName |
-					
 						eachName isString ifTrue: [
-							self flag: 'skip function as attribute'.
-							"for now I skip the field which is a function declartor,
+								self flag: 'skip function as attribute'.
+								"for now I skip the field which is a function declartor,
 							they can be represented as an association between the structure 
 							and the function but the current meta-model does not support this as far as I know
 							"
@@ -546,9 +606,16 @@ FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 									                          parentType: context top.
 
 								context push: fieldDelcarationEntity.
-								fieldDelcarationEntity
-									attributeAt: #declaredType
-									put: (self visitKey: 'type' inDictionnary: fields).
+
+								type := self visitTypeNodeInFields: fields.
+
+								type isString
+									ifTrue: [
+									fieldDelcarationEntity attributeAt: #declaredType put: type ]
+									ifFalse: [
+									fieldDelcarationEntity typing:
+										(self newEntityTypingFor: type) ].
+
 								context pop ] ] ]
 		ifFalse: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
 			self visitKey: 'type' inDictionnary: fields ]
@@ -588,16 +655,16 @@ FamixCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
 	"type declarator body"
 
-	| fnEntity |
+	| fnEntity type |
+	type := self visitTypeNodeInFields: fields.
+
 	"get the created function entity after visiting the declarator"
 	fnEntity := self visitKey: 'declarator' inDictionnary: fields.
 
 	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
 
 	context push: fnEntity.
-	fnEntity
-		attributeAt: #declaredType
-		put: (self visitKey: 'type' inDictionnary: fields).
+	fnEntity attributeAt: #declaredType put: type.
 	self visitKey: 'body' inDictionnary: fields.
 
 	context pop
@@ -789,9 +856,7 @@ FamixCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: 
 			self visitKey: 'body' inDictionnary: fields.
 			context pop ]
 		ifFalse: [ "no need to create an entity here"
-			structuredTypeEntity := self
-				                        detect: aFamixCStructuredTypeClass
-				                        name: structuredTypeName ].
+			^ structuredTypeName ].
 	^ structuredTypeEntity
 ]
 
@@ -852,4 +917,16 @@ FamixCImporterVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
 		self createWriteAccessTo: variable from: aTSNode ].
 	
 	^ varName
+]
+
+{ #category : 'visiting' }
+FamixCImporterVisitor >> visitTypeNodeInFields: fields [
+
+	| type |
+	
+	type := self visitKey: 'type' inDictionnary: fields.
+	(self isPrimitiveType: type) ifTrue: [
+		self ensurePrimitiveTypeExist: type ].
+	
+	^ type
 ]

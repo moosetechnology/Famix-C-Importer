@@ -103,10 +103,14 @@ FamixCImporterModelTest >> testAnonymousEnumWithVariable [
 	'.
 
 	importer importFromString: sourceCode.
-	
+
 	self assert: importer model allEnums anyOne name equals: ''.
-	self assert: importer model allLocalVariables anyOne name equals: 'option'.
-	self assert: importer model allLocalVariables anyOne declaredType class equals: FamixCEnum.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'option'.
+	self
+		assert: importer model allLocalVariables anyOne declaredType
+		equals: importer model allEnums anyOne
 ]
 
 { #category : 'tests - union' }
@@ -162,7 +166,8 @@ FamixCImporterModelTest >> testAnonymousStructDeclaration [
 	self assert: structEntities anyOne name equals: ''.
 	self assert: attributeEntities size equals: 1.
 	self assert: attributeEntities anyOne name equals: 'a'.
-	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'
+	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'.
+	self assert: importer model allLocalVariables anyOne declaredType class equals: FamixCStruct
 ]
 
 { #category : 'tests - struct' }
@@ -902,14 +907,8 @@ FamixCImporterModelTest >> testLocalVariableTypeAnonymousStruct [
 
 	self assert: importer model allLocalVariables size equals: 1.
 	self
-		assertPropertyClass: #declaredType
-		of: importer model allLocalVariables anyOne
-		equals: FamixCStruct.
-	self
-		assert: (importer model allLocalVariables anyOne
-				 attributeAt: #declaredType
-				 ifAbsent: [ nil ]) name
-		equals: ''
+		assert: importer model allLocalVariables anyOne declaredType
+		equals: (importer model allWithType: FamixCStruct) anyOne
 ]
 
 { #category : 'tests - type' }
@@ -928,13 +927,8 @@ FamixCImporterModelTest >> testLocalVariableTypeStruct [
 
 	self assert: importer model allLocalVariables size equals: 1.
 	self
-		assertPropertyClass: #declaredType
+		assertProperty: #declaredType
 		of: importer model allLocalVariables anyOne
-		equals: FamixCStruct.
-	self
-		assert: (importer model allLocalVariables anyOne
-				 attributeAt: #declaredType
-				 ifAbsent: [ nil ]) name
 		equals: 'Person'
 ]
 
@@ -1372,6 +1366,28 @@ FamixCImporterModelTest >> testPreprocInclude [
 	self assertProperty: #path of: includes first equals: '<stdio.h>'.
 	
 	self assertProperty: #path of: includes second equals: 'functions.h'
+]
+
+{ #category : 'tests - primitives' }
+FamixCImporterModelTest >> testPrimitiveType [
+
+	| sourceCode |
+	sourceCode := '
+	struct Point {
+    float x;
+    float y;
+	};
+	void main(){
+		int a;
+		double b;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allPrimitiveTypes ) size
+		equals: 4.
 ]
 
 { #category : 'tests - struct' }
