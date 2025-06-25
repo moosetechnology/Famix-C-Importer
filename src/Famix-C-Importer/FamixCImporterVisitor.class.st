@@ -492,9 +492,11 @@ FamixCImporterVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCCallExpression: aTSNode withFields: fields [
 	"function arguments"
 
-	self createDereferencedInvocation: aTSNode.
-
-	^ super visitCCallExpression: aTSNode withFields: fields
+	| invocation fnName |
+	invocation := self createDereferencedInvocation: aTSNode.
+	fnName := self visitKey: 'function' inDictionnary: fields.
+	invocation attributeAt: #name put: fnName.
+	self visitKey: 'arguments' inDictionnary: fields
 ]
 
 { #category : 'visiting' }

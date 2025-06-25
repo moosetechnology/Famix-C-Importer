@@ -477,6 +477,26 @@ FamixCImporterModelTest >> testFunctionIdentifierStartEndPosition [
 ]
 
 { #category : 'tests - invocations' }
+FamixCImporterModelTest >> testFunctionInvocationResolution [
+
+	| sourceCode invocation |
+	sourceCode := '
+	void func();
+	int main(){
+		func();
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	invocation := (importer model allWithType:
+		               FamixCDereferencedInvocation) anyOne.
+
+	self assert: invocation candidates first class equals: FamixCFunction 
+]
+
+{ #category : 'tests - invocations' }
 FamixCImporterModelTest >> testFunctionInvocationSignature [
 
 	| sourceCode invocation |
