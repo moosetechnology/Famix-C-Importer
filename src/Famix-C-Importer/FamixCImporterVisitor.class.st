@@ -510,10 +510,7 @@ FamixCImporterVisitor >> visitCComment: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
-	| type |
 	inDeclaration := true.
-
-	type := self visitTypeNodeInFields: fields.
 
 	self flag:
 		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
@@ -534,13 +531,20 @@ FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 								                  (self extractSourceAnchor: aTSNode);
 							                  parentBehaviouralEntity: context top.
 						model add: localVarEntity.
-
-						self assignTypeTo: localVarEntity with: type ] ]
+						context push: localVarEntity.
+						self
+							assignTypeTo: localVarEntity
+							with: (self visitTypeNodeInFields: fields).
+						context pop ] ]
 		ifFalse: [
 				| entity |
 				entity := self visitKey: 'declarator' inDictionnary: fields.
 				entity class = FamixCFunction ifTrue: [
-					self assignTypeTo: entity with: type ] ].
+						context push: entity.
+						self
+							assignTypeTo: entity
+							with: (self visitTypeNodeInFields: fields).
+						context pop ] ].
 
 
 
@@ -807,6 +811,12 @@ FamixCImporterVisitor >> visitCReturnStatement: aTSNode withFields: fields [
 		                 inDictionnary: fields.
 
 	self createReadAccessIfVariableTo: returnedExpr from: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCImporterVisitor >> visitCSizedTypeSpecifier: aTSNode withFields: fields [
+
+	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
