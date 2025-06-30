@@ -224,6 +224,26 @@ FamixCImporterModelTest >> testAnonymousUnionDeclaration [
 	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'
 ]
 
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testChainedTypedefPrimitive [
+
+	| sourceCode aliases |
+	sourceCode := '
+	typedef int Integer1;
+	typedef Integer1 Integer2;
+	'.
+
+	importer importFromString: sourceCode.
+
+	aliases := importer model allWithType: FamixCAliasType.
+
+	self assert: aliases size equals: 2.
+	self assert: aliases first name equals: 'Integer1'.
+	self assert: aliases first aliasedType name equals: 'int'.
+	self assert: aliases second name equals: 'Integer2'.
+	self assert: aliases second aliasedType name equals: 'Integer1'
+]
+
 { #category : 'tests - comments' }
 FamixCImporterModelTest >> testCommentMultipleLine [
 
