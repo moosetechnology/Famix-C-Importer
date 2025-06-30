@@ -885,9 +885,6 @@ FamixCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: 
 				inDeclaration | asAttributeType ifTrue: [
 					self assignTypeTo: context top with: structuredTypeEntity ].
 
-				asTypedefType ifTrue: [
-					context top aliasedType: structuredTypeEntity ].
-
 				context push: structuredTypeEntity.
 				self visitKey: 'body' inDictionnary: fields.
 				context pop ]
@@ -912,14 +909,19 @@ FamixCImporterVisitor >> visitCSystemLibString: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
 	"type declarator"
 
-	| typedefEntity |
+	| typedefEntity aliasedType |
 	typedefEntity := model newAliasType
 		                 name:
 			                 (self visitKey: 'declarator' inDictionnary: fields);
 		                 sourceAnchor: (self extractSourceAnchor: aTSNode).
-
 	context push: typedefEntity.
-	self visitKey: 'type' inDictionnary: fields.
+	aliasedType := self visitKey: 'type' inDictionnary: fields.
+	aliasedType isString
+		ifTrue: [
+				aliasedType := self visitTypeNodeInFields: fields.
+				typedefEntity attributeAt: #aliasedType put: aliasedType ]
+		ifFalse: [ typedefEntity aliasedType: aliasedType ].
+
 	context pop
 ]
 
@@ -958,10 +960,9 @@ FamixCImporterVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
 FamixCImporterVisitor >> visitTypeNodeInFields: fields [
 
 	| type |
-	
 	type := self visitKey: 'type' inDictionnary: fields.
 	(self isPrimitiveType: type) ifTrue: [
 		self ensurePrimitiveTypeExist: type ].
-	
+
 	^ type
 ]

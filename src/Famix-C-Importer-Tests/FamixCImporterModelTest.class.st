@@ -1812,7 +1812,12 @@ FamixCImporterModelTest >> testTypedefForStruct [
 		equals: 1.
 	self
 		assert: (importer model allWithType: FamixCStruct) anyOne name
-		equals: 'Person'
+		equals: 'Person'.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) first aliasedType
+			class
+		equals: FamixCStruct
 ]
 
 { #category : 'tests - typedef' }
@@ -1849,6 +1854,62 @@ FamixCImporterModelTest >> testTypedefName [
 	self
 		assert: (importer model allWithType: FamixCAliasType) anyOne name
 		equals: 'Integer'
+]
+
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefResolution [
+
+	| sourceCode |
+	sourceCode := '
+	typedef int Integer;
+	'.
+
+	importer importFromString: sourceCode.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) anyOne aliasedType
+			class
+		equals: FamixCPrimitiveType.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) anyOne aliasedType
+			name
+		equals: 'int'.
+	self
+		assert: importer model allPrimitiveTypes anyOne typeAliases size
+		equals: 1.
+	self
+		assert:
+		importer model allPrimitiveTypes anyOne typeAliases first name
+		equals: 'Integer'
+]
+
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefResolutionAnonymousStruct [
+
+	| sourceCode |
+	sourceCode := '
+	typedef struct { int a; int b } myStruct;
+	'.
+
+	importer importFromString: sourceCode.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) first aliasedType
+			class
+		equals: FamixCStruct.
+	self
+		assert:
+		(importer model allWithType: FamixCAliasType) first aliasedType
+			name
+		equals: ''.
+	self
+		assert: (importer model allWithType: FamixCStruct) first typeAliases size
+		equals: 1.
+	self
+		assert:
+		(importer model allWithType: FamixCStruct) first typeAliases first name
+		equals: 'myStruct'
 ]
 
 { #category : 'tests - typedef' }

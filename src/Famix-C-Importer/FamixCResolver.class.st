@@ -29,11 +29,9 @@ FamixCResolver >> allLocalPreprocIncludes [
 ]
 
 { #category : 'accessing' }
-FamixCResolver >> lookupFunction: aString [
+FamixCResolver >> lookupFunctions: aString [
 
-	^ model allFunctions 
-		detect: [ :each | each name = aString ]
-		ifNone: [ nil ]
+	^ model allFunctions select: [ :each | each name = aString ]
 ]
 
 { #category : 'accessing' }
@@ -76,6 +74,18 @@ FamixCResolver >> resolveAccesses [
 ]
 
 { #category : 'accessing' }
+FamixCResolver >> resolveAliasedTypes [
+
+	(model allWithType: FamixCAliasType) do: [ :eachAlias |
+			eachAlias aliasedType ifNil: [
+					| aliasedTypeName |
+					aliasedTypeName := eachAlias
+						                   attributeAt: #aliasedType
+						                   ifAbsent: [ nil ].
+					eachAlias aliasedType: (self lookupType: aliasedTypeName) ] ]
+]
+
+{ #category : 'accessing' }
 FamixCResolver >> resolveIncludes [
 
 	self allLocalPreprocIncludes do: [ :include |
@@ -92,10 +102,10 @@ FamixCResolver >> resolveIncludes [
 FamixCResolver >> resolveInvocations [
 
 	model allInvocations do: [ :each |
-			| fnName famixFnEntity |
+			| fnName |
 			fnName := each attributeAt: #name ifAbsent: [ nil ].
-			famixFnEntity := self lookupFunction: fnName.
-			famixFnEntity ifNotNil: [ each addCandidate: famixFnEntity ] ]
+			(self lookupFunctions: fnName) do: [ :eachFn |
+				each addCandidate: eachFn ] ]
 ]
 
 { #category : 'accessing' }
@@ -117,7 +127,7 @@ FamixCResolver >> resolvingSteps [
 	^ #( 
 			#resolveIncludes
 			#resolveTypes
-			"#resolveAliasedTypes"
+			#resolveAliasedTypes
 			"#resolveAccesses"
 			#resolveInvocations
 		)
