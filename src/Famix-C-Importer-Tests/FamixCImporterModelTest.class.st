@@ -439,7 +439,8 @@ FamixCImporterModelTest >> testFunctionDefinitionAndDeclarationAddedTwoTimes [
 	importer importFromString: sourceCode.
 
 	self assert: importer model allFunctions size equals: 1.
-	self assert: importer model allFunctions anyOne name equals: 'func'
+	self assert: importer model allFunctions anyOne name equals: 'func'.
+	self assert: importer model allFunctions anyOne declaredType name equals: 'int'
 ]
 
 { #category : 'tests - type' }
@@ -1354,29 +1355,44 @@ FamixCImporterModelTest >> testParameterParentFunction [
 		self assert: param parentBehaviouralEntity name equals: 'myFunc' ]
 ]
 
+{ #category : 'tests - accesses' }
+FamixCImporterModelTest >> testParameterReadAccess [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int parentFunction(int a){
+		int b = a + 1;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'a'
+]
+
 { #category : 'tests - parameters' }
 FamixCImporterModelTest >> testParameterType [
 
-	| sourceCode |
+	| sourceCode params|
 	sourceCode := '
+	struct Person { int a };
+	typedef struct { int x; int y } Point;
 	int myFunc(int arg1, struct Person arg2, Point arg3);
 	'.
 
 	importer importFromString: sourceCode.
-
-	self assert: importer model allParameters anyOne name equals: 'arg1'.
-	self
-		assertProperty: #declaredType
-		of: importer model allParameters first
-		equals: 'int'.
-	self
-		assertProperty: #declaredType
-		of: importer model allParameters second
-		equals: 'Person'.
-	self
-		assertProperty: #declaredType
-		of: importer model allParameters third 
-		equals: 'Point'.
+	params := importer model allParameters.
+	
+	self assert: params first declaredType name equals: 'int'.
+	self assert: params second declaredType name equals: 'Person'.
+	self assert: params third declaredType name equals: 'Point'.
 ]
 
 { #category : 'tests - parameters' }

@@ -118,9 +118,8 @@ FamixCImporterVisitor >> createDereferencedInvocation: aTSNode [
 { #category : 'accessing' }
 FamixCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
 
-	(context isNotEmpty and: [ context top class = FamixCFunction ]) ifTrue: [
-			aVariableName isString ifTrue: [
-				^ self createReadAccessTo: aVariableName from: aTSNode ] ].
+	(self inFunctionContext and: [ aVariableName isString ]) ifTrue: [
+		^ self createReadAccessTo: aVariableName from: aTSNode ].
 	^ nil
 ]
 
@@ -128,21 +127,21 @@ FamixCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNo
 FamixCImporterVisitor >> createReadAccessTo: variableName from: aTSNode [
 
 	^ model newAccess
-		  variable: (self lookupVariable: variableName in: context top);
 		  accessor: context top;
 		  isWrite: false;
 		  sourceAnchor: (self extractSourceAnchor: aTSNode);
+		  attributeAt: #variable put: variableName;
 		  yourself
 ]
 
 { #category : 'private-entity-creation' }
-FamixCImporterVisitor >> createWriteAccessTo: variable from: anAssignmentNode [
+FamixCImporterVisitor >> createWriteAccessTo: variableName from: anAssignmentNode [
 
 	^ model newAccess
-		  variable: variable;
 		  accessor: self currentEntity;
 		  isWrite: true;
 		  sourceAnchor: (self extractSourceAnchor: anAssignmentNode);
+		  attributeAt: #variable put: variableName;
 		  yourself
 ]
 
@@ -353,12 +352,6 @@ FamixCImporterVisitor >> isPrimitiveType: aString [
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> lookupVariable: aName in: aFamixCFunction [
-
-	^ self entityNamed: aName in: aFamixCFunction localVariables
-]
-
-{ #category : 'accessing' }
 FamixCImporterVisitor >> model [
 
 	^ model
@@ -464,15 +457,13 @@ FamixCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields 
 	"left right"
 
 	| left right |
+	
 	left := self visitKey: 'left' inDictionnary: fields.
-	self inFunctionContext ifTrue: [
-			| variable |
-			variable := self lookupVariable: left in: context top.
-			self createWriteAccessTo: variable from: aTSNode ].
-
-
 	right := self visitKey: 'right' inDictionnary: fields.
-	self createReadAccessIfVariableTo: right from: aTSNode
+	
+	self inFunctionContext ifTrue: [
+			self createWriteAccessTo: left from: aTSNode.
+			self createReadAccessIfVariableTo: right from: aTSNode ]
 ]
 
 { #category : 'visiting' }
@@ -947,12 +938,10 @@ FamixCImporterVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
 
 	| varName |
 	varName := self visitKey: 'argument' inDictionnary: fields.
-	
-	(context isNotEmpty and: [ context top isFunction ]) ifTrue: [
-		| variable |
-		variable := self lookupVariable: varName in: context top.
-		self createWriteAccessTo: variable from: aTSNode ].
-	
+
+	self inFunctionContext ifTrue: [
+		self createWriteAccessTo: varName from: aTSNode ].
+
 	^ varName
 ]
 
