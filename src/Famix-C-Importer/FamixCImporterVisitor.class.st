@@ -312,7 +312,7 @@ FamixCImporterVisitor >> importFromString: aString [
 { #category : 'accessing' }
 FamixCImporterVisitor >> inFunctionContext [
 
-	^ context isNotEmpty and: [ context top isFunction ]
+	^ context isNotEmpty and: [ context top class = FamixCFunction ]
 ]
 
 { #category : 'initialization' }
