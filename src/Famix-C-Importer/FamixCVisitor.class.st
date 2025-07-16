@@ -1,12 +1,13 @@
+"
+this is the visitor (2)
+"
 Class {
-	#name : 'FamixCImporterVisitor',
-	#superclass : 'TSCLanguageVisitor',
+	#name : 'FamixCVisitor',
+	#superclass : 'FamixTSAbstractVisitor',
 	#instVars : [
 		'parser',
-		'model',
 		'context',
 		'sourceCode',
-		'fileName',
 		'inDeclaration'
 	],
 	#category : 'Famix-C-Importer',
@@ -14,7 +15,7 @@ Class {
 }
 
 { #category : 'as yet unclassified' }
-FamixCImporterVisitor class >> cPrimitiveTypes [
+FamixCVisitor class >> cPrimitiveTypes [
 
 	^ #(
 		'_Bool'
@@ -55,20 +56,14 @@ FamixCImporterVisitor class >> cPrimitiveTypes [
 	)
 ]
 
-{ #category : 'importer' }
-FamixCImporterVisitor >> acceptedExtensions [
-
-	^ #( 'c' 'h' )
-]
-
 { #category : 'as yet unclassified' }
-FamixCImporterVisitor >> allHeaderFiles [
+FamixCVisitor >> allHeaderFiles [
 
 	^ model allWithType: FamixCPreprocHeaderFile
 ]
 
 { #category : 'as yet unclassified' }
-FamixCImporterVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
+FamixCVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
 	"this is only used on the first walk of the AST"
 
 	aStringOrType isString
@@ -91,32 +86,33 @@ FamixCImporterVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> context [
+FamixCVisitor >> context [
 
 	^ context
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> context: anObject [
+FamixCVisitor >> context: anObject [
 
 	context := anObject
 ]
 
 { #category : 'private-entity-creation' }
-FamixCImporterVisitor >> createDereferencedInvocation: aTSNode [
+FamixCVisitor >> createDereferencedInvocation: aTSNode [
 
 	| invocation |
 	invocation := FamixCDereferencedInvocation new
 		              signature: (aTSNode textFromSourceText: sourceCode);
-		              sender: context top;
-		              sourceAnchor: (self extractSourceAnchor: aTSNode).
+		              sender: context top.
+		              
+	self setSourceAnchor: invocation from: aTSNode.
 		              
 	model add: invocation.
 	^ invocation
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
+FamixCVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
 
 	(self inFunctionContext and: [ aVariableName isString ]) ifTrue: [
 		^ self createReadAccessTo: aVariableName from: aTSNode ].
@@ -124,35 +120,29 @@ FamixCImporterVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNo
 ]
 
 { #category : 'private-entity-creation' }
-FamixCImporterVisitor >> createReadAccessTo: variableName from: aTSNode [
+FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 
 	^ model newAccess
 		  accessor: context top;
 		  isWrite: false;
-		  sourceAnchor: (self extractSourceAnchor: aTSNode);
 		  attributeAt: #variable put: variableName;
+		  in: [ :access | self setSourceAnchor: access from: aTSNode ];
 		  yourself
 ]
 
 { #category : 'private-entity-creation' }
-FamixCImporterVisitor >> createWriteAccessTo: variableName from: anAssignmentNode [
+FamixCVisitor >> createWriteAccessTo: variableName from: anAssignmentNode [
 
 	^ model newAccess
 		  accessor: self currentEntity;
 		  isWrite: true;
-		  sourceAnchor: (self extractSourceAnchor: anAssignmentNode);
+		  in: [ :access | self setSourceAnchor: access from: anAssignmentNode ];
 		  attributeAt: #variable put: variableName;
 		  yourself
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> currentEntity [
-
-	^ context top
-]
-
-{ #category : 'accessing' }
-FamixCImporterVisitor >> detect: aFamixCEntity name: aString [
+FamixCVisitor >> detect: aFamixCEntity name: aString [
 
 	^ (model allWithType: aFamixCEntity)
 		  detect: [ :each | each name = aString ]
@@ -160,7 +150,7 @@ FamixCImporterVisitor >> detect: aFamixCEntity name: aString [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> ensureAsOrderedCollection: anObject [
+FamixCVisitor >> ensureAsOrderedCollection: anObject [
 
 	^ anObject class = OrderedCollection
 		  ifTrue: [ anObject ]
@@ -171,7 +161,7 @@ FamixCImporterVisitor >> ensureAsOrderedCollection: anObject [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> ensureEntityExist: aFamixCEntity name: aString [
+FamixCVisitor >> ensureEntityExist: aFamixCEntity name: aString [
 
 	^ (model allWithType: aFamixCEntity)
 		  detect: [ :each | each name = aString ]
@@ -179,144 +169,25 @@ FamixCImporterVisitor >> ensureEntityExist: aFamixCEntity name: aString [
 ]
 
 { #category : 'as yet unclassified' }
-FamixCImporterVisitor >> ensurePrimitiveTypeExist: aString [
+FamixCVisitor >> ensurePrimitiveTypeExist: aString [
 
 	^ self ensureEntityExist: FamixCPrimitiveType name: aString
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> entityNamed: aName in: aCollection [
+FamixCVisitor >> entityNamed: aName in: aCollection [
 
 	^ aCollection detect: [ :each | each name = aName ] ifNone: [ nil ]
 ]
 
-{ #category : 'visiting' }
-FamixCImporterVisitor >> extractSourceAnchor: aTSNode [
-
-	^ FamixCIndexedFileAnchor new
-		  startPos: aTSNode startByte + 1;
-		  endPos: aTSNode endByte;
-		  fileName: fileName;
-		  mooseModel: model
-]
-
 { #category : 'accessing' }
-FamixCImporterVisitor >> fileName [
-
-	^ fileName
-]
-
-{ #category : 'accessing' }
-FamixCImporterVisitor >> fileName: anObject [
-
-	fileName := anObject
-]
-
-{ #category : 'accessing' }
-FamixCImporterVisitor >> import: aFileName [
-
-	| fileReference |
-	fileReference := aFileName asFileReference.
-
-	fileReference exists ifFalse: [
-		self error: fileReference fullName , ' does not exist' ].
-
-	model
-		name: fileReference basename;
-		rootFolder: (fileReference isFile
-				 ifTrue: [ fileReference parent ]
-				 ifFalse: [ aFileName ]).
-				
-	UIManager default
-		displayProgress: ''
-		from: 0
-		to: 2
-		during: [ :bar |
-				bar label: 'Importing ', model rootFolder.
-				
-				self importFileReference: fileReference.
-				
-				bar current: 1.
-				bar label: 'Resolving'.
-				
-				self resolve.
-				
-				bar current: 2 ].
-
-
-	^ model
-]
-
-{ #category : 'api' }
-FamixCImporterVisitor >> importFileReference: aFileReference [
-	"We can have two cases here:
-	 1. it's a file: so we parse its content if it's a .c or .h file. We skip other files
-	 2. it's a directory: we will visit it's children (might be files or/and directories)
-	"
-
-	aFileReference isFile
-		ifTrue: [
-				(self isCFile: aFileReference) ifFalse: [ ^ self ].
-				self importFromFile: aFileReference.
-				self traceCr: fileName ]
-		ifFalse: [
-				aFileReference pathString ~= model rootFolder ifTrue: [
-					self newPreprocFolder: aFileReference ].
-				
-				aFileReference children do: [ :each |
-					self importFileReference: each ].
-
-				^ self ]
-]
-
-{ #category : 'importer' }
-FamixCImporterVisitor >> importFromFile: aFileReference [
-
-	| fileEntity |
-	fileEntity := aFileReference extension = 'c'
-		              ifTrue: [
-		              self newPreprocCompilationUnit: aFileReference ]
-		              ifFalse: [ self newPreprocHeaderFile: aFileReference ].
-		
-	fileName := self relativePath: aFileReference.
-
-	sourceCode := aFileReference contents.
-
-	context push: fileEntity.
-	(self parseString: sourceCode) accept: self.
-	context pop.
-
-	^ model
-]
-
-{ #category : 'importer' }
-FamixCImporterVisitor >> importFromString: aString [
-
-	| rootNode |
-	rootNode := self parseString: aString.
-	sourceCode := aString.
-	fileName := '** Not a file - Imported from a string **'.
-
-	context push: (self
-			 newPreprocFile: FamixCPreprocCFile
-			 with: fileName asFileReference).
-
-	rootNode accept: self.
-	context pop.
-
-	self resolve.
-
-	^ model
-]
-
-{ #category : 'accessing' }
-FamixCImporterVisitor >> inFunctionContext [
+FamixCVisitor >> inFunctionContext [
 
 	^ context isNotEmpty and: [ context top class = FamixCFunction ]
 ]
 
 { #category : 'initialization' }
-FamixCImporterVisitor >> initialize [
+FamixCVisitor >> initialize [
 
 	super initialize.
 
@@ -328,20 +199,14 @@ FamixCImporterVisitor >> initialize [
 	inDeclaration := false.
 ]
 
-{ #category : 'testing' }
-FamixCImporterVisitor >> isCFile: aFileReference [
-
-	^ self acceptedExtensions includes: aFileReference extension
-]
-
 { #category : 'accessing' }
-FamixCImporterVisitor >> isLocalLib: aTSNode [
+FamixCVisitor >> isLocalLib: aTSNode [
 
 	^ aTSNode type ~= 'system_lib_string'
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> isPrimitiveType: aString [
+FamixCVisitor >> isPrimitiveType: aString [
 
 	aString isString ifFalse: [ ^ false ].
 	
@@ -352,19 +217,26 @@ FamixCImporterVisitor >> isPrimitiveType: aString [
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> model [
+FamixCVisitor >> model [
 
 	^ model
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> model: anObject [
+FamixCVisitor >> model: anObject [
 
 	model := anObject
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> newEntityTypingFor: aFamixCTypeEntity [
+FamixCVisitor >> modelClass [
+	"Should return the model class such as FamixPythonModel."
+
+	^ FamixCModel 
+]
+
+{ #category : 'accessing' }
+FamixCVisitor >> newEntityTypingFor: aFamixCTypeEntity [
 
 	^ model newEntityTyping
 		  declaredType: aFamixCTypeEntity;
@@ -372,7 +244,7 @@ FamixCImporterVisitor >> newEntityTypingFor: aFamixCTypeEntity [
 ]
 
 { #category : 'instance creation' }
-FamixCImporterVisitor >> newPreprocCompilationUnit: aFileReference [
+FamixCVisitor >> newPreprocCompilationUnit: aFileReference [
 
 	^ self
 		  newPreprocFile: FamixCPreprocCompilationUnit
@@ -380,39 +252,39 @@ FamixCImporterVisitor >> newPreprocCompilationUnit: aFileReference [
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> newPreprocFile: aClass with: aFileReference [
+FamixCVisitor >> newPreprocFile: aClass with: aFileReference [
 
 	^ model add: (aClass new name: (self relativePath: aFileReference))
 ]
 
 { #category : 'instance creation' }
-FamixCImporterVisitor >> newPreprocFolder: aFileReference [
+FamixCVisitor >> newPreprocFolder: aFileReference [
 
 	^ self newPreprocFile: FamixCPreprocFolder with: aFileReference
 ]
 
 { #category : 'instance creation' }
-FamixCImporterVisitor >> newPreprocHeaderFile: aFileReference [
+FamixCVisitor >> newPreprocHeaderFile: aFileReference [
 
 	^ model add: (FamixCPreprocHeaderFile new name: aFileReference basename)
 ]
 
 { #category : 'parsing' }
-FamixCImporterVisitor >> parseString: aString [
+FamixCVisitor >> parseString: aString [
 	"return the source code AST"
 
 	^ (parser parseString: aString) rootNode
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> relativePath: aFileReference [
+FamixCVisitor >> relativePath: aFileReference [
 
 	^ (aFileReference relativeTo: model rootFolder asFileReference)
 		  pathString
 ]
 
 { #category : 'navigating' }
-FamixCImporterVisitor >> resolve [
+FamixCVisitor >> resolve [
 
 	(FamixCResolver on: model) resolve.
 	
@@ -420,19 +292,19 @@ FamixCImporterVisitor >> resolve [
 ]
 
 { #category : 'accessing' }
-FamixCImporterVisitor >> sourceCode: anObject [
+FamixCVisitor >> sourceCode: anObject [
 
 	sourceCode := anObject
 ]
 
 { #category : 'parsing' }
-FamixCImporterVisitor >> textFromSourceText: aTSNode [
+FamixCVisitor >> textFromSourceText: aTSNode [
 
 	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCArgumentList: aTSNode withFields: fields [
+FamixCVisitor >> visitCArgumentList: aTSNode withFields: fields [
 	"<unnamedChild>"
 
 	| argumentList |
@@ -445,7 +317,7 @@ FamixCImporterVisitor >> visitCArgumentList: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
+FamixCVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 	"declarator size"
 
 	self visitKey: 'size' inDictionnary: fields.
@@ -453,7 +325,7 @@ FamixCImporterVisitor >> visitCArrayDeclarator: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields [
+FamixCVisitor >> visitCAssignmentExpression: aTSNode withFields: fields [
 	"left right"
 
 	| left right |
@@ -467,7 +339,7 @@ FamixCImporterVisitor >> visitCAssignmentExpression: aTSNode withFields: fields 
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
+FamixCVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
 	"left right"
 
 	| left right |
@@ -480,7 +352,7 @@ FamixCImporterVisitor >> visitCBinaryExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCCallExpression: aTSNode withFields: fields [
+FamixCVisitor >> visitCCallExpression: aTSNode withFields: fields [
 	"function arguments"
 
 	| invocation fnName |
@@ -491,16 +363,20 @@ FamixCImporterVisitor >> visitCCallExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCComment: aTSNode withFields: fields [
+FamixCVisitor >> visitCComment: aTSNode withFields: fields [
 	"no fields"
 
-	^ model add:
-		  (FamixCComment new sourceAnchor:
-			   (self extractSourceAnchor: aTSNode))
+	| comment |
+	comment := FamixCComment new.
+	self setSourceAnchor: comment from: aTSNode.
+
+	^ model
+		  add: comment;
+		  yourself
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
+FamixCVisitor >> visitCDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	inDeclaration := true.
@@ -520,9 +396,8 @@ FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 						| localVarEntity |
 						localVarEntity := FamixCLocalVariable new
 							                  name: eachIdentifierName;
-							                  sourceAnchor:
-								                  (self extractSourceAnchor: aTSNode);
 							                  parentBehaviouralEntity: context top.
+						self setSourceAnchor: localVarEntity from: aTSNode.
 						model add: localVarEntity.
 						context push: localVarEntity.
 						self
@@ -545,7 +420,7 @@ FamixCImporterVisitor >> visitCDeclaration: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCERROR: aTSNode withFields: fields [
+FamixCVisitor >> visitCERROR: aTSNode withFields: fields [
  ^ {
        self visitKey: 'type' inDictionnary: fields.
        self visitKey: '<unnamedChild>' inDictionnary: fields.
@@ -554,7 +429,7 @@ FamixCImporterVisitor >> visitCERROR: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
+FamixCVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 	"name body"
 
 	| enumEntity enumName enumAsAttributeType |
@@ -565,9 +440,8 @@ FamixCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 
 	(fields includesKey: 'body')
 		ifTrue: [
-				enumEntity := FamixCEnum new
-					              name: enumName;
-					              sourceAnchor: (self extractSourceAnchor: aTSNode).
+				enumEntity := FamixCEnum new name: enumName.
+				self setSourceAnchor: enumEntity from: aTSNode.
 				model add: enumEntity.
 
 				"parent type resolution"
@@ -592,22 +466,21 @@ FamixCImporterVisitor >> visitCEnumSpecifier: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCEnumerator: aTSNode withFields: fields [
+FamixCVisitor >> visitCEnumerator: aTSNode withFields: fields [
 	"tokony hisy value eto fa tsy name ihany"
 
 	| enumValueEntity |
-	enumValueEntity := FamixCEnumValue new
-		                   name:
-			                   (self visitKey: 'name' inDictionnary: fields);
-		                   sourceAnchor: (self extractSourceAnchor: aTSNode);
-		                   parentEnum: context top;
-		                   yourself.
-	model add: enumValueEntity.
+	enumValueEntity := model newEnumValueNamed:
+		                   ((self visit: aTSNode _name)
+			                    parentEnum: self currentEntity;
+			                    yourself).
+	self setSourceAnchor: enumValueEntity from: aTSNode.
+
 	^ enumValueEntity
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
+FamixCVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 	"type declarator"
 
 	| fieldDelcarationEntity type |
@@ -626,10 +499,9 @@ FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 							"
 								fieldDelcarationEntity := model newAttribute
 									                          name: eachName;
-									                          sourceAnchor:
-										                          (self extractSourceAnchor: aTSNode);
 									                          parentType: context top.
-
+								self setSourceAnchor: fieldDelcarationEntity from: aTSNode.
+								
 								context push: fieldDelcarationEntity.
 
 								type := self visitTypeNodeInFields: fields.
@@ -641,62 +513,28 @@ FamixCImporterVisitor >> visitCFieldDeclaration: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCFieldExpression: aTSNode withFields: fields [
+FamixCVisitor >> visitCFieldExpression: aTSNode withFields: fields [
 
 	self visitKey: 'field' inDictionnary: fields.
 	^ self visitKey: 'argument' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCFieldIdentifier: aTSNode withFields: fields [
+FamixCVisitor >> visitCFieldIdentifier: aTSNode withFields: fields [
 	"no fields"
 
 	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCFunctionDeclarator: aTSNode withFields: fields [
-	"declarator parameters"
-
-	| fnName fnEntity |
-	fnName := self visitKey: 'declarator' inDictionnary: fields.
-	fnEntity := self ensureEntityExist: FamixCFunction name: fnName.
-	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
-
-	context push: fnEntity.
-
-	self visitKey: 'parameters' inDictionnary: fields.
-
-	^ context pop
-]
-
-{ #category : 'visiting' }
-FamixCImporterVisitor >> visitCFunctionDefinition: aTSNode withFields: fields [
-	"type declarator body"
-
-	| fnEntity type |
-	type := self visitTypeNodeInFields: fields.
-
-	"get the created function entity after visiting the declarator"
-	fnEntity := self visitKey: 'declarator' inDictionnary: fields.
-
-	fnEntity sourceAnchor: (self extractSourceAnchor: aTSNode).
-	self assignTypeTo: fnEntity with: type.
-
-	context push: fnEntity.
-	self visitKey: 'body' inDictionnary: fields.
-	context pop
-]
-
-{ #category : 'visiting' }
-FamixCImporterVisitor >> visitCIdentifier: aTSNode withFields: fields [
+FamixCVisitor >> visitCIdentifier: aTSNode withFields: fields [
 	"no fields"
 
 	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCInitDeclarator: aTSNode withFields: fields [
+FamixCVisitor >> visitCInitDeclarator: aTSNode withFields: fields [
 	"declarator value"
 
 	self visitKey: 'value' inDictionnary: fields.
@@ -704,26 +542,7 @@ FamixCImporterVisitor >> visitCInitDeclarator: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCParameterDeclaration: aTSNode withFields: fields [
-	"type declarator"
-
-	| paramEntity type |
-	
-	type := self visitTypeNodeInFields: fields.
-
-	paramEntity := model newParameter.
-	paramEntity
-		parentBehaviouralEntity: context top;
-		name: (self visitKey: 'declarator' inDictionnary: fields);
-		sourceAnchor: (self extractSourceAnchor: aTSNode).
-		
-	self assignTypeTo: paramEntity with: type.
-
-	^ paramEntity
-]
-
-{ #category : 'visiting' }
-FamixCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
+FamixCVisitor >> visitCParameterList: aTSNode withFields: fields [
 	"<unnamedChild>"
 
 	"(fields at: '<unnamedChild>') is a TSNode instance if there is only one parameter"
@@ -745,13 +564,13 @@ FamixCImporterVisitor >> visitCParameterList: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCParenthesizedDeclarator: aTSNode withFields: fields [
+FamixCVisitor >> visitCParenthesizedDeclarator: aTSNode withFields: fields [
 
 	^ self visitKey: '<unnamedChild>' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCParenthesizedExpression: aTSNode withFields: fields [
+FamixCVisitor >> visitCParenthesizedExpression: aTSNode withFields: fields [
 	"<unnamedChild>"
 
 	| expression |
@@ -760,42 +579,35 @@ FamixCImporterVisitor >> visitCParenthesizedExpression: aTSNode withFields: fiel
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
+FamixCVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
 
 	^ self visitKey: 'declarator' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCPointerExpression: aTSNode withFields: fields [
+FamixCVisitor >> visitCPointerExpression: aTSNode withFields: fields [
 	"argument"
 
 	^ self visitKey: 'argument' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCPreprocInclude: aTSNode withFields: fields [
+FamixCVisitor >> visitCPreprocInclude: aTSNode withFields: fields [
 
 	| includeEntity |
 	includeEntity := FamixCPreprocInclude new
 		                 attributeAt: #path
 		                 put: (self visitKey: 'path' inDictionnary: fields);
 		                 isLocal: (self isLocalLib: (fields at: 'path'));
-		                 includedBy: context top;
-		                 sourceAnchor: (self extractSourceAnchor: aTSNode).
+		                 includedBy: context top.
 
-
+	self setSourceAnchor: includeEntity from: aTSNode.
 	model add: includeEntity.
 	^ includeEntity
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCPrimitiveType: aTSNode withFields: fields [
-
-	^ self textFromSourceText: aTSNode
-]
-
-{ #category : 'visiting' }
-FamixCImporterVisitor >> visitCReturnStatement: aTSNode withFields: fields [
+FamixCVisitor >> visitCReturnStatement: aTSNode withFields: fields [
 	"<unnamedChild>"
 
 	| returnedExpr |
@@ -807,25 +619,25 @@ FamixCImporterVisitor >> visitCReturnStatement: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCSizedTypeSpecifier: aTSNode withFields: fields [
+FamixCVisitor >> visitCSizedTypeSpecifier: aTSNode withFields: fields [
 
 	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCStringContent: aTSNode withFields: fields [
+FamixCVisitor >> visitCStringContent: aTSNode withFields: fields [
 
 	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCStringLiteral: aTSNode withFields: fields [
+FamixCVisitor >> visitCStringLiteral: aTSNode withFields: fields [
 
 	^ self visitKey: '<unnamedChild>' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
+FamixCVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 	"name body"
 
 	^ self
@@ -835,7 +647,7 @@ FamixCImporterVisitor >> visitCStructSpecifier: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFamixCStructuredTypeClass [
+FamixCVisitor >> visitCStructuredType: aTSNode withFields: fields type: aFamixCStructuredTypeClass [
 	"name body"
 
 	| structuredTypeEntity structuredTypeName isAnonymous asAttributeType asTypedefType |
@@ -868,9 +680,9 @@ FamixCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: 
 		ifTrue: [
 				structuredTypeEntity := aFamixCStructuredTypeClass new.
 
-				structuredTypeEntity
-					name: structuredTypeName;
-					sourceAnchor: (self extractSourceAnchor: aTSNode).
+				structuredTypeEntity name: structuredTypeName.
+				self setSourceAnchor: structuredTypeEntity from: aTSNode.
+				
 				model add: structuredTypeEntity.
 
 				inDeclaration | asAttributeType ifTrue: [
@@ -884,27 +696,28 @@ FamixCImporterVisitor >> visitCStructuredType: aTSNode withFields: fields type: 
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCSubscriptExpression: aTSNode withFields: fields [
+FamixCVisitor >> visitCSubscriptExpression: aTSNode withFields: fields [
 
 	self visitKey: 'index' inDictionnary: fields.
 	^ self visitKey: 'argument' inDictionnary: fields
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCSystemLibString: aTSNode withFields: fields [
+FamixCVisitor >> visitCSystemLibString: aTSNode withFields: fields [
 
 	^ self textFromSourceText: aTSNode
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
+FamixCVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
 	"type declarator"
 
 	| typedefEntity aliasedType |
-	typedefEntity := model newAliasType
-		                 name:
-			                 (self visitKey: 'declarator' inDictionnary: fields);
-		                 sourceAnchor: (self extractSourceAnchor: aTSNode).
+	typedefEntity := model newAliasType name:
+		                 (self visitKey: 'declarator' inDictionnary: fields).
+
+	self setSourceAnchor: typedefEntity from: aTSNode.
+
 	context push: typedefEntity.
 	aliasedType := self visitKey: 'type' inDictionnary: fields.
 	aliasedType isString
@@ -917,14 +730,14 @@ FamixCImporterVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
+FamixCVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
 	"no fields"
-
+1halt.
 	^ aTSNode textFromSourceText: sourceCode
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCUnionSpecifier: aTSNode withFields: fields [
+FamixCVisitor >> visitCUnionSpecifier: aTSNode withFields: fields [
 	"name body"
 
 	^ self
@@ -934,7 +747,7 @@ FamixCImporterVisitor >> visitCUnionSpecifier: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
+FamixCVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
 
 	| varName |
 	varName := self visitKey: 'argument' inDictionnary: fields.
@@ -945,8 +758,309 @@ FamixCImporterVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
 	^ varName
 ]
 
+{ #category : 'private - transcript cleaning' }
+FamixCVisitor >> visitCompoundStatement: aTSNode [
+
+	^ self visitChildren: aTSNode
+]
+
 { #category : 'visiting' }
-FamixCImporterVisitor >> visitTypeNodeInFields: fields [
+FamixCVisitor >> visitDeclaration: aTSNode [
+	"type declarator"
+
+	inDeclaration := true.
+
+	self flag:
+		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
+	"check if it is a declaration inside a function, for local variable"
+
+	(self hasCurrentEntity and: [ self currentEntity isFunction ])
+		ifTrue: [
+				| identifiers |
+				identifiers := self ensureAsOrderedCollection: (self visit: aTSNode _declarator).
+
+				identifiers do: [ :eachIdentifier |
+						| localVarEntity |
+						localVarEntity := (model newLocalVariableNamed:
+							                   eachIdentifier sourceText)
+							                  parentBehaviouralEntity: self currentEntity.
+
+						self setSourceAnchor: localVarEntity from: aTSNode.
+
+						self
+							useCurrentEntity: localVarEntity
+							during: [
+							self
+								assignTypeTo: localVarEntity
+								with: (self visit: aTSNode _type) ] ] ]
+		ifFalse: [
+				| entity |
+				entity := self visit: aTSNode _declarator.
+				entity class = FamixCFunction ifTrue: [
+						self
+							useCurrentEntity: entity
+							during: [
+							self assignTypeTo: entity with: (self visit: aTSNode _type) ] ] ].
+
+
+
+	inDeclaration := false
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitFieldDeclaration: aTSNode [
+	"type declarator"
+
+	| fieldDelcarationEntity type |
+	aTSNode _declarator
+		ifNotNil: [
+				| fieldsName |
+				fieldsName := self ensureAsOrderedCollection:
+					              (self visit: aTSNode _declarator). "this might return a FamixCFunction"
+
+				fieldsName do: [ :eachName |
+						eachName isString ifTrue: [
+								self flag: 'skip function as attribute'.
+								"for now I skip the field which is a function declartor,
+							they can be represented as an association between the structure 
+							and the function but the current meta-model does not support this as far as I know
+							"
+
+								fieldDelcarationEntity := model newAttribute name: eachName.
+								
+								self hasCurrentEntity ifTrue: [
+									fieldDelcarationEntity parentType: self currentEntity ].
+
+								self setSourceAnchor: fieldDelcarationEntity from: aTSNode.
+								self useCurrentEntity: fieldDelcarationEntity during: [
+										type := self visit: aTSNode _type.
+										self assignTypeTo: fieldDelcarationEntity with: type ] ] ] ]
+		ifNil: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
+			self visit: aTSNode _type ]
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitFieldIdentifier: aTSNode [ 
+	"no fields"
+
+	^ aTSNode sourceText 
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitFunctionDeclarator: aTSNode [
+	"declarator parameters"
+
+	| fnName fnEntity |
+	fnName := aTSNode _declarator sourceText.
+	fnEntity := self ensureEntityExist: FamixCFunction name: fnName.
+	self setSourceAnchor: fnEntity from: aTSNode.
+
+	^ self
+		  useCurrentEntity: fnEntity
+		  during: [ self visit: aTSNode _parameters ]
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitFunctionDefinition: aTSNode [
+	"type declarator body"
+
+	| fnEntity type |
+	type := self visit: aTSNode _type.
+
+	"get the created function entity after visiting the declarator"
+	fnEntity := self visit: aTSNode _declarator.
+
+	self setSourceAnchor: fnEntity from: aTSNode.
+
+	self assignTypeTo: fnEntity with: type.
+
+	^ self
+		  useCurrentEntity: fnEntity
+		  during: [ self visit: aTSNode _body ]
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitIdentifier: aTSNode [
+	"no fields"
+
+	^ aTSNode sourceText
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitInitDeclarator: aTSNode [
+	"declarator value"
+
+	self visit: aTSNode _value.
+	^ self visit: aTSNode _declarator
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitKey: aKey inDictionnary: childrenDictionnary [
+
+	| child |
+	child := childrenDictionnary at: aKey ifAbsent: [ ^ nil ].
+
+	^ child isCollection
+		  ifTrue: [ child collect: [ :c | c accept: self ] ]
+		  ifFalse: [ child accept: self ]
+]
+
+{ #category : 'private - transcript cleaning' }
+FamixCVisitor >> visitNumberLiteral: aTSNode [
+
+	^ super visitChildren: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitParameterDeclaration: aTSNode [
+	"type declarator"
+
+	| paramEntity type |
+	type := self visit: aTSNode _type.
+
+	paramEntity := model newParameterNamed:
+		               aTSNode _declarator sourceText.
+	paramEntity parentBehaviouralEntity: self currentEntity.
+
+	self setSourceAnchor: paramEntity from: aTSNode.
+
+	self assignTypeTo: paramEntity with: type.
+
+	^ paramEntity
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitParameterList: aTSNode [
+	"<unnamedChild>"
+
+	"(fields at: '<unnamedChild>') is a TSNode instance if there is only one parameter"
+
+	"otherwise it will be an orederedCollection"
+
+	"before visiting all parameters, we need to check if they have already been added to the model from their function prototype"
+
+	self currentEntity parameters ifNotEmpty: [ "parameters already in the model"
+		^ self ].
+
+	^ aTSNode collectNamedChild collect: [ :node | self visit: node ]
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitPreprocInclude: aTSNode [
+
+	| includeEntity |
+	
+	includeEntity := FamixCPreprocInclude new
+		                 attributeAt: #path put: aTSNode _path sourceText;
+		                 isLocal: (self isLocalLib: aTSNode _path);
+		                 includedBy: self currentEntity.
+
+	self setSourceAnchor: includeEntity from: aTSNode.
+	model add: includeEntity.
+	^ includeEntity
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitPrimitiveType: aTSNode [
+
+	^ self ensurePrimitiveTypeExist: aTSNode sourceText
+]
+
+{ #category : 'private - transcript cleaning' }
+FamixCVisitor >> visitReturnStatement: aTSNode [
+
+	^ super visitChildren: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitStructSpecifier: aTSNode [
+	"name body"
+
+	^ self visitStructuredType: aTSNode type: FamixCStruct
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitStructuredType: aTSNode type: aFamixCStructuredTypeClass [
+	"name body"
+
+	| structuredTypeEntity structuredTypeName isAnonymous asAttributeType asTypedefType |
+	
+	isAnonymous := aTSNode _name isNil.
+	
+	asAttributeType := false.
+	asTypedefType := false.
+	
+	self hasCurrentEntity ifTrue: [
+			asAttributeType := self currentEntity isAttribute.
+			asTypedefType := self currentEntity class = FamixCAliasType ].
+
+
+	isAnonymous & asAttributeType not & inDeclaration not
+	& asTypedefType not ifTrue: [ "skip entity creation for this case: 
+			 ```
+			struct foo { 
+				struct {
+					int a; // here, a is promoted to outer structure or union
+				}
+			};
+			```
+			"
+			self visit: aTSNode _body.
+			^ nil ].
+
+	structuredTypeName := ''.
+	isAnonymous ifFalse: [ structuredTypeName := aTSNode _name sourceText ].
+
+	aTSNode _body ifNotNil: [
+			structuredTypeEntity := aFamixCStructuredTypeClass new.
+
+			structuredTypeEntity name: structuredTypeName.
+			self setSourceAnchor: structuredTypeEntity from: aTSNode.
+			
+			model add: structuredTypeEntity.
+
+			inDeclaration | asAttributeType ifTrue: [
+				self assignTypeTo: self currentEntity with: structuredTypeEntity ].
+
+			self
+				useCurrentEntity: structuredTypeEntity
+				during: [ self visit: aTSNode _body ] ].
+	^ structuredTypeEntity
+]
+
+{ #category : 'private - transcript cleaning' }
+FamixCVisitor >> visitTranslationUnit: aTSNode [
+
+	^ super visitChildren: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitTypeDefinition: aTSNode [
+	"type declarator"
+
+	| typedefEntity aliasedType |
+	typedefEntity := model newAliasType name:
+		                 aTSNode _declarator sourceText.
+
+	self setSourceAnchor: typedefEntity from: aTSNode.
+
+	self useCurrentEntity: typedefEntity during: [
+			aliasedType := self visit: aTSNode _type.
+			aliasedType isString
+				ifTrue: [
+						aliasedType := self visit: aTSNode _type.
+						typedefEntity attributeAt: #aliasedType put: aliasedType ]
+				ifFalse: [ typedefEntity aliasedType: aliasedType ] ]
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitTypeIdentifier: aTSNode [ 
+	"no fields"
+	^ aTSNode sourceText 
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitTypeNodeInFields: fields [
 
 	| type |
 	type := self visitKey: 'type' inDictionnary: fields.

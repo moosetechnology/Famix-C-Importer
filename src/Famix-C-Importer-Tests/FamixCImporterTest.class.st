@@ -24,7 +24,7 @@ FamixCImporterTest >> setUp [
 
 	super setUp.
 
-	importer := FamixCImporterVisitor new
+	importer := FamixCImporter new.
 ]
 
 { #category : 'running' }

@@ -38,7 +38,7 @@ FamixCImporterModelTest >> setUp [
 
 	super setUp.
 
-	importer := FamixCImporterVisitor new fileName: '/test/file/name'
+	importer := FamixCImporter new fileName: '/test/file/name' asFileReference 
 ]
 
 { #category : 'tests - enum' }

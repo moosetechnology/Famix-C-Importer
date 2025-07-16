@@ -750,3 +750,10 @@ TSCLanguageVisitor >> visitNode: aTSNode [
 		with: aTSNode 
 		with: aTSNode collectFieldNameOfNamedChild
 ]
+
+{ #category : 'visiting' }
+TSCLanguageVisitor >> visitTranslationUnit: aNode [
+	1halt.
+
+"	^ { (self visitKey: '<unnamedChild>' inDictionnary: fields) }"
+]
