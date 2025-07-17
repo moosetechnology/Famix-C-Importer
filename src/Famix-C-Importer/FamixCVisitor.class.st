@@ -5,7 +5,6 @@ Class {
 	#name : 'FamixCVisitor',
 	#superclass : 'FamixTSAbstractVisitor',
 	#instVars : [
-		'parser',
 		'context',
 		'sourceCode',
 		'inDeclaration'
@@ -68,7 +67,12 @@ FamixCVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
 
 	aStringOrType isString
 		ifTrue: [
-		aFamixCTypedEntity attributeAt: #declaredType put: aStringOrType ]
+				self
+					resolve: ((SRIdentifierWithNode identifier: aStringOrType)
+							 expectedKind: FamixCType;
+							 notFoundReplacementEntity: [ :unresolved | 1 halt ];
+							 yourself)
+					foundAction: [ :type :currentEntity | aFamixCTypedEntity typing: type ] ]
 		ifFalse: [ "sometimes when the type of the entity is an anonymous structural entity like struct or union so we need to directly assign it to the entity. Moreover this type is only used there.
 			e.g:
 			```
@@ -83,6 +87,14 @@ FamixCVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
 				
 			"
 			aFamixCTypedEntity typing: (self newEntityTypingFor: aStringOrType) ]
+]
+
+{ #category : 'private' }
+FamixCVisitor >> checkIfPrimitiveType: aString [
+
+	^ (self primitiveTypeParts includesAll: (Character space split: aString))
+		  ifTrue: [ self ensurePrimitiveTypeExist: aString ]
+		  ifFalse: [ aString ]
 ]
 
 { #category : 'accessing' }
@@ -130,6 +142,14 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 		  yourself
 ]
 
+{ #category : 'private' }
+FamixCVisitor >> createStubHeaderFileFrom: aPath [
+
+	^ (model newHeaderFileNamed: aPath)
+		  isStub: true;
+		  yourself
+]
+
 { #category : 'private-entity-creation' }
 FamixCVisitor >> createWriteAccessTo: variableName from: anAssignmentNode [
 
@@ -174,6 +194,15 @@ FamixCVisitor >> ensurePrimitiveTypeExist: aString [
 	^ self ensureEntityExist: FamixCPrimitiveType name: aString
 ]
 
+{ #category : 'private' }
+FamixCVisitor >> ensureStubHeaderFileFrom: aPath [
+
+	self flag: #todo. "Manage paths"
+	^ (model allUsing: FamixCPreprocHeaderFile) 
+			detect: [ :header | header isStub and: [ header name = aPath ] ]
+			ifNone: [ self createStubHeaderFileFrom: aPath ]
+]
+
 { #category : 'accessing' }
 FamixCVisitor >> entityNamed: aName in: aCollection [
 
@@ -193,12 +222,7 @@ FamixCVisitor >> initialize [
 
 	super initialize.
 
-	parser := TSParser new.
-	parser language: TSLanguage cLang.
-
-	context := Stack new.
-	model := FamixCModel new.
-	inDeclaration := false.
+	inDeclaration := false
 ]
 
 { #category : 'accessing' }
@@ -232,9 +256,8 @@ FamixCVisitor >> model: anObject [
 
 { #category : 'accessing' }
 FamixCVisitor >> modelClass [
-	"Should return the model class such as FamixPythonModel."
 
-	^ FamixCModel 
+	^ FamixCModel
 ]
 
 { #category : 'accessing' }
@@ -268,14 +291,13 @@ FamixCVisitor >> newPreprocFolder: aFileReference [
 { #category : 'instance creation' }
 FamixCVisitor >> newPreprocHeaderFile: aFileReference [
 
-	^ model add: (FamixCPreprocHeaderFile new name: aFileReference basename)
+	^ model newHeaderFileNamed: aFileReference basename
 ]
 
-{ #category : 'parsing' }
-FamixCVisitor >> parseString: aString [
-	"return the source code AST"
+{ #category : 'initialization' }
+FamixCVisitor >> primitiveTypeParts [
 
-	^ (parser parseString: aString) rootNode
+	^ { 'bool'. 'char'. 'signed'. 'unsigned'. 'short'. 'int'. 'long'. 'float'. 'double' }
 ]
 
 { #category : 'accessing' }
@@ -732,27 +754,6 @@ FamixCVisitor >> visitCSystemLibString: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCVisitor >> visitCTypeDefinition: aTSNode withFields: fields [
-	"type declarator"
-
-	| typedefEntity aliasedType |
-	typedefEntity := model newAliasType name:
-		                 (self visitKey: 'declarator' inDictionnary: fields).
-
-	self setSourceAnchor: typedefEntity from: aTSNode.
-
-	context push: typedefEntity.
-	aliasedType := self visitKey: 'type' inDictionnary: fields.
-	aliasedType isString
-		ifTrue: [
-				aliasedType := self visitTypeNodeInFields: fields.
-				typedefEntity attributeAt: #aliasedType put: aliasedType ]
-		ifFalse: [ typedefEntity aliasedType: aliasedType ].
-
-	context pop
-]
-
-{ #category : 'visiting' }
 FamixCVisitor >> visitCTypeIdentifier: aTSNode withFields: fields [
 	"no fields"
 1halt.
@@ -797,7 +798,7 @@ FamixCVisitor >> visitDeclaration: aTSNode [
 		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
 	"check if it is a declaration inside a function, for local variable"
 
-	(self hasCurrentEntity and: [ self currentEntity class = FamixCFunction ])
+	(self hasCurrentEntity and: [ self currentEntity isFunction ])
 		ifTrue: [
 				| identifiers |
 				identifiers := self ensureAsOrderedCollection: (self visit: aTSNode _declarator).
@@ -819,6 +820,7 @@ FamixCVisitor >> visitDeclaration: aTSNode [
 		ifFalse: [
 				| entity |
 				entity := self visit: aTSNode _declarator.
+				
 				entity class = FamixCFunction ifTrue: [
 						self
 							useCurrentEntity: entity
@@ -851,7 +853,7 @@ FamixCVisitor >> visitEnumSpecifier: aTSNode [
 					self currentEntity aliasedType: enumEntity ].
 
 				enumAsAttributeType := self hasCurrentEntity and: [
-					                       self currentEntity class = FamixCAttribute ].
+					                       self currentEntity isAttribute ].
 				enumAsAttributeType | inDeclaration ifTrue: [
 					self assignTypeTo: self currentEntity with: enumEntity ].
 				self
@@ -1022,11 +1024,18 @@ FamixCVisitor >> visitParameterList: aTSNode [
 FamixCVisitor >> visitPreprocInclude: aTSNode [
 
 	| includeEntity |
-	
 	includeEntity := FamixCPreprocInclude new
-		                 attributeAt: #path put: aTSNode _path sourceText;
 		                 isLocal: (self isLocalLib: aTSNode _path);
 		                 includedBy: self currentEntity.
+
+	self flag: #todo. "Add tests on stub includes."
+	self flag: #todo. "Add tests that stub header files are stub and on source anchors."
+	self flag: #todo. "In case we have a non local import we could directly create and set the stub header file to not resolve something we know is a stub"
+	self
+		resolve: ((FamixCIncludesResolvable path: (self visit: aTSNode _path))
+				 notFoundReplacementEntity: [ :unresolved :currentEntity | self ensureStubHeaderFileFrom: unresolved path ];
+				 yourself)
+		foundAction: [ :entity :currentEntity | includeEntity included: entity ].
 
 	self setSourceAnchor: includeEntity from: aTSNode.
 	model add: includeEntity.
@@ -1043,6 +1052,21 @@ FamixCVisitor >> visitPrimitiveType: aTSNode [
 FamixCVisitor >> visitReturnStatement: aTSNode [
 
 	^ super visitChildren: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitSizedTypeSpecifier: aNode [
+
+	^ self checkIfPrimitiveType: aNode sourceText
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitStringLiteral: aTSNode [
+
+	^ aTSNode collectNamedChild ifNotEmpty: [ :children |
+			  children size = 1
+				  ifTrue: [ children anyOne sourceText ]
+				  ifFalse: [ self error: 'I though this should not happen but if we are here it''s because it does... So we need to check what to do in that case.' ] ]
 ]
 
 { #category : 'visiting' }
@@ -1101,6 +1125,12 @@ FamixCVisitor >> visitStructuredType: aTSNode type: aFamixCStructuredTypeClass [
 	^ structuredTypeEntity
 ]
 
+{ #category : 'visiting' }
+FamixCVisitor >> visitSystemLibString: aNode [
+
+	^ aNode sourceText
+]
+
 { #category : 'private - transcript cleaning' }
 FamixCVisitor >> visitTranslationUnit: aTSNode [
 
@@ -1112,17 +1142,26 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 	"type declarator"
 
 	| typedefEntity aliasedType |
-	typedefEntity := model newAliasType name:
-		                 aTSNode _declarator sourceText.
+	typedefEntity := model newAliasType name: aTSNode _declarator sourceText.
+
+	typedefEntity typeContainer: self currentEntity.
 
 	self setSourceAnchor: typedefEntity from: aTSNode.
 
 	self useCurrentEntity: typedefEntity during: [
 			aliasedType := self visit: aTSNode _type.
+
 			aliasedType isString
 				ifTrue: [
 						aliasedType := self visit: aTSNode _type.
-						typedefEntity attributeAt: #aliasedType put: aliasedType ]
+
+
+						self
+							resolve: ((SRIdentifierWithNode identifier: aliasedType)
+									 expectedKind: FamixCType;
+									 notFoundReplacementEntity: [ :unresolved :currentEntity | 1 halt ];
+									 yourself)
+							foundAction: [ :type :currentEntity | typedefEntity aliasedType: type ] ]
 				ifFalse: [ typedefEntity aliasedType: aliasedType ] ]
 ]
 
