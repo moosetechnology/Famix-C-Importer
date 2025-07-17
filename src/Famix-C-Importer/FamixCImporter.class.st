@@ -38,13 +38,22 @@ FamixCImporter >> importFileReference: aFileReference [
 
 	aFileReference isFile
 		ifTrue: [
+				| fileEntity |
 				(self isCFile: aFileReference) ifFalse: [ ^ self ].
-				self importFile: aFileReference.
-				self traceCr: fileName ]
+
+				fileEntity := aFileReference extension = 'c'
+					              ifTrue: [
+					              visitor newPreprocCompilationUnit: aFileReference ]
+					              ifFalse: [
+					              visitor newPreprocHeaderFile: aFileReference ].
+
+				visitor
+					useCurrentEntity: fileEntity
+					during: [ self importFile: aFileReference ] ]
 		ifFalse: [
 				aFileReference pathString ~= visitor model rootFolder ifTrue: [
 					visitor newPreprocFolder: aFileReference ].
-				
+
 				aFileReference children do: [ :each |
 					self importFileReference: each ].
 

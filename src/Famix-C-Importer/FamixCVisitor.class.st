@@ -183,7 +183,9 @@ FamixCVisitor >> entityNamed: aName in: aCollection [
 { #category : 'accessing' }
 FamixCVisitor >> inFunctionContext [
 
-	^ context isNotEmpty and: [ context top class = FamixCFunction ]
+	self withCurrentEntityDo: [ :entity |
+		^ entity class = FamixCFunction ].
+	^ false
 ]
 
 { #category : 'initialization' }
@@ -301,6 +303,27 @@ FamixCVisitor >> sourceCode: anObject [
 FamixCVisitor >> textFromSourceText: aTSNode [
 
 	^ aTSNode textFromSourceText: sourceCode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitArrayDeclarator: aTSNode [
+	"declarator size"
+
+	self visit: aTSNode _size.
+	^ self visit: aTSNode _declarator
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitAssignmentExpression: aTSNode [
+	"left right"
+
+	| left right |
+	left := self visit: aTSNode _left.
+	right := self visit: aTSNode _right.
+
+	self inFunctionContext ifTrue: [
+			self createWriteAccessTo: left from: aTSNode.
+			self createReadAccessIfVariableTo: right from: aTSNode ]
 ]
 
 { #category : 'visiting' }
@@ -774,7 +797,7 @@ FamixCVisitor >> visitDeclaration: aTSNode [
 		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
 	"check if it is a declaration inside a function, for local variable"
 
-	(self hasCurrentEntity and: [ self currentEntity isFunction ])
+	(self hasCurrentEntity and: [ self currentEntity class = FamixCFunction ])
 		ifTrue: [
 				| identifiers |
 				identifiers := self ensureAsOrderedCollection: (self visit: aTSNode _declarator).
@@ -805,6 +828,56 @@ FamixCVisitor >> visitDeclaration: aTSNode [
 
 
 	inDeclaration := false
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitEnumSpecifier: aTSNode [
+	"name body"
+
+	| enumEntity enumName enumAsAttributeType |
+	enumName := ''.
+	aTSNode _name ifNotNil: [ enumName := aTSNode _name sourceText ].
+
+
+	aTSNode _body
+		ifNotNil: [
+				enumEntity := FamixCEnum new name: enumName.
+				self setSourceAnchor: enumEntity from: aTSNode.
+				model add: enumEntity.
+
+				"parent type resolution"
+				(self hasCurrentEntity and: [
+					 self currentEntity class = FamixCAliasType ]) ifTrue: [
+					self currentEntity aliasedType: enumEntity ].
+
+				enumAsAttributeType := self hasCurrentEntity and: [
+					                       self currentEntity class = FamixCAttribute ].
+				enumAsAttributeType | inDeclaration ifTrue: [
+					self assignTypeTo: self currentEntity with: enumEntity ].
+				self
+					useCurrentEntity: enumEntity
+					during: [ self visit: aTSNode _body ] ]
+		ifNil: [
+				enumEntity := self detect: FamixCEnum name: enumName.
+				enumEntity ifNotNil: [
+					self assignTypeTo: self currentEntity with: enumEntity ] ].
+
+
+	^ enumEntity
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitEnumerator: aTSNode [
+	"tokony hisy value eto fa tsy name ihany"
+
+	| enumValueEntity |
+	enumValueEntity := (model newEnumValueNamed:
+			                    (self visit: aTSNode _name))
+		                   parentEnum: self currentEntity;
+		                   yourself.
+	self setSourceAnchor: enumValueEntity from: aTSNode.
+
+	^ enumValueEntity
 ]
 
 { #category : 'visiting' }
@@ -1068,4 +1141,11 @@ FamixCVisitor >> visitTypeNodeInFields: fields [
 		self ensurePrimitiveTypeExist: type ].
 
 	^ type
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitUnionSpecifier: aTSNode [
+	"name body"
+
+	^ self visitStructuredType: aTSNode type: FamixCUnion
 ]
