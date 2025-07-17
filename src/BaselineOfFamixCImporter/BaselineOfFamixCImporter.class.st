@@ -19,9 +19,9 @@ BaselineOfFamixCImporter >> baseline: spec [
 BaselineOfFamixCImporter >> defineDependencies: spec [
 
 	spec
-		baseline: 'TreeSitter'
+		baseline: 'TreeSitterFamixIntegration'
 		with: [
-			spec repository: 'github://Evref-BL/Pharo-Tree-Sitter:main/src' ];
+			spec repository: 'github://moosetechnology/TreeSitterFamixIntegration:main/src' ];
 		baseline: 'FamixCpp'
 		with: [
 			spec repository: 'github://moosetechnology/Famix-Cpp:main/src' ]
@@ -40,7 +40,7 @@ BaselineOfFamixCImporter >> definePackages: spec [
 
 	spec
 		package: 'Famix-C-Importer'
-		with: [ spec requires: #( 'TreeSitter' 'FamixCpp' ) ];
+		with: [ spec requires: #( 'TreeSitterFamixIntegration' 'FamixCpp' ) ];
 		package: 'Famix-C-Importer-Tests'
 		with: [ spec requires: #( 'Famix-C-Importer' ) ]
 ]
