@@ -274,28 +274,32 @@ FamixCImporterModelTest >> testCommentSingleLine [
 
 { #category : 'tests' }
 FamixCImporterModelTest >> testEnsureEntityExistForExistingEntity [
+	
+	| sourceCode |
+	sourceCode := '
+	void aFunction(){}
+	'.
 
-	importer model newFunctionNamed: 'aFunction'.
+	importer importFromString: sourceCode.
 
 	self assert:
-		(importer ensureEntityExist: FamixCFunction name: 'aFunction')
+		(importer visitor ensureEntityExist: FamixCFunction name: 'aFunction')
 			isFunction.
 	self
 		assert:
-		(importer ensureEntityExist: FamixCFunction name: 'aFunction') name
+		(importer visitor ensureEntityExist: FamixCFunction name: 'aFunction') name
 		equals: 'aFunction'
 ]
 
 { #category : 'tests' }
 FamixCImporterModelTest >> testEnsureEntityExistForNonExistingEntity [
 
-	self assert:
-		(importer ensureEntityExist: FamixCFunction name: 'aFunction')
-			isFunction.
-	self
-		assert:
-		(importer ensureEntityExist: FamixCFunction name: 'aFunction') name
-		equals: 'aFunction'
+	| sourceCode |
+	sourceCode := ''.
+
+	importer importFromString: sourceCode.
+	self assert: (importer visitor ensureEntityExist: FamixCFunction name: 'aFunction') isFunction.
+	self assert: (importer visitor ensureEntityExist: FamixCFunction name: 'aFunction') name equals: 'aFunction'
 ]
 
 { #category : 'tests - enum' }
