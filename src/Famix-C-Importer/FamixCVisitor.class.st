@@ -72,7 +72,7 @@ FamixCVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
 							 expectedKind: FamixCType;
 							 notFoundReplacementEntity: [ :unresolved | 1 halt ];
 							 yourself)
-					foundAction: [ :type :currentEntity | aFamixCTypedEntity typing: type ] ]
+					foundAction: [ :type :currentEntity | aFamixCTypedEntity typing: (self newEntityTypingFor: type) ] ]
 		ifFalse: [ "sometimes when the type of the entity is an anonymous structural entity like struct or union so we need to directly assign it to the entity. Moreover this type is only used there.
 			e.g:
 			```
@@ -624,12 +624,6 @@ FamixCVisitor >> visitCParenthesizedExpression: aTSNode withFields: fields [
 ]
 
 { #category : 'visiting' }
-FamixCVisitor >> visitCPointerDeclarator: aTSNode withFields: fields [
-
-	^ self visitKey: 'declarator' inDictionnary: fields
-]
-
-{ #category : 'visiting' }
 FamixCVisitor >> visitCPointerExpression: aTSNode withFields: fields [
 	"argument"
 
@@ -794,8 +788,7 @@ FamixCVisitor >> visitDeclaration: aTSNode [
 
 	inDeclaration := true.
 
-	self flag:
-		'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
+	self flag: 'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
 	"check if it is a declaration inside a function, for local variable"
 
 	(self hasCurrentEntity and: [ self currentEntity isFunction ])
@@ -805,27 +798,17 @@ FamixCVisitor >> visitDeclaration: aTSNode [
 
 				identifiers do: [ :eachIdentifier |
 						| localVarEntity |
-						localVarEntity := (model newLocalVariableNamed:
-							                   eachIdentifier sourceText)
-							                  parentBehaviouralEntity: self currentEntity.
+						localVarEntity := (model newLocalVariableNamed: eachIdentifier sourceText) parentBehaviouralEntity: self currentEntity.
 
 						self setSourceAnchor: localVarEntity from: aTSNode.
-
-						self
-							useCurrentEntity: localVarEntity
-							during: [
-							self
-								assignTypeTo: localVarEntity
-								with: (self visit: aTSNode _type) ] ] ]
+						self assignTypeTo: localVarEntity with: (self visit: aTSNode _type).
+						"self useCurrentEntity: localVarEntity during: [  ]."
+						] ]
 		ifFalse: [
 				| entity |
 				entity := self visit: aTSNode _declarator.
-				
-				entity class = FamixCFunction ifTrue: [
-						self
-							useCurrentEntity: entity
-							during: [
-							self assignTypeTo: entity with: (self visit: aTSNode _type) ] ] ].
+
+				entity class = FamixCFunction ifTrue: [ self useCurrentEntity: entity during: [ self assignTypeTo: entity with: (self visit: aTSNode _type) ] ] ].
 
 
 
@@ -890,8 +873,7 @@ FamixCVisitor >> visitFieldDeclaration: aTSNode [
 	aTSNode _declarator
 		ifNotNil: [
 				| fieldsName |
-				fieldsName := self ensureAsOrderedCollection:
-					              (self visit: aTSNode _declarator). "this might return a FamixCFunction"
+				fieldsName := self ensureAsOrderedCollection: (self visit: aTSNode _declarator). "this might return a FamixCFunction"
 
 				fieldsName do: [ :eachName |
 						eachName isString ifTrue: [
@@ -901,17 +883,20 @@ FamixCVisitor >> visitFieldDeclaration: aTSNode [
 							and the function but the current meta-model does not support this as far as I know
 							"
 
-								fieldDelcarationEntity := model newAttribute name: eachName.
-								
-								self hasCurrentEntity ifTrue: [
-									fieldDelcarationEntity parentType: self currentEntity ].
+								fieldDelcarationEntity := model newAttribute
+									                          name: eachName;
+									                          parentType: self currentEntity.
 
 								self setSourceAnchor: fieldDelcarationEntity from: aTSNode.
-								self useCurrentEntity: fieldDelcarationEntity during: [
-										type := self visit: aTSNode _type.
-										self assignTypeTo: fieldDelcarationEntity with: type ] ] ] ]
-		ifNil: [ "this field declaration node is an anonymous struct and doesn't have field_identifier"
-			self visit: aTSNode _type ]
+								type := self visit: aTSNode _type.
+								self assignTypeTo: fieldDelcarationEntity with: type ] ] ]
+		ifNil: [ "this field declaration node is an anonymous struct and doesn't have field_identifier" self visit: aTSNode _type ]
+]
+
+{ #category : 'private - transcript cleaning' }
+FamixCVisitor >> visitFieldDeclarationList: aTSNode [
+
+	^ super visitChildren: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -1021,6 +1006,18 @@ FamixCVisitor >> visitParameterList: aTSNode [
 ]
 
 { #category : 'visiting' }
+FamixCVisitor >> visitPointerDeclarator: aTSNode [
+
+	^ self visit: aTSNode _declarator
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitPointerExpression: aTSNode [
+
+	^ self visitChildren: aTSNode
+]
+
+{ #category : 'visiting' }
 FamixCVisitor >> visitPreprocInclude: aTSNode [
 
 	| includeEntity |
@@ -1081,19 +1078,16 @@ FamixCVisitor >> visitStructuredType: aTSNode type: aFamixCStructuredTypeClass [
 	"name body"
 
 	| structuredTypeEntity structuredTypeName isAnonymous asAttributeType asTypedefType |
-	
 	isAnonymous := aTSNode _name isNil.
-	
+
 	asAttributeType := false.
 	asTypedefType := false.
-	
-	self hasCurrentEntity ifTrue: [
-			asAttributeType := self currentEntity isAttribute.
-			asTypedefType := self currentEntity class = FamixCAliasType ].
 
+	self withCurrentEntityDo: [ :entity |
+			asAttributeType := entity class inheritsFrom: FamixCStructuredType . "either a struct or union"
+			asTypedefType := entity class = FamixCAliasType ].
 
-	isAnonymous & asAttributeType not & inDeclaration not
-	& asTypedefType not ifTrue: [ "skip entity creation for this case: 
+	(isAnonymous and: [ asAttributeType not and: [ inDeclaration not and: [ asTypedefType not ] ] ]) ifTrue: [ "skip entity creation for this case: 
 			 ```
 			struct foo { 
 				struct {
@@ -1108,21 +1102,22 @@ FamixCVisitor >> visitStructuredType: aTSNode type: aFamixCStructuredTypeClass [
 	structuredTypeName := ''.
 	isAnonymous ifFalse: [ structuredTypeName := aTSNode _name sourceText ].
 
-	aTSNode _body ifNotNil: [
-			structuredTypeEntity := aFamixCStructuredTypeClass new.
+	aTSNode _body
+		ifNotNil: [
+				structuredTypeEntity := aFamixCStructuredTypeClass named: structuredTypeName.
 
-			structuredTypeEntity name: structuredTypeName.
-			self setSourceAnchor: structuredTypeEntity from: aTSNode.
-			
-			model add: structuredTypeEntity.
+				self setSourceAnchor: structuredTypeEntity from: aTSNode.
+				
+				structuredTypeEntity typeContainer: self currentEntity.
 
-			inDeclaration | asAttributeType ifTrue: [
-				self assignTypeTo: self currentEntity with: structuredTypeEntity ].
+				model add: structuredTypeEntity.
 
-			self
-				useCurrentEntity: structuredTypeEntity
-				during: [ self visit: aTSNode _body ] ].
-	^ structuredTypeEntity
+				(inDeclaration or: [ asAttributeType ]) ifTrue: [ "self assignTypeTo: self currentEntity with: structuredTypeEntity" ].
+
+				self useCurrentEntity: structuredTypeEntity during: [ self visit: aTSNode _body ].
+				
+				^ structuredTypeEntity ]
+		ifNil: [ ^ structuredTypeName ]
 ]
 
 { #category : 'visiting' }
@@ -1134,7 +1129,9 @@ FamixCVisitor >> visitSystemLibString: aNode [
 { #category : 'private - transcript cleaning' }
 FamixCVisitor >> visitTranslationUnit: aTSNode [
 
-	^ super visitChildren: aTSNode
+	^ super visitChildren: aTSNode.
+	self tag: 'TODO' "handle comments".
+	"FamixCCommentVisitor visitor: self importCommentsOf: aTSNode"
 ]
 
 { #category : 'visiting' }
