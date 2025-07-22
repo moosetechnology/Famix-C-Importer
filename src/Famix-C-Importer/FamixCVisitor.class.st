@@ -114,11 +114,11 @@ FamixCVisitor >> createDereferencedInvocation: aTSNode [
 
 	| invocation |
 	invocation := FamixCDereferencedInvocation new
-		              signature: (aTSNode textFromSourceText: sourceCode);
-		              sender: context top.
-		              
+		              signature: aTSNode sourceText;
+		              sender: self currentEntity.
+
 	self setSourceAnchor: invocation from: aTSNode.
-		              
+
 	model add: invocation.
 	^ invocation
 ]
@@ -134,17 +134,24 @@ FamixCVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
 { #category : 'private-entity-creation' }
 FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 
-	^ model newAccess
-		  accessor: context top;
-		  isWrite: false;
-		  attributeAt: #variable put: variableName;
-		  in: [ :access | self setSourceAnchor: access from: aTSNode ];
-		  yourself
+	| access |
+	access := model newAccess
+		          accessor: self currentEntity;
+		          isWrite: false;
+		          in: [ :access | self setSourceAnchor: access from: aTSNode ];
+		          yourself.
+
+	self
+		resolve: ((SRIdentifierWithNode identifier: variableName)
+				 expectedKind: FamixCLocalVariable;
+				 yourself)
+		foundAction: [ :variable :currentEntity | access variable: variable ].
+		
+	^ access
 ]
 
 { #category : 'private' }
 FamixCVisitor >> createStubHeaderFileFrom: aPath [
-
 	^ (model newHeaderFileNamed: aPath)
 		  isStub: true;
 		  yourself
@@ -153,12 +160,18 @@ FamixCVisitor >> createStubHeaderFileFrom: aPath [
 { #category : 'private-entity-creation' }
 FamixCVisitor >> createWriteAccessTo: variableName from: anAssignmentNode [
 
-	^ model newAccess
-		  accessor: self currentEntity;
-		  isWrite: true;
-		  in: [ :access | self setSourceAnchor: access from: anAssignmentNode ];
-		  attributeAt: #variable put: variableName;
-		  yourself
+	| access |
+	access := model newAccess
+		          accessor: self currentEntity;
+		          isWrite: true;
+		          in: [ :access | self setSourceAnchor: access from: anAssignmentNode ];
+		          yourself.
+	self
+		resolve: ((SRIdentifierWithNode identifier: variableName)
+				 expectedKind: FamixCLocalVariable;
+				 yourself)
+		foundAction: [ :variable :currentEntity | access variable: variable ].
+	^ access
 ]
 
 { #category : 'accessing' }
@@ -198,7 +211,7 @@ FamixCVisitor >> ensurePrimitiveTypeExist: aString [
 FamixCVisitor >> ensureStubHeaderFileFrom: aPath [
 
 	self flag: #todo. "Manage paths"
-	^ (model allUsing: FamixCPreprocHeaderFile) 
+	^ (model allWithType: FamixCPreprocHeaderFile) 
 			detect: [ :header | header isStub and: [ header name = aPath ] ]
 			ifNone: [ self createStubHeaderFileFrom: aPath ]
 ]
@@ -328,6 +341,15 @@ FamixCVisitor >> textFromSourceText: aTSNode [
 ]
 
 { #category : 'visiting' }
+FamixCVisitor >> visitArgumentList: aTSNode [
+	"<unnamedChild>"
+
+	| argumentList |
+	argumentList := self visitChildren: aTSNode.
+	argumentList do: [ :eachArgument | self createReadAccessIfVariableTo: eachArgument from: aTSNode ]
+]
+
+{ #category : 'visiting' }
 FamixCVisitor >> visitArrayDeclarator: aTSNode [
 	"declarator size"
 
@@ -342,10 +364,23 @@ FamixCVisitor >> visitAssignmentExpression: aTSNode [
 	| left right |
 	left := self visit: aTSNode _left.
 	right := self visit: aTSNode _right.
-
+	
 	self inFunctionContext ifTrue: [
 			self createWriteAccessTo: left from: aTSNode.
+			(right isArray and: [ right size = 1 ]) ifTrue: [ right := right first ].
 			self createReadAccessIfVariableTo: right from: aTSNode ]
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitBinaryExpression: aTSNode [
+	"left right"
+
+	| left right |
+	left := self visit: aTSNode _left.
+	self createReadAccessIfVariableTo: left from: aTSNode.
+
+	right := self visit: aTSNode _right.
+	self createReadAccessIfVariableTo: right from: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -776,6 +811,17 @@ FamixCVisitor >> visitCUpdateExpression: aTSNode withFields: fields [
 	^ varName
 ]
 
+{ #category : 'visiting' }
+FamixCVisitor >> visitCallExpression: aTSNode [
+	"function arguments"
+
+	| invocation fnName |
+	invocation := self createDereferencedInvocation: aTSNode.
+	fnName := self visit: aTSNode _function.
+	invocation attributeAt: #name put: fnName.
+	self visit: aTSNode _arguments
+]
+
 { #category : 'private - transcript cleaning' }
 FamixCVisitor >> visitCompoundStatement: aTSNode [
 
@@ -865,6 +911,12 @@ FamixCVisitor >> visitEnumerator: aTSNode [
 	^ enumValueEntity
 ]
 
+{ #category : 'private - transcript cleaning' }
+FamixCVisitor >> visitExpressionStatement: aTSNode [
+
+	^ super visitChildren: aTSNode
+]
+
 { #category : 'visiting' }
 FamixCVisitor >> visitFieldDeclaration: aTSNode [
 	"type declarator"
@@ -897,6 +949,13 @@ FamixCVisitor >> visitFieldDeclaration: aTSNode [
 FamixCVisitor >> visitFieldDeclarationList: aTSNode [
 
 	^ super visitChildren: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitFieldExpression: aTSNode [
+	"field argument"
+
+	^ self visit: aTSNode _argument
 ]
 
 { #category : 'visiting' }
@@ -1006,6 +1065,21 @@ FamixCVisitor >> visitParameterList: aTSNode [
 ]
 
 { #category : 'visiting' }
+FamixCVisitor >> visitParenthesizedDeclarator: aTSNode [
+
+	^ self visitChildren: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitParenthesizedExpression: aTSNode [
+	"<unnamedChild>"
+
+	| expression |
+	expression := self visitChildren: aTSNode.
+	self createReadAccessIfVariableTo: expression first from: aTSNode
+]
+
+{ #category : 'visiting' }
 FamixCVisitor >> visitPointerDeclarator: aTSNode [
 
 	^ self visit: aTSNode _declarator
@@ -1047,8 +1121,14 @@ FamixCVisitor >> visitPrimitiveType: aTSNode [
 
 { #category : 'private - transcript cleaning' }
 FamixCVisitor >> visitReturnStatement: aTSNode [
+	"<unnamedChild>"
 
-	^ super visitChildren: aTSNode
+	| returnedExpr |
+	returnedExpr := self visitChildren: aTSNode.
+
+	returnedExpr do: [ :each | self createReadAccessIfVariableTo: each from: aTSNode. ].
+	
+	^ returnedExpr
 ]
 
 { #category : 'visiting' }
@@ -1121,6 +1201,13 @@ FamixCVisitor >> visitStructuredType: aTSNode type: aFamixCStructuredTypeClass [
 ]
 
 { #category : 'visiting' }
+FamixCVisitor >> visitSubscriptExpression: aTSNode [
+	"index argument"
+
+	^ self visit: aTSNode _argument
+]
+
+{ #category : 'visiting' }
 FamixCVisitor >> visitSystemLibString: aNode [
 
 	^ aNode sourceText
@@ -1184,4 +1271,16 @@ FamixCVisitor >> visitUnionSpecifier: aTSNode [
 	"name body"
 
 	^ self visitStructuredType: aTSNode type: FamixCUnion
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitUpdateExpression: aTSNode [ 
+
+	| varName |
+	varName := self visit: aTSNode _argument.
+
+	self inFunctionContext ifTrue: [
+		self createWriteAccessTo: varName from: aTSNode ].
+
+	^ varName
 ]
