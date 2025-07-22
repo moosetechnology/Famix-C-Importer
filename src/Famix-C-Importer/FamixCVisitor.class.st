@@ -1139,7 +1139,7 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 	"type declarator"
 
 	| typedefEntity aliasedType |
-	typedefEntity := model newAliasType name: aTSNode _declarator sourceText.
+	typedefEntity := model newAliasType name: (self visit: aTSNode _declarator).
 
 	typedefEntity typeContainer: self currentEntity.
 
