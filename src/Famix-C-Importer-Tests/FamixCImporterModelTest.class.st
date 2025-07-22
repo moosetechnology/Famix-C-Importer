@@ -161,11 +161,12 @@ FamixCImporterModelTest >> testAnonymousStructDeclaration [
 
 	structEntities := importer model allWithType: FamixCStruct.
 	attributeEntities := importer model allWithType: FamixCAttribute.
-	
+
 	self assert: structEntities size equals: 1.
-	self assert: structEntities anyOne name equals: ''.
+	self assert: structEntities anyOne isAnonymous.
 	self assert: attributeEntities size equals: 1.
 	self assert: attributeEntities anyOne name equals: 'a'.
+	self assert: attributeEntities anyOne parentType isAnonymous.
 	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'.
 	self assert: importer model allLocalVariables anyOne declaredType class equals: FamixCStruct
 ]
@@ -218,7 +219,7 @@ FamixCImporterModelTest >> testAnonymousUnionDeclaration [
 	attributeEntities := importer model allWithType: FamixCAttribute.
 	
 	self assert: unionEntities size equals: 1.
-	self assert: unionEntities anyOne name equals: ''.
+	self assert: unionEntities anyOne isAnonymous.
 	self assert: attributeEntities size equals: 1.
 	self assert: attributeEntities anyOne name equals: 'a'.
 	self assert: importer model allLocalVariables anyOne name equals: 'aVariable'
@@ -1519,7 +1520,7 @@ FamixCImporterModelTest >> testStructFieldAnonymousStruct [
 	struct WithAnonymousStruct{
 		struct { 
 			struct { 
-				int a; // fields a is promoted to most non anonymous outer struct
+				int a; 
 			 };
 		}; 
 	};
@@ -1527,22 +1528,11 @@ FamixCImporterModelTest >> testStructFieldAnonymousStruct [
 
 	importer importFromString: sourceCode.
 
-	self
-		assert: (importer model allWithType: FamixCStruct) size
-		equals: 1.
-	self
-		assert: (importer model allWithType: FamixCStruct) anyOne name
-		equals: 'WithAnonymousStruct'.
-	self
-		assert: (importer model allWithType: FamixCAttribute) size
-		equals: 1.
-	self
-		assert: (importer model allWithType: FamixCAttribute) anyOne name
-		equals: 'a'.
-	self
-		assert:
-		(importer model allWithType: FamixCAttribute) anyOne parentType name
-		equals: 'WithAnonymousStruct'
+	self assert: (importer model allWithType: FamixCStruct) size equals: 3.
+	self assert: (importer model allWithType: FamixCStruct) first name equals: 'WithAnonymousStruct'.
+	self assert: (importer model allWithType: FamixCAttribute) size equals: 1.
+	self assert: (importer model allWithType: FamixCAttribute) anyOne name equals: 'a'.
+	self assert: (importer model allWithType: FamixCAttribute) anyOne parentType isAnonymous
 ]
 
 { #category : 'tests - struct' }
@@ -1982,7 +1972,7 @@ FamixCImporterModelTest >> testUnionFieldAnonymousUnion [
 	union WithAnonymousUnion{
 		union { 
 			union { 
-				int a; // fields a is promoted to most non anonymous outer union
+				int a; 
 			 };
 		}; 
 	};
@@ -1990,22 +1980,11 @@ FamixCImporterModelTest >> testUnionFieldAnonymousUnion [
 
 	importer importFromString: sourceCode.
 
-	self
-		assert: (importer model allWithType: FamixCUnion) size
-		equals: 1.
-	self
-		assert: (importer model allWithType: FamixCUnion) anyOne name
-		equals: 'WithAnonymousUnion'.
-	self
-		assert: (importer model allWithType: FamixCAttribute) size
-		equals: 1.
-	self
-		assert: (importer model allWithType: FamixCAttribute) anyOne name
-		equals: 'a'.
-	self
-		assert:
-		(importer model allWithType: FamixCAttribute) anyOne parentType name
-		equals: 'WithAnonymousUnion'
+	self assert: (importer model allWithType: FamixCUnion) size equals: 3.
+	self assert: (importer model allWithType: FamixCUnion) first name equals: 'WithAnonymousUnion'.
+	self assert: (importer model allWithType: FamixCAttribute) size equals: 1.
+	self assert: (importer model allWithType: FamixCAttribute) anyOne name equals: 'a'.
+	self assert: (importer model allWithType: FamixCAttribute) anyOne parentType isAnonymous
 ]
 
 { #category : 'tests - union' }
