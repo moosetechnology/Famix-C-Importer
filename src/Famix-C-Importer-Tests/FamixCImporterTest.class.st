@@ -64,7 +64,7 @@ FamixCImporterTest >> testImportFromCFile [
 	tempCFile := self
 		             createFile: 'temp.c'
 		             content: 'int main(){return 0;}'.
-	model := importer importFromFile: tempCFile.
+	model := importer import: tempCFile.
 
 	self assert: model isMooseModel
 ]
@@ -91,7 +91,7 @@ FamixCImporterTest >> testImportFromHeaderFile [
 
 	| tempHeaderFile |
 	tempHeaderFile := self createFile: 'temp.h' content: 'int func();'.
-	model := importer importFromFile: tempHeaderFile.
+	model := importer import: tempHeaderFile.
 
 	self assert: model isMooseModel
 ]

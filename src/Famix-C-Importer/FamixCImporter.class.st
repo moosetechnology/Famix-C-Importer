@@ -61,24 +61,6 @@ FamixCImporter >> importFileReference: aFileReference [
 ]
 
 { #category : 'importer' }
-FamixCImporter >> importFromFile: aFileReference [
-
-	| fileEntity |
-	fileEntity := aFileReference extension = 'c'
-		              ifTrue: [
-		              self newPreprocCompilationUnit: aFileReference ]
-		              ifFalse: [ self newPreprocHeaderFile: aFileReference ].
-		
-	fileName := self relativePath: aFileReference.
-
-	visitor context push: fileEntity.
-	(self parseString: aFileReference contents) accept: self.
-	visitor context pop.
-
-	^visitor model
-]
-
-{ #category : 'importer' }
 FamixCImporter >> importFromString: aString [
 
 	| rootNode file |
