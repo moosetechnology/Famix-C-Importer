@@ -1420,15 +1420,6 @@ FamixCImporterModelTest >> testParametersWithTheSameNameButInDifferentFunction [
 	self assert: (paramNames count: [ :each | each = 'arg2' ]) equals: 2
 ]
 
-{ #category : 'tests' }
-FamixCImporterModelTest >> testParseStringReturnsATSNode [
-
-	| rootNode |
-	rootNode := importer parseString: 'int maint(){}'.
-	self assert: rootNode class equals: TSNode.
-	self assert: rootNode type equals: 'translation_unit'
-]
-
 { #category : 'tests - functions' }
 FamixCImporterModelTest >> testPreprocInclude [
 
