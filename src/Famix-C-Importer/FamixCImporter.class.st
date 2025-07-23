@@ -71,10 +71,8 @@ FamixCImporter >> importFromFile: aFileReference [
 		
 	fileName := self relativePath: aFileReference.
 
-	visitor sourceCode: aFileReference contents.
-
 	visitor context push: fileEntity.
-	(self parseString: visitor sourceCode) accept: self.
+	(self parseString: aFileReference contents) accept: self.
 	visitor context pop.
 
 	^visitor model
