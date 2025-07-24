@@ -254,7 +254,7 @@ FamixCImporterModelTest >> testCommentMultipleLine [
 	a multiple line comment
 	*/
 	'.
-	self tag: 'TODO'. "currently cPreprocFile cannot contain comments"
+	self flag: 'TODO'. "currently cPreprocFile cannot contain comments"
 
 	importer importFromString: sourceCode.
 
@@ -514,7 +514,7 @@ FamixCImporterModelTest >> testFunctionInvocationResolution [
 		return 0;
 	}
 	'.
-	self tag: 'TODO'. "this depends on the MM which doesn't support function in preprocCFile"
+	self flag: 'TODO'. "this depends on the MM which doesn't support function in preprocCFile"
 	importer importFromString: sourceCode.
 
 	invocation := (importer model allWithType:
