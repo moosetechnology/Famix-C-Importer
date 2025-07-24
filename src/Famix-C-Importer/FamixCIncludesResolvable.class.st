@@ -59,7 +59,7 @@ FamixCIncludesResolvable >> resolveInScope: aScope currentEntity: currentEntity 
 	"For now we are doing a naive version not checking for multiple files with the same name. 
 	So we do not really need the scopes management, this is why we raise a SRNoResolutionPossible instead of a NotFound error"
 
-	(currentEntity mooseModel allWithType: FamixCPreprocHeaderFile)
+	(currentEntity mooseModel allWithType: FamixCHeaderFile)
 		detect: [ :headerFile | headerFile name asPath basename = path asPath basename ]
 		ifFound: [ :headerFile | entity := headerFile ]
 		ifNone: [ SRNoResolutionPossible signal ]

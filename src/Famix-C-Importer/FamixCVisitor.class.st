@@ -57,7 +57,7 @@ FamixCVisitor class >> cPrimitiveTypes [
 { #category : 'as yet unclassified' }
 FamixCVisitor >> allHeaderFiles [
 
-	^ model allWithType: FamixCPreprocHeaderFile
+	^ model allWithType: FamixCHeaderFile
 ]
 
 { #category : 'as yet unclassified' }
@@ -210,9 +210,7 @@ FamixCVisitor >> ensurePrimitiveTypeExist: aString [
 FamixCVisitor >> ensureStubHeaderFileFrom: aPath [
 
 	self flag: #todo. "Manage paths"
-	^ (model allWithType: FamixCPreprocHeaderFile) 
-			detect: [ :header | header isStub and: [ header name = aPath ] ]
-			ifNone: [ self createStubHeaderFileFrom: aPath ]
+	^ (model allWithType: FamixCHeaderFile) detect: [ :header | header isStub and: [ header name = aPath ] ] ifNone: [ self createStubHeaderFileFrom: aPath ]
 ]
 
 { #category : 'accessing' }
@@ -283,9 +281,7 @@ FamixCVisitor >> newEntityTypingFor: aFamixCTypeEntity [
 { #category : 'instance creation' }
 FamixCVisitor >> newPreprocCompilationUnit: aFileReference [
 
-	^ self
-		  newPreprocFile: FamixCPreprocCompilationUnit
-		  with: aFileReference
+	^ self newPreprocFile: FamixCCompilationUnit with: aFileReference
 ]
 
 { #category : 'accessing' }
@@ -297,7 +293,7 @@ FamixCVisitor >> newPreprocFile: aClass with: aFileReference [
 { #category : 'instance creation' }
 FamixCVisitor >> newPreprocFolder: aFileReference [
 
-	^ self newPreprocFile: FamixCPreprocFolder with: aFileReference
+	^ self newPreprocFile: FamixCFolder with: aFileReference
 ]
 
 { #category : 'instance creation' }
@@ -646,7 +642,7 @@ FamixCVisitor >> visitPointerExpression: aTSNode [
 FamixCVisitor >> visitPreprocInclude: aTSNode [
 
 	| includeEntity |
-	includeEntity := FamixCPreprocInclude new
+	includeEntity := FamixCInclude new
 		                 isLocal: (self isLocalLib: aTSNode _path);
 		                 includedBy: self currentEntity.
 
