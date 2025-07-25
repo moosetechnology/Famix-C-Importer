@@ -565,6 +565,23 @@ FamixCImporterModelTest >> testFunctionOutgoingInvocations [
 	self assert: invocation signature equals: 'func()'
 ]
 
+{ #category : 'tests - functions' }
+FamixCImporterModelTest >> testFunctionParent [
+
+	| sourceCode |
+	
+	sourceCode := '
+	int func(){
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allFunctions size equals: 1.
+	self assert: importer model allFunctions anyOne functionOwner name equals: 'testFile.c'
+]
+
 { #category : 'tests - type' }
 FamixCImporterModelTest >> testFunctionPrototypeAndDefinitionReturnType [
 

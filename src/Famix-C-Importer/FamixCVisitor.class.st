@@ -525,11 +525,10 @@ FamixCVisitor >> visitFunctionDeclarator: aTSNode [
 	| fnName fnEntity |
 	fnName := aTSNode _declarator sourceText.
 	fnEntity := self ensureEntityExist: FamixCFunction name: fnName.
+	fnEntity functionOwner: self currentEntity.
 	self setSourceAnchor: fnEntity from: aTSNode.
 
-	^ self
-		  useCurrentEntity: fnEntity
-		  during: [ self visit: aTSNode _parameters ]
+	^ self useCurrentEntity: fnEntity during: [ self visit: aTSNode _parameters ]
 ]
 
 { #category : 'visiting' }
