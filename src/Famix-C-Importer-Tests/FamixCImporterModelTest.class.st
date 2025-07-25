@@ -596,6 +596,68 @@ FamixCImporterModelTest >> testFunctionPrototypeReturnType [
 		equals: 'void'
 ]
 
+{ #category : 'tests - global variables' }
+FamixCImporterModelTest >> testGlobalVariable [
+
+	| sourceCode |
+	sourceCode := '
+	int aGlobalVar;
+	int parentFunction(){
+		int aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allGlobalVariables size equals: 1.
+	self
+		assert: importer model allGlobalVariables anyOne name
+		equals: 'aGlobalVar'
+]
+
+{ #category : 'tests - global variables' }
+FamixCImporterModelTest >> testGlobalVariableOneLineMultipleDeclaration [
+
+	| sourceCode |
+	sourceCode := '
+	int a, b;
+	int parentFunction(){
+		int aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allGlobalVariables size equals: 2.
+	self
+		assert: importer model allGlobalVariables first name
+		equals: 'a'.
+	self
+		assert: importer model allGlobalVariables second name
+		equals: 'b'
+]
+
+{ #category : 'tests - global variables' }
+FamixCImporterModelTest >> testGlobalVariableParentScope [
+
+	| sourceCode |
+	sourceCode := '
+	int aGlobalVar;
+	int parentFunction(){
+		int aLocalVar;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allGlobalVariables anyOne parentScope name equals: 'testFile.c'.
+	self assert: (importer model allWithType: FamixCCompilationUnit) anyOne globalVariables size equals: 1.
+	self assert: (importer model allWithType: FamixCCompilationUnit) anyOne globalVariables anyOne name equals: 'aGlobalVar'
+]
+
 { #category : 'tests - accesses' }
 FamixCImporterModelTest >> testLocalVariableAccessMultipleFunction [
 
@@ -788,6 +850,29 @@ FamixCImporterModelTest >> testLocalVariableReadAccessInBinaryExpression [
 	readAccesses := importer model allAccesses select: [ :each |
 		                each isRead ].
 	self assert: readAccesses size equals: 2.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
+FamixCImporterModelTest >> testLocalVariableReadAccessInBinaryExpression2 [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int parentFunction(){
+		int a;
+		int b = 3 + a + 1; //here
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
 	self assert: readAccesses anyOne accessor isFunction.
 	self
 		assert: readAccesses anyOne accessor name
@@ -1429,13 +1514,13 @@ FamixCImporterModelTest >> testPreprocInclude [
 	#include "functions.h"
 	'.
 	importer importFromString: sourceCode.
-	includes := importer model allWithType: FamixCPreprocInclude.
+	includes := importer model allWithType: FamixCInclude.
 
 	self assert: includes size equals: 2.
 	self deny: includes first isLocal.
 	self assert: includes last isLocal.
-	self assert: (importer model allWithType: FamixCPreprocHeaderFile) first isStub.
-	self assert: (importer model allWithType: FamixCPreprocHeaderFile) last isStub
+	self assert: (importer model allWithType: FamixCInclude ) first isStub.
+	self assert: (importer model allWithType: FamixCHeaderFile) last isStub
 ]
 
 { #category : 'tests - primitives' }

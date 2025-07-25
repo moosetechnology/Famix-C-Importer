@@ -278,6 +278,14 @@ FamixCVisitor >> newEntityTypingFor: aFamixCTypeEntity [
 		  yourself
 ]
 
+{ #category : 'accessing' }
+FamixCVisitor >> newNamedVariable: aString isLocal: aBoolean [
+
+	^ aBoolean
+		  ifTrue: [ (model newLocalVariableNamed: aString) parentBehaviouralEntity: self currentEntity ]
+		  ifFalse: [ (model newGlobalVariableNamed: aString) parentScope: self currentEntity ]
+]
+
 { #category : 'instance creation' }
 FamixCVisitor >> newPreprocCompilationUnit: aFileReference [
 
@@ -355,7 +363,7 @@ FamixCVisitor >> visitBinaryExpression: aTSNode [
 	self createReadAccessIfVariableTo: left from: aTSNode.
 
 	right := self visit: aTSNode _right.
-	self createReadAccessIfVariableTo: right from: aTSNode
+	self createReadAccessIfVariableTo: right from: aTSNode.
 ]
 
 { #category : 'visiting' }
@@ -379,29 +387,27 @@ FamixCVisitor >> visitCompoundStatement: aTSNode [
 FamixCVisitor >> visitDeclaration: aTSNode [
 	"type declarator"
 
+	| declaratorVisitResult |
 	inDeclaration := true.
 
-	self flag: 'TODO: Refactor this to consider global variable once there is FamixCGlobalVariable in the metamodel'.
-	"check if it is a declaration inside a function, for local variable"
 
-	(self hasCurrentEntity and: [ self currentEntity isFunction ])
+	declaratorVisitResult := self visit: aTSNode _declarator.
+
+	declaratorVisitResult class = FamixCFunction
 		ifTrue: [
+		self useCurrentEntity: declaratorVisitResult during: [ self assignTypeTo: declaratorVisitResult with: (self visit: aTSNode _type) ] ]
+		ifFalse: [
 				| identifiers |
-				identifiers := self ensureAsOrderedCollection: (self visit: aTSNode _declarator).
+				identifiers := self ensureAsOrderedCollection: declaratorVisitResult.
 
 				identifiers do: [ :eachIdentifier |
-						| localVarEntity |
-						localVarEntity := (model newLocalVariableNamed: eachIdentifier sourceText) parentBehaviouralEntity: self currentEntity.
+						| varEntity |
+						varEntity := self newNamedVariable: eachIdentifier isLocal: self currentEntity isFunction.
 
-						self setSourceAnchor: localVarEntity from: aTSNode.
-						self assignTypeTo: localVarEntity with: (self visit: aTSNode _type).
-						"self useCurrentEntity: localVarEntity during: [  ]."
-						] ]
-		ifFalse: [
-				| entity |
-				entity := self visit: aTSNode _declarator.
+						self setSourceAnchor: varEntity from: aTSNode.
+						self assignTypeTo: varEntity with: (self visit: aTSNode _type) ] ].
 
-				entity class = FamixCFunction ifTrue: [ self useCurrentEntity: entity during: [ self assignTypeTo: entity with: (self visit: aTSNode _type) ] ] ].
+
 
 
 
