@@ -1807,6 +1807,26 @@ FamixCImporterModelTest >> testStructName [
 ]
 
 { #category : 'tests - struct' }
+FamixCImporterModelTest >> testStructParentFile [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+	self
+		assert: (importer model allWithType: FamixCStruct) anyOne typeContainer name
+		equals: 'testFile.c'.
+	self
+		assert: (importer model allWithType: FamixCCompilationUnit ) anyOne types size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCCompilationUnit ) anyOne types first name
+		equals: 'Person'.
+]
+
+{ #category : 'tests - struct' }
 FamixCImporterModelTest >> testStructSourceAnchor [
 
 	| sourceCode |
@@ -1976,6 +1996,26 @@ FamixCImporterModelTest >> testTypedefName [
 	self
 		assert: (importer model allWithType: FamixCAliasType) anyOne name
 		equals: 'Integer'
+]
+
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefParentFile [
+
+	| sourceCode |
+	sourceCode := '
+	typedef int Integer;
+	'.
+
+	importer importFromString: sourceCode.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne typeContainer name
+		equals: 'testFile.c'.
+	self
+		assert: (importer model allWithType: FamixCCompilationUnit ) anyOne types size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCCompilationUnit ) anyOne types first name
+		equals: 'Integer'.
 ]
 
 { #category : 'tests - typedef' }
@@ -2233,6 +2273,21 @@ FamixCImporterModelTest >> testUnionName [
 	self
 		assert: (importer model allWithType: FamixCUnion) anyOne name
 		equals: 'Person'
+]
+
+{ #category : 'tests - union' }
+FamixCImporterModelTest >> testUnionParentFile [
+
+	| sourceCode |
+	sourceCode := '
+	union Person{int id};
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: (importer model allWithType: FamixCUnion) first typeContainer name equals: 'testFile.c'.
+	self assert: (importer model allWithType: FamixCCompilationUnit) anyOne types size equals: 1.
+	self assert: (importer model allWithType: FamixCCompilationUnit) anyOne types first name equals: 'Person'
 ]
 
 { #category : 'tests - union' }
