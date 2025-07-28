@@ -121,12 +121,9 @@ FamixCVisitor >> createDereferencedInvocation: aTSNode [
 	model add: invocation.
 
 	self
-		resolve: ((SRIdentifierWithNode identifier: aTSNode _function sourceText)
+		resolve: ((SRIdentifierResolvable identifier: aTSNode _function sourceText)
 				 expectedKind: FamixCFunction;
-				 notFoundReplacementEntity: [ :unresolved |
-					1 halt.
-						 self createStubFunctionFrom: aTSNode _function sourceText.
-						  ];
+				 notFoundReplacementEntity: [ :unresolved |self createStubFunctionFrom: aTSNode _function sourceText];
 				 yourself)
 		foundAction: [ :function :currentEntity | invocation addCandidate: function ].
 
@@ -152,7 +149,7 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 		          yourself.
 
 	self
-		resolve: ((SRIdentifierWithNode identifier: variableName)
+		resolve: ((SRIdentifierResolvable identifier: variableName)
 				 expectedKind: {FamixCLocalVariable . FamixCParameter . FamixCGlobalVariable };
 				 yourself)
 		foundAction: [ :variable :currentEntity | access variable: variable ].
@@ -185,7 +182,7 @@ FamixCVisitor >> createWriteAccessTo: variableName from: anAssignmentNode [
 		          in: [ :access | self setSourceAnchor: access from: anAssignmentNode ];
 		          yourself.
 	self
-		resolve: ((SRIdentifierWithNode identifier: variableName)
+		resolve: ((SRIdentifierResolvable identifier: variableName)
 				 expectedKind: {FamixCLocalVariable . FamixCGlobalVariable };
 				 yourself)
 		foundAction: [ :variable :currentEntity | access variable: variable ].
