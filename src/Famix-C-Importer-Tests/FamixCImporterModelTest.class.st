@@ -676,6 +676,83 @@ FamixCImporterModelTest >> testGlobalVariableParentScope [
 ]
 
 { #category : 'tests - accesses' }
+FamixCImporterModelTest >> testGlobalVariableReadAccessInArgumentList [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int a = 1;
+	int b = 2;
+	void fn(int param1, int param2){};
+	void parentFunction(){
+		fn(a, b);
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 2.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert:
+		(readAccesses anySatisfy: [ :access | access variable name = 'a' ]).
+	self assert:
+		(readAccesses anySatisfy: [ :access | access variable name = 'b' ])
+]
+
+{ #category : 'tests - accesses' }
+FamixCImporterModelTest >> testGlobalVariableReadAccessInAssignmentExpression [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int b = 0;
+	int parentFunction(){
+		int a;
+		a = b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'b'
+]
+
+{ #category : 'tests - accesses' }
+FamixCImporterModelTest >> testGlobalVariableReadAccessOvewrite [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int b = 0;
+	int parentFunction(){
+		int a;
+		int b = 3;
+		a = b;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert: readAccesses anyOne variable name equals: 'b'.
+	self assert: readAccesses anyOne variable class equals: FamixCLocalVariable.
+]
+
+{ #category : 'tests - accesses' }
 FamixCImporterModelTest >> testGlobalVariableWriteAccess [
 
 	| sourceCode |
