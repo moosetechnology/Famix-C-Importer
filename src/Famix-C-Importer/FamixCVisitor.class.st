@@ -119,6 +119,17 @@ FamixCVisitor >> createDereferencedInvocation: aTSNode [
 	self setSourceAnchor: invocation from: aTSNode.
 
 	model add: invocation.
+
+	self
+		resolve: ((SRIdentifierWithNode identifier: aTSNode _function sourceText)
+				 expectedKind: FamixCFunction;
+				 notFoundReplacementEntity: [ :unresolved |
+					1 halt.
+						 self createStubFunctionFrom: aTSNode _function sourceText.
+						  ];
+				 yourself)
+		foundAction: [ :function :currentEntity | invocation addCandidate: function ].
+
 	^ invocation
 ]
 
@@ -147,6 +158,14 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 		foundAction: [ :variable :currentEntity | access variable: variable ].
 		
 	^ access
+]
+
+{ #category : 'accessing' }
+FamixCVisitor >> createStubFunctionFrom: aString [
+
+	^ (model newFunctionNamed: aString)
+		  isStub: true;
+		  yourself
 ]
 
 { #category : 'private' }

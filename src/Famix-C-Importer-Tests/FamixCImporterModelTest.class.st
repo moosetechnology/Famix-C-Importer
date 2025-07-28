@@ -514,13 +514,32 @@ FamixCImporterModelTest >> testFunctionInvocationResolution [
 		return 0;
 	}
 	'.
-	self flag: 'TODO'. "this depends on the MM which doesn't support function in preprocCFile"
 	importer importFromString: sourceCode.
 
 	invocation := (importer model allWithType:
 		               FamixCDereferencedInvocation) anyOne.
 
 	self assert: invocation candidates first class equals: FamixCFunction 
+]
+
+{ #category : 'tests - invocations' }
+FamixCImporterModelTest >> testFunctionInvocationResolutionStub [
+
+	| sourceCode invocation |
+	sourceCode := '
+	void func();
+	int main(){
+		printf("I am stub");
+		return 0;
+	}
+	'.
+	importer importFromString: sourceCode.
+
+	invocation := (importer model allWithType:
+		               FamixCDereferencedInvocation) anyOne.
+1halt.
+	self assert: (importer model allFunctions detect: [:each | each isStub ]) size equals: 1.
+	self assert: invocation candidates first isStub.
 ]
 
 { #category : 'tests - invocations' }
