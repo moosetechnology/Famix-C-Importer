@@ -151,6 +151,7 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 	self
 		resolve: ((SRIdentifierResolvable identifier: variableName)
 				 expectedKind: {FamixCLocalVariable . FamixCParameter . FamixCGlobalVariable };
+				notFoundReplacementEntity: [ :unresolved | 1halt.];
 				 yourself)
 		foundAction: [ :variable :currentEntity | access variable: variable ].
 		
@@ -345,6 +346,7 @@ FamixCVisitor >> visitArgumentList: aTSNode [
 
 	| argumentList |
 	argumentList := self visitChildren: aTSNode.
+
 	argumentList do: [ :eachArgument | self createReadAccessIfVariableTo: eachArgument from: aTSNode ]
 ]
 
@@ -703,15 +705,6 @@ FamixCVisitor >> visitReturnStatement: aTSNode [
 FamixCVisitor >> visitSizedTypeSpecifier: aNode [
 
 	^ self checkIfPrimitiveType: aNode sourceText
-]
-
-{ #category : 'visiting' }
-FamixCVisitor >> visitStringLiteral: aTSNode [
-
-	^ aTSNode collectNamedChild ifNotEmpty: [ :children |
-			  children size = 1
-				  ifTrue: [ children anyOne sourceText ]
-				  ifFalse: [ self error: 'I though this should not happen but if we are here it''s because it does... So we need to check what to do in that case.' ] ]
 ]
 
 { #category : 'visiting' }

@@ -537,8 +537,8 @@ FamixCImporterModelTest >> testFunctionInvocationResolutionStub [
 
 	invocation := (importer model allWithType:
 		               FamixCDereferencedInvocation) anyOne.
-1halt.
-	self assert: (importer model allFunctions detect: [:each | each isStub ]) size equals: 1.
+
+	self assert: (importer model allFunctions select: [:each | each isStub ]) size equals: 1.
 	self assert: invocation candidates first isStub.
 ]
 
