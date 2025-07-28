@@ -676,6 +676,31 @@ FamixCImporterModelTest >> testGlobalVariableParentScope [
 ]
 
 { #category : 'tests - accesses' }
+FamixCImporterModelTest >> testGlobalVariableWriteAccess [
+
+	| sourceCode |
+	sourceCode := '
+	int a;
+	int parentFunction(){
+		a = 3; 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allAccesses size equals: 1.
+	self assert: importer model allAccesses anyOne accessor isFunction.
+	self assert: importer model allAccesses anyOne isWrite.
+	self
+		assert: importer model allAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self
+		assert: importer model allAccesses anyOne variable name
+		equals: 'a'
+]
+
+{ #category : 'tests - accesses' }
 FamixCImporterModelTest >> testLocalVariableAccessMultipleFunction [
 
 	| sourceCode |

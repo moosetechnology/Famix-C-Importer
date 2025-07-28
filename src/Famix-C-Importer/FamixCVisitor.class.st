@@ -142,7 +142,7 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 
 	self
 		resolve: ((SRIdentifierWithNode identifier: variableName)
-				 expectedKind: {FamixCLocalVariable . FamixCParameter };
+				 expectedKind: {FamixCLocalVariable . FamixCParameter . FamixCGlobalVariable };
 				 yourself)
 		foundAction: [ :variable :currentEntity | access variable: variable ].
 		
@@ -167,7 +167,7 @@ FamixCVisitor >> createWriteAccessTo: variableName from: anAssignmentNode [
 		          yourself.
 	self
 		resolve: ((SRIdentifierWithNode identifier: variableName)
-				 expectedKind: FamixCLocalVariable;
+				 expectedKind: {FamixCLocalVariable . FamixCGlobalVariable };
 				 yourself)
 		foundAction: [ :variable :currentEntity | access variable: variable ].
 	^ access
