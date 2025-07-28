@@ -750,6 +750,7 @@ FamixCImporterModelTest >> testGlobalVariableReadAccessOvewrite [
 		equals: 'parentFunction'.
 	self assert: readAccesses anyOne variable name equals: 'b'.
 	self assert: readAccesses anyOne variable class equals: FamixCLocalVariable.
+	self assert: importer model allGlobalVariables anyOne incomingAccesses size equals: 0.
 ]
 
 { #category : 'tests - accesses' }
