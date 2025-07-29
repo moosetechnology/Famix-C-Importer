@@ -83,5 +83,5 @@ FamixCResolver >> resolveInvocations [
 { #category : 'run' }
 FamixCResolver >> resolvingSteps [
 
-	^ #( #resolveAccesses #resolveInvocations )
+	^ #( #resolveAccesses)
 ]

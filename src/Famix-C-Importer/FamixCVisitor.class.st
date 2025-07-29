@@ -133,7 +133,7 @@ FamixCVisitor >> createDereferencedInvocation: aTSNode [
 { #category : 'accessing' }
 FamixCVisitor >> createReadAccessIfVariableTo: aVariableName from: aTSNode [
 
-	(self inFunctionContext and: [ aVariableName isString ]) ifTrue: [
+	 aVariableName isString ifTrue: [
 		^ self createReadAccessTo: aVariableName from: aTSNode ].
 	^ nil
 ]
@@ -168,6 +168,7 @@ FamixCVisitor >> createStubFunctionFrom: aString [
 
 { #category : 'private' }
 FamixCVisitor >> createStubHeaderFileFrom: aPath [
+
 	^ (model newHeaderFileNamed: aPath)
 		  isStub: true;
 		  yourself
@@ -270,6 +271,24 @@ FamixCVisitor >> isPrimitiveType: aString [
 ]
 
 { #category : 'accessing' }
+FamixCVisitor >> isReadAccess: aTSNode [
+
+	(aTSNode isInField: #arguments ofParentOfType: #call_expression) ifTrue: [ ^ true ].
+
+
+	aTSNode parentsDo: [ :parentNode |
+			parentNode type = #call_expression ifTrue: [ ^ false ].
+
+			(#( binary_expression argument_list parenthesized_expression return_statement ) includes: parentNode type) ifTrue: [
+				^ parentNode includesChild: aTSNode ].
+
+			"only true if the identifier is on right side of an assignement otherWise it is a write access"
+			parentNode type = 'assignment_expression' ifTrue: [
+				(parentNode _right = aTSNode or: [ parentNode _right includesChild: aTSNode ]) ifTrue: [ ^ true ] ] ].
+	^ false
+]
+
+{ #category : 'accessing' }
 FamixCVisitor >> model [
 
 	^ model
@@ -346,7 +365,7 @@ FamixCVisitor >> visitArgumentList: aTSNode [
 
 	| argumentList |
 	argumentList := self visitChildren: aTSNode.
-
+^ self.
 	argumentList do: [ :eachArgument | self createReadAccessIfVariableTo: eachArgument from: aTSNode ]
 ]
 
@@ -369,7 +388,7 @@ FamixCVisitor >> visitAssignmentExpression: aTSNode [
 	self inFunctionContext ifTrue: [
 			self createWriteAccessTo: left from: aTSNode.
 			(right isArray and: [ right size = 1 ]) ifTrue: [ right := right first ].
-			self createReadAccessIfVariableTo: right from: aTSNode ]
+			"self createReadAccessIfVariableTo: right from: aTSNode" ]
 ]
 
 { #category : 'visiting' }
@@ -377,6 +396,8 @@ FamixCVisitor >> visitBinaryExpression: aTSNode [
 	"left right"
 
 	| left right |
+	self visitChildren: aTSNode.
+	^self.
 	left := self visit: aTSNode _left.
 	self createReadAccessIfVariableTo: left from: aTSNode.
 
@@ -572,6 +593,7 @@ FamixCVisitor >> visitFunctionDefinition: aTSNode [
 FamixCVisitor >> visitIdentifier: aTSNode [
 	"no fields"
 
+	(self isReadAccess: aTSNode) ifTrue: [ self createReadAccessTo: aTSNode sourceText from: aTSNode ].
 	^ aTSNode sourceText
 ]
 
@@ -646,6 +668,7 @@ FamixCVisitor >> visitParenthesizedExpression: aTSNode [
 
 	| expression |
 	expression := self visitChildren: aTSNode.
+	^ self.
 	self createReadAccessIfVariableTo: expression first from: aTSNode
 ]
 
@@ -664,14 +687,19 @@ FamixCVisitor >> visitPointerExpression: aTSNode [
 { #category : 'visiting' }
 FamixCVisitor >> visitPreprocInclude: aTSNode [
 
-	| includeEntity |
+	| includeEntity path isLocal |
+	isLocal := self isLocalLib: aTSNode _path.
 	includeEntity := FamixCInclude new
-		                 isLocal: (self isLocalLib: aTSNode _path);
+		                 isLocal: isLocal;
 		                 includedBy: self currentEntity.
 
 	self flag: #todo. "Add tests on stub includes."
 	self flag: #todo. "Add tests that stub header files are stub and on source anchors."
 	self flag: #todo. "In case we have a non local import we could directly create and set the stub header file to not resolve something we know is a stub"
+	"isLocal ifTrue: [ 
+		path := aTSNode _path sourceText
+		 ] ifFalse: [ 
+		path := aTSNode _path sourceText ]."
 	self
 		resolve: ((FamixCIncludesResolvable path: (self visit: aTSNode _path))
 				 notFoundReplacementEntity: [ :unresolved :currentEntity | self ensureStubHeaderFileFrom: unresolved path ];
@@ -695,8 +723,8 @@ FamixCVisitor >> visitReturnStatement: aTSNode [
 
 	| returnedExpr |
 	returnedExpr := self visitChildren: aTSNode.
-
-	returnedExpr do: [ :each | self createReadAccessIfVariableTo: each from: aTSNode. ].
+	
+	"returnedExpr do: [ :each | self createReadAccessIfVariableTo: each from: aTSNode. ]."
 	
 	^ returnedExpr
 ]
@@ -705,6 +733,16 @@ FamixCVisitor >> visitReturnStatement: aTSNode [
 FamixCVisitor >> visitSizedTypeSpecifier: aNode [
 
 	^ self checkIfPrimitiveType: aNode sourceText
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitStringLiteral: aTSNode [
+
+	^ aTSNode collectNamedChild ifNotEmpty: [ :children |
+			  children size = 1
+				  ifTrue: [ children anyOne sourceText ]
+				  ifFalse: [
+				  self error: 'I though this should not happen but if we are here it''s because it does... So we need to check what to do in that case.' ] ]
 ]
 
 { #category : 'visiting' }

@@ -703,7 +703,7 @@ FamixCImporterModelTest >> testGlobalVariableReadAccessInArgumentList [
 	int b = 2;
 	void fn(int param1, int param2){};
 	void parentFunction(){
-		fn(a, b);
+		fn(a, b, "s");
 	}
 	'.
 
@@ -1658,7 +1658,7 @@ FamixCImporterModelTest >> testPreprocInclude [
 	self assert: includes size equals: 2.
 	self deny: includes first isLocal.
 	self assert: includes last isLocal.
-	self assert: (importer model allWithType: FamixCInclude ) first isStub.
+	self assert: (importer model allWithType: FamixCHeaderFile ) first isStub.
 	self assert: (importer model allWithType: FamixCHeaderFile) last isStub
 ]
 

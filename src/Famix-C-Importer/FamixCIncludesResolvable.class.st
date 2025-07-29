@@ -20,7 +20,7 @@ FamixCIncludesResolvable class >> path: aString [
 { #category : 'hooks' }
 FamixCIncludesResolvable >> applyReplacementStrategyWithCurrentEntity: anEntity [
 
-	self entity:
+	self result:
 		(self notFoundReplacementEntity cull: self cull: anEntity)
 ]
 
@@ -61,6 +61,6 @@ FamixCIncludesResolvable >> resolveInScope: aScope currentEntity: currentEntity 
 
 	(currentEntity mooseModel allWithType: FamixCHeaderFile)
 		detect: [ :headerFile | headerFile name asPath basename = path asPath basename ]
-		ifFound: [ :headerFile | entity := headerFile ]
+		ifFound: [ :headerFile | self result: headerFile ]
 		ifNone: [ SRNoResolutionPossible signal ]
 ]
