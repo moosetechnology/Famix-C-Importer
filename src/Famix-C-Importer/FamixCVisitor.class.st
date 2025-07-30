@@ -365,10 +365,7 @@ FamixCVisitor >> relativePath: aFileReference [
 FamixCVisitor >> visitArgumentList: aTSNode [
 	"<unnamedChild>"
 
-	| argumentList |
-	argumentList := self visitChildren: aTSNode.
-^ self.
-	argumentList do: [ :eachArgument | self createReadAccessIfVariableTo: eachArgument from: aTSNode ]
+	self visitChildren: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -383,28 +380,19 @@ FamixCVisitor >> visitArrayDeclarator: aTSNode [
 FamixCVisitor >> visitAssignmentExpression: aTSNode [
 	"left right"
 
-	| left right |
-	left := self visit: aTSNode _left.
-	right := self visit: aTSNode _right.
+	| left |
 	
-	self inFunctionContext ifTrue: [
-			self createWriteAccessTo: left from: aTSNode.
-			(right isArray and: [ right size = 1 ]) ifTrue: [ right := right first ].
-			"self createReadAccessIfVariableTo: right from: aTSNode" ]
+	left := self visit: aTSNode _left.
+	self createWriteAccessTo: left from: aTSNode.
+	
+	self visit: aTSNode _right
 ]
 
 { #category : 'visiting' }
 FamixCVisitor >> visitBinaryExpression: aTSNode [
 	"left right"
 
-	| left right |
-	self visitChildren: aTSNode.
-	^self.
-	left := self visit: aTSNode _left.
-	self createReadAccessIfVariableTo: left from: aTSNode.
-
-	right := self visit: aTSNode _right.
-	self createReadAccessIfVariableTo: right from: aTSNode.
+	self visitChildren: aTSNode
 ]
 
 { #category : 'visiting' }
@@ -606,17 +594,6 @@ FamixCVisitor >> visitInitDeclarator: aTSNode [
 	^ self visit: aTSNode _declarator
 ]
 
-{ #category : 'visiting' }
-FamixCVisitor >> visitKey: aKey inDictionnary: childrenDictionnary [
-
-	| child |
-	child := childrenDictionnary at: aKey ifAbsent: [ ^ nil ].
-
-	^ child isCollection
-		  ifTrue: [ child collect: [ :c | c accept: self ] ]
-		  ifFalse: [ child accept: self ]
-]
-
 { #category : 'private - transcript cleaning' }
 FamixCVisitor >> visitNumberLiteral: aTSNode [
 
@@ -667,10 +644,7 @@ FamixCVisitor >> visitParenthesizedDeclarator: aTSNode [
 FamixCVisitor >> visitParenthesizedExpression: aTSNode [
 	"<unnamedChild>"
 
-	| expression |
-	expression := self visitChildren: aTSNode.
-	^ self.
-	self createReadAccessIfVariableTo: expression first from: aTSNode "already handled in visitIdentifier"
+	self visitChildren: aTSNode.
 ]
 
 { #category : 'visiting' }
@@ -694,13 +668,8 @@ FamixCVisitor >> visitPreprocInclude: aTSNode [
 		                 isLocal: isLocal;
 		                 includedBy: self currentEntity.
 
-	self flag: #todo. "Add tests on stub includes."
-	self flag: #todo. "Add tests that stub header files are stub and on source anchors."
 	self flag: #todo. "In case we have a non local import we could directly create and set the stub header file to not resolve something we know is a stub"
-	"isLocal ifTrue: [ 
-		path := aTSNode _path sourceText
-		 ] ifFalse: [ 
-		path := aTSNode _path sourceText ]."
+	
 	self
 		resolve: ((FamixCIncludesResolvable path: (self visit: aTSNode _path))
 				 notFoundReplacementEntity: [ :unresolved :currentEntity | self ensureStubHeaderFileFrom: unresolved path ];
@@ -709,6 +678,7 @@ FamixCVisitor >> visitPreprocInclude: aTSNode [
 
 	self setSourceAnchor: includeEntity from: aTSNode.
 	model add: includeEntity.
+	
 	^ includeEntity
 ]
 
@@ -722,12 +692,7 @@ FamixCVisitor >> visitPrimitiveType: aTSNode [
 FamixCVisitor >> visitReturnStatement: aTSNode [
 	"<unnamedChild>"
 
-	| returnedExpr |
-	returnedExpr := self visitChildren: aTSNode.
-	
-	"returnedExpr do: [ :each | self createReadAccessIfVariableTo: each from: aTSNode. ]." "already handled in visitIdentifier"
-	
-	^ returnedExpr
+	^ self visitChildren: aTSNode.
 ]
 
 { #category : 'visiting' }
@@ -841,7 +806,7 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 
 
 						self
-							resolve: ((SRIdentifierWithNode identifier: aliasedType)
+							resolve: ((SRIdentifierResolvable identifier: aliasedType)
 									 expectedKind: FamixCType;
 									 notFoundReplacementEntity: [ :unresolved :currentEntity | 1 halt ];
 									 yourself)
@@ -853,17 +818,6 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 FamixCVisitor >> visitTypeIdentifier: aTSNode [ 
 	"no fields"
 	^ aTSNode sourceText 
-]
-
-{ #category : 'visiting' }
-FamixCVisitor >> visitTypeNodeInFields: fields [
-
-	| type |
-	type := self visitKey: 'type' inDictionnary: fields.
-	(self isPrimitiveType: type) ifTrue: [
-		self ensurePrimitiveTypeExist: type ].
-
-	^ type
 ]
 
 { #category : 'visiting' }
