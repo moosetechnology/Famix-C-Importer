@@ -46,7 +46,7 @@ FamixCImporter >> importFileReference: aFileReference [
 					              visitor newPreprocCompilationUnit: aFileReference ]
 					              ifFalse: [
 					              visitor newPreprocHeaderFile: aFileReference ].
-
+				
 				visitor
 					useCurrentEntity: fileEntity
 					during: [ self importFile: aFileReference ] ]

@@ -246,6 +246,60 @@ FamixCImporterModelTest >> testChainedTypedefPrimitive [
 ]
 
 { #category : 'tests - comments' }
+FamixCImporterModelTest >> testCommentForAttribute [
+
+	| sourceCode |
+	sourceCode := '
+	struct Person { 
+		int a; // first attribute
+		int b; // second attribute
+	 };
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allComments size equals: 2.
+	self assert: importer model allComments first commentedEntity isAttribute. 
+	self assert: importer model allComments second commentedEntity isAttribute.
+]
+
+{ #category : 'tests - comments' }
+FamixCImporterModelTest >> testCommentInsideFunction [
+
+	| sourceCode |
+	sourceCode := '
+	int myFunc(){
+		// a function
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allComments size equals: 1.
+	self assert: importer model allComments first commentedEntity isFunction 
+]
+
+{ #category : 'tests - comments' }
+FamixCImporterModelTest >> testCommentInsideFunctionWithVar [
+
+	| sourceCode |
+	sourceCode := '
+	int myFunc(){
+		// a function
+		
+		// this variable
+		int a;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allComments size equals: 2.
+	self assert: importer model allComments first commentedEntity isFunction.
+	self assert: importer model allComments second commentedEntity isLocalVariable
+]
+
+{ #category : 'tests - comments' }
 FamixCImporterModelTest >> testCommentMultipleLine [
 
 	| sourceCode |
@@ -253,12 +307,13 @@ FamixCImporterModelTest >> testCommentMultipleLine [
 	/* 
 	a multiple line comment
 	*/
+	int main(){}
 	'.
-	self flag: 'TODO'. "currently cPreprocFile cannot contain comments"
 
 	importer importFromString: sourceCode.
 
 	self assert: importer model allComments size equals: 1.
+	self assert: importer model allComments first commentedEntity isFunction
 ]
 
 { #category : 'tests - comments' }
@@ -266,12 +321,30 @@ FamixCImporterModelTest >> testCommentSingleLine [
 
 	| sourceCode |
 	sourceCode := '
-	// a comment
+	int a; // a comment
 	'.
 
 	importer importFromString: sourceCode.
 
 	self assert: importer model allComments size equals: 1.
+	self assert: importer model allComments first commentedEntity isGlobalVariable 
+]
+
+{ #category : 'tests - comments' }
+FamixCImporterModelTest >> testConsecutiveCommentSingleLine [
+
+	| sourceCode |
+	sourceCode := '
+	// a comment
+	// next line comment
+	// last line comment
+	int a; 
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allComments size equals: 1.
+	self assert: importer model allComments first commentedEntity isGlobalVariable 
 ]
 
 { #category : 'tests' }
@@ -746,6 +819,23 @@ FamixCImporterModelTest >> testGlobalVariableReadAccessInAssignmentExpression [
 ]
 
 { #category : 'tests - accesses' }
+FamixCImporterModelTest >> testGlobalVariableReadAccessInFile [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	int b = 0;
+	int a = b;
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 1.
+	self assert: readAccesses anyOne accessor name equals: 'testFile.c'.
+	self assert: readAccesses anyOne variable name equals: 'b'
+]
+
+{ #category : 'tests - accesses' }
 FamixCImporterModelTest >> testGlobalVariableReadAccessOvewrite [
 
 	| sourceCode readAccesses |
@@ -932,6 +1022,33 @@ FamixCImporterModelTest >> testLocalVariableReadAccessInArgumentList [
 	   int a = 1;
 	   int b = 2;
 		fn(a, b);
+	}
+	'.
+
+	importer importFromString: sourceCode.
+	readAccesses := importer model allAccesses select: [ :each |
+		                each isRead ].
+	self assert: readAccesses size equals: 2.
+	self assert: readAccesses anyOne accessor isFunction.
+	self
+		assert: readAccesses anyOne accessor name
+		equals: 'parentFunction'.
+	self assert:
+		(readAccesses anySatisfy: [ :access | access variable name = 'a' ]).
+	self assert:
+		(readAccesses anySatisfy: [ :access | access variable name = 'b' ])
+]
+
+{ #category : 'tests - accesses' }
+FamixCImporterModelTest >> testLocalVariableReadAccessInArgumentListWithLiteral [
+
+	| sourceCode readAccesses |
+	sourceCode := '
+	void fn(int param1, int param2){};
+	void parentFunction(){
+	   int a = 1;
+	   int b = 2;
+		fn(a, b, 2, "str");
 	}
 	'.
 
@@ -1218,10 +1335,8 @@ FamixCImporterModelTest >> testLocalVariableTypeTypedef [
 
 	self assert: importer model allLocalVariables size equals: 1.
 
-	self
-		assert: importer model allLocalVariables anyOne declaredType name
-		equals: 'Integer'.
-	self flag: 'TODO: test aliased type resolution'
+	self assert: importer model allLocalVariables anyOne declaredType name equals: 'Integer'.
+	self assert: (importer model allWithType: FamixCAliasType) first aliasedType isPrimitiveType
 ]
 
 { #category : 'tests - local variables' }
@@ -1498,6 +1613,22 @@ FamixCImporterModelTest >> testOneLineMultipleDeclarationType [
 		
 	self assert: (importer model allLocalVariables allSatisfy: [ :each |
 			 each declaredType isPrimitiveType ])
+]
+
+{ #category : 'tests - comments' }
+FamixCImporterModelTest >> testOnlyCommentsInside [
+
+	| sourceCode |
+	sourceCode := '
+	/* 
+	a multiple line comment
+	
+	*/
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allComments size equals: 1.
 ]
 
 { #category : 'tests - parameters' }

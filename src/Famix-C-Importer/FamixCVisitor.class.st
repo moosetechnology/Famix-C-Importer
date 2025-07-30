@@ -284,7 +284,9 @@ FamixCVisitor >> isReadAccess: aTSNode [
 
 			"only true if the identifier is on right side of an assignement otherWise it is a write access"
 			parentNode type = 'assignment_expression' ifTrue: [
-				(parentNode _right = aTSNode or: [ parentNode _right includesChild: aTSNode ]) ifTrue: [ ^ true ] ] ].
+				(parentNode _right = aTSNode or: [ parentNode _right includesChild: aTSNode ]) ifTrue: [ ^ true ] ].
+
+			parentNode type = 'init_declarator' ifTrue: [ parentNode _value = aTSNode ifTrue: [ ^ true ] ] ].
 	^ false
 ]
 
@@ -428,7 +430,6 @@ FamixCVisitor >> visitDeclaration: aTSNode [
 
 	| declaratorVisitResult |
 	inDeclaration := true.
-
 
 	declaratorVisitResult := self visit: aTSNode _declarator.
 
@@ -669,7 +670,7 @@ FamixCVisitor >> visitParenthesizedExpression: aTSNode [
 	| expression |
 	expression := self visitChildren: aTSNode.
 	^ self.
-	self createReadAccessIfVariableTo: expression first from: aTSNode
+	self createReadAccessIfVariableTo: expression first from: aTSNode "already handled in visitIdentifier"
 ]
 
 { #category : 'visiting' }
@@ -724,7 +725,7 @@ FamixCVisitor >> visitReturnStatement: aTSNode [
 	| returnedExpr |
 	returnedExpr := self visitChildren: aTSNode.
 	
-	"returnedExpr do: [ :each | self createReadAccessIfVariableTo: each from: aTSNode. ]."
+	"returnedExpr do: [ :each | self createReadAccessIfVariableTo: each from: aTSNode. ]." "already handled in visitIdentifier"
 	
 	^ returnedExpr
 ]
@@ -815,9 +816,9 @@ FamixCVisitor >> visitSystemLibString: aNode [
 { #category : 'private - transcript cleaning' }
 FamixCVisitor >> visitTranslationUnit: aTSNode [
 
-	^ super visitChildren: aTSNode.
-	self tag: 'TODO' "handle comments".
-	"FamixCCommentVisitor visitor: self importCommentsOf: aTSNode"
+	self setSourceAnchor: self currentEntity from: aTSNode.
+	super visitChildren: aTSNode.
+	FamixCCommentVisitor visitor: self importCommentsOf: aTSNode
 ]
 
 { #category : 'visiting' }
