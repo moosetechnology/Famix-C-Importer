@@ -147,14 +147,9 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 		          isWrite: false;
 		          in: [ :access | self setSourceAnchor: access from: aTSNode ];
 		          yourself.
-
-	self
-		resolve: ((SRIdentifierResolvable identifier: variableName)
-				 expectedKind: {FamixCLocalVariable . FamixCParameter . FamixCGlobalVariable };
-				notFoundReplacementEntity: [ :unresolved | 1halt.];
-				 yourself)
-		foundAction: [ :variable :currentEntity | access variable: variable ].
 		
+	self resolveAccessOf: variableName foundAction: [ :variable :currentEntity | access variable: variable ].
+
 	^ access
 ]
 
@@ -183,11 +178,9 @@ FamixCVisitor >> createWriteAccessTo: variableName from: anAssignmentNode [
 		          isWrite: true;
 		          in: [ :access | self setSourceAnchor: access from: anAssignmentNode ];
 		          yourself.
-	self
-		resolve: ((SRIdentifierResolvable identifier: variableName)
-				 expectedKind: {FamixCLocalVariable . FamixCGlobalVariable };
-				 yourself)
-		foundAction: [ :variable :currentEntity | access variable: variable ].
+		
+	self resolveAccessOf: variableName foundAction: [ :variable :currentEntity | access variable: variable ].
+
 	^ access
 ]
 
@@ -337,12 +330,6 @@ FamixCVisitor >> newPreprocFile: aClass with: aFileReference [
 ]
 
 { #category : 'instance creation' }
-FamixCVisitor >> newPreprocFolder: aFileReference [
-
-	^ self newPreprocFile: FamixCFolder with: aFileReference
-]
-
-{ #category : 'instance creation' }
 FamixCVisitor >> newPreprocHeaderFile: aFileReference [
 
 	^ model newHeaderFileNamed: aFileReference basename
@@ -359,6 +346,25 @@ FamixCVisitor >> relativePath: aFileReference [
 
 	^ (aFileReference relativeTo: model rootFolder asFileReference)
 		  pathString
+]
+
+{ #category : 'as yet unclassified' }
+FamixCVisitor >> resolveAccessOf: identifier foundAction: aBlockClosure [
+self
+		resolve: ((SRIdentifierResolvable identifier: identifier )
+				 expectedKind: {
+						 FamixCLocalVariable.
+							FamixCParameter.
+						 FamixCGlobalVariable };
+				 notFoundReplacementEntity: [ :unresolved :currentEntity | "we will look among the global variables or create a stub if not found"
+						 | globalVar |
+						 model allGlobalVariables
+							 detect: [ :each | each name = unresolved identifier ]
+							 ifFound: [ :found | globalVar := found ]
+							 ifNone: [ 1 halt "create globalVar stub" ].
+						 globalVar ];
+				 yourself)
+		foundAction: aBlockClosure.
 ]
 
 { #category : 'visiting' }
@@ -605,10 +611,10 @@ FamixCVisitor >> visitParameterDeclaration: aTSNode [
 	"type declarator"
 
 	| paramEntity type |
+	aTSNode _type sourceText = 'void' ifTrue: [ ^ self ].
+	
 	type := self visit: aTSNode _type.
-
-	paramEntity := model newParameterNamed:
-		               aTSNode _declarator sourceText.
+	paramEntity := model newParameterNamed: aTSNode _declarator sourceText.
 	paramEntity parentBehaviouralEntity: self currentEntity.
 
 	self setSourceAnchor: paramEntity from: aTSNode.
@@ -704,11 +710,11 @@ FamixCVisitor >> visitSizedTypeSpecifier: aNode [
 { #category : 'visiting' }
 FamixCVisitor >> visitStringLiteral: aTSNode [
 
-	^ aTSNode collectNamedChild ifNotEmpty: [ :children |
-			  children size = 1
-				  ifTrue: [ children anyOne sourceText ]
-				  ifFalse: [
-				  self error: 'I though this should not happen but if we are here it''s because it does... So we need to check what to do in that case.' ] ]
+	| literal |
+	literal := ''.
+	aTSNode collectNamedChild do: [ :each | literal := literal , each sourceText ].
+	
+	^ literal
 ]
 
 { #category : 'visiting' }

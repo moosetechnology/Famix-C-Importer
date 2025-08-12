@@ -4,9 +4,6 @@ this is the importer (1)
 Class {
 	#name : 'FamixCImporter',
 	#superclass : 'FamixTSAbstractImporter',
-	#instVars : [
-		'fileName'
-	],
 	#category : 'Famix-C-Importer',
 	#package : 'Famix-C-Importer'
 }
@@ -15,18 +12,6 @@ Class {
 FamixCImporter >> acceptedExtensions [
 
 	^ #( 'c' 'h' )
-]
-
-{ #category : 'accessing' }
-FamixCImporter >> fileName [
-
-	^ fileName
-]
-
-{ #category : 'accessing' }
-FamixCImporter >> fileName: anObject [
-
-	fileName := anObject
 ]
 
 { #category : 'api' }
@@ -51,8 +36,6 @@ FamixCImporter >> importFileReference: aFileReference [
 					useCurrentEntity: fileEntity
 					during: [ self importFile: aFileReference ] ]
 		ifFalse: [
-				aFileReference pathString ~= visitor model rootFolder ifTrue: [
-					visitor newPreprocFolder: aFileReference ].
 
 				aFileReference children do: [ :each |
 					self importFileReference: each ].
@@ -91,5 +74,5 @@ FamixCImporter >> treeSitterLanguage [
 FamixCImporter >> visitorClass [
 	"Return the class of the visitor to use. It should be a subclass of FamixTSAbstractVisitor."
 
-	^ FamixCVisitor 
+	^ FamixCVisitor
 ]

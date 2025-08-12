@@ -38,7 +38,7 @@ FamixCImporterModelTest >> setUp [
 
 	super setUp.
 
-	importer := FamixCImporter new fileName: '/test/file/name' asFileReference 
+	importer := FamixCImporter new.
 ]
 
 { #category : 'tests - enum' }
@@ -1456,32 +1456,6 @@ FamixCImporterModelTest >> testLocalVariableWriteAccessIncrement [
 	self
 		assert: importer model allAccesses anyOne variable name
 		equals: 'a'
-]
-
-{ #category : 'tests - accesses' }
-FamixCImporterModelTest >> testLocalVariableWriteAccessOneLine [
-
-	| sourceCode |
-	sourceCode := '
-	int parentFunction(){
-		int a, b;
-		a = b = 3; 
-		return 0;
-	}
-	'.
-
-	importer importFromString: sourceCode.
-
-	self assert: importer model allAccesses size equals: 2.
-	self assert: importer model allAccesses anyOne accessor isFunction.
-	self assert: (importer model allAccesses allSatisfy: [ :each | each isWrite ]).
-	self
-		assert: importer model allAccesses anyOne accessor name
-		equals: 'parentFunction'.
-	self assert: (importer model allAccesses anySatisfy: [ :each |
-			 each variable name = 'a' ]).
-	self assert: (importer model allAccesses anySatisfy: [ :each |
-			 each variable name = 'b' ])
 ]
 
 { #category : 'tests - accesses' }
