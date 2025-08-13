@@ -24,7 +24,7 @@ FamixCImporterTest >> setUp [
 
 	super setUp.
 
-	importer := FamixCImporterVisitor new
+	importer := FamixCImporter new.
 ]
 
 { #category : 'running' }
@@ -50,18 +50,13 @@ FamixCImporterTest >> testFromProjectPreprocInclude [
 	model := importer import:
 		         '/Users/toky/code-examples-to-parse/module/'.
 
-	localIncludes := (model allWithType: FamixCPreprocInclude) select: [
-		                 :each | each isLocal ].
-	headerFile := (model allWithType: FamixCPreprocHeaderFile) first.
-
-	self assert: localIncludes size equals: 1.
-	self assert: localIncludes first includedBy name equals: 'main.c' halt.
-	self
-		assert: localIncludes first included name
-		equals: 'module.h'.
-	self
-		assert: headerFile inclusion first class
-		equals: FamixCPreprocInclude
+	localIncludes := (model allWithType: FamixCInclude) select: [ :each |
+		                 each isLocal ].
+	headerFile := (model allWithType: FamixCHeaderFile) first.
+	self assert: localIncludes size equals: 2.
+	self assert: localIncludes first includedBy name equals: 'main.c'.
+	self assert: localIncludes first included name equals: 'module.h'.
+	self assert: headerFile inclusion first class equals: FamixCInclude
 ]
 
 { #category : 'importer' }
@@ -71,7 +66,7 @@ FamixCImporterTest >> testImportFromCFile [
 	tempCFile := self
 		             createFile: 'temp.c'
 		             content: 'int main(){return 0;}'.
-	model := importer importFromFile: tempCFile.
+	model := importer import: tempCFile.
 
 	self assert: model isMooseModel
 ]
@@ -83,14 +78,14 @@ FamixCImporterTest >> testImportFromFolder [
 	self skip.
 	model := importer import: '/Users/toky/code-examples-to-parse/module'.
 
-	headerFiles := model allWithType: FamixCPreprocHeaderFile.
-	cFiles := model allWithType: FamixCPreprocCompilationUnit.
-	self assert: model name equals: 'module' halt.
+	headerFiles := model allWithType: FamixCHeaderFile.
+	cFiles := model allWithType: FamixCCompilationUnit.
+	self assert: model name equals: 'module'.
 	self
-		assert: model rootFolder
+		assert: model rootFolder fullName 
 		equals: '/Users/toky/code-examples-to-parse/module'.
-	self assert: headerFiles size equals: 1.
-	self assert: cFiles size equals: 2
+	self assert: headerFiles size equals: 3.
+	self assert: cFiles size equals: 3
 ]
 
 { #category : 'importer' }
@@ -98,7 +93,7 @@ FamixCImporterTest >> testImportFromHeaderFile [
 
 	| tempHeaderFile |
 	tempHeaderFile := self createFile: 'temp.h' content: 'int func();'.
-	model := importer importFromFile: tempHeaderFile.
+	model := importer import: tempHeaderFile.
 
 	self assert: model isMooseModel
 ]

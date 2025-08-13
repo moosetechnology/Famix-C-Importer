@@ -16,18 +16,6 @@ FamixCResolver class >> on: aMooseModel [
 		  yourself
 ]
 
-{ #category : 'as yet unclassified' }
-FamixCResolver >> allHeaderFiles [
-
-	^ model allWithType: FamixCPreprocHeaderFile
-]
-
-{ #category : 'as yet unclassified' }
-FamixCResolver >> allLocalPreprocIncludes [
-
-	^ model allWithType: FamixCPreprocInclude
-]
-
 { #category : 'accessing' }
 FamixCResolver >> entityNamed: aName in: aCollection [
 
@@ -54,14 +42,6 @@ FamixCResolver >> lookupLocalVariable: aString in: aFamixCFunction [
 ]
 
 { #category : 'accessing' }
-FamixCResolver >> lookupType: aString [
-
-	^ model allTypes
-		detect: [ :each | each name = aString ]
-		ifNone: [ nil ]
-]
-
-{ #category : 'accessing' }
 FamixCResolver >> model [
 
 	^ model
@@ -71,14 +51,6 @@ FamixCResolver >> model [
 FamixCResolver >> model: anObject [
 
 	model := anObject
-]
-
-{ #category : 'instance creation' }
-FamixCResolver >> newEntityTypingFor: aFamixCTypeEntity [
-
-	^ model newEntityTyping
-		  declaredType: aFamixCTypeEntity;
-		  yourself
 ]
 
 { #category : 'navigating' }
@@ -99,31 +71,6 @@ FamixCResolver >> resolveAccesses [
 ]
 
 { #category : 'accessing' }
-FamixCResolver >> resolveAliasedTypes [
-
-	(model allWithType: FamixCAliasType) do: [ :eachAlias |
-			eachAlias aliasedType ifNil: [
-					| aliasedTypeName |
-					aliasedTypeName := eachAlias
-						                   attributeAt: #aliasedType
-						                   ifAbsent: [ nil ].
-					eachAlias aliasedType: (self lookupType: aliasedTypeName) ] ]
-]
-
-{ #category : 'accessing' }
-FamixCResolver >> resolveIncludes [
-
-	self allLocalPreprocIncludes do: [ :include |
-			self allHeaderFiles
-				detect: [ :headerFile |
-						headerFile name asPath basename
-						=
-						(include attributeAt: #path ifAbsent: [ ^ nil ]) asPath basename ]
-				ifFound: [ :headerFile | include included: headerFile ]
-				ifNone: [ ] ]
-]
-
-{ #category : 'accessing' }
 FamixCResolver >> resolveInvocations [
 
 	model allInvocations do: [ :each |
@@ -133,27 +80,8 @@ FamixCResolver >> resolveInvocations [
 				each addCandidate: eachFn ] ]
 ]
 
-{ #category : 'accessing' }
-FamixCResolver >> resolveTypes [
-
-	(model allUsing: FamixTTypedEntity) do: [ :each |
-			each typing ifNil: [
-					| type famixTypeEntity |
-					
-					type := each attributeAt: #declaredType ifAbsent: [ nil ].
-					famixTypeEntity := self lookupType: type.
-					famixTypeEntity ifNotNil: [
-						each typing: (self newEntityTypingFor: famixTypeEntity) ] ] ]
-]
-
 { #category : 'run' }
 FamixCResolver >> resolvingSteps [
 
-	^ #( 
-			#resolveIncludes
-			#resolveTypes
-			#resolveAliasedTypes
-			#resolveAccesses
-			#resolveInvocations
-		)
+	^ #( #resolveAccesses)
 ]
