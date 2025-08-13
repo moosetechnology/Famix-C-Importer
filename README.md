@@ -19,5 +19,5 @@ Metacello new
 ## Usage
 ```Smalltalk
 | model |
-model := FamixCImporter import: 'path/to/your/c/folder-or/file.c'.;
+model := FamixCImporter import: 'path/to/your/c/folder-or/file.c'.
 ```
