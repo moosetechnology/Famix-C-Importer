@@ -85,7 +85,10 @@ FamixCVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
 				self
 					resolve: ((SRIdentifierWithNode identifier: aStringOrType)
 							 expectedKind: FamixCType;
-							 notFoundReplacementEntity: [ :unresolved | 1 halt ];
+							 notFoundReplacementEntity: [ :unresolved |
+									 (model newTypeNamed: aStringOrType)
+										 isStub: true;
+										 yourself ];
 							 yourself)
 					foundAction: [ :type :currentEntity | aFamixCTypedEntity typing: (self newEntityTypingFor: type) ] ]
 		ifFalse: [ "sometimes when the type of the entity is an anonymous structural entity like struct or union so we need to directly assign it to the entity. Moreover this type is only used there.

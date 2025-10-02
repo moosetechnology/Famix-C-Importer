@@ -2089,6 +2089,24 @@ FamixCImporterModelTest >> testStructTypeVarExcludedFromModel [
 		equals: 1
 ]
 
+{ #category : 'tests - type' }
+FamixCImporterModelTest >> testTypeStub [
+
+	| sourceCode stubTypes |
+	sourceCode := '
+	struct sockaddr_un {
+       CURL_SA_FAMILY_T sun_family;
+       char sun_path[UNIX_PATH_MAX];
+     } '.
+
+	importer importFromString: sourceCode.
+	stubTypes := (importer model allTypes select: [ :each | each isStub ]).
+
+	self assert: stubTypes size equals: 1.
+	self assert: stubTypes anyOne name equals: 'CURL_SA_FAMILY_T'
+	
+]
+
 { #category : 'tests - typedef' }
 FamixCImporterModelTest >> testTypedefForAnonymousStruct [
 
