@@ -2344,7 +2344,7 @@ FamixCImporterModelTest >> testTypedefTypeSpecifier [
 { #category : 'tests - typedef' }
 FamixCImporterModelTest >> testTypedefWithMultipleNames [
 
-	| sourceCode aliases |
+	| sourceCode aliases structs |
 	sourceCode := '
 	typedef struct myStruct {
 		int a
@@ -2353,11 +2353,14 @@ FamixCImporterModelTest >> testTypedefWithMultipleNames [
 
 	importer importFromString: sourceCode.
 	aliases := importer model allWithType: FamixCAliasType.
+	structs := importer model allWithType: FamixCStruct.
 	
 	self assert: aliases size equals: 2.
 	self assert: aliases first aliasedType name equals: 'myStruct'.
 	self assert: aliases second aliasedType name equals: 'myStruct'.
-	self assert: importer model allStructuralEntities size equals: 1
+	self assert: structs size equals: 1.
+	self assert: structs anyOne typeAliases size equals: 2
+	
 ]
 
 { #category : 'tests - union' }

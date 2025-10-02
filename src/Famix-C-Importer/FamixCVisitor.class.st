@@ -815,29 +815,32 @@ FamixCVisitor >> visitTranslationUnit: aTSNode [
 FamixCVisitor >> visitTypeDefinition: aTSNode [
 	"type declarator"
 
-	| aliasedType typeIdentifiers |
-	typeIdentifiers := self ensureAsOrderedCollection: aTSNode _declarator.
-	typeIdentifiers do: [ :each |
+	| aliasedType typeIdentifiers typedefEntities |
+	
+	typeIdentifiers := self ensureAsOrderedCollection: aTSNode _declarator. "this may be a collection in the case of a multiple names for one typedef"
+	
+	typedefEntities := typeIdentifiers collect: [ :each |
 			| typedefEntity |
-			typedefEntity := model newAliasType name: (self visit: each).
-
-			typedefEntity typeContainer: self currentEntity.
+			typedefEntity := model newAliasType 
+											name: (self visit: each); 
+											typeContainer: self currentEntity.
 
 			self setSourceAnchor: typedefEntity from: aTSNode.
+			typedefEntity ].
 
-			self useCurrentEntity: typedefEntity during: [
-					aliasedType := self visit: aTSNode _type.
-					
-					aliasedType isString
-						ifTrue: [
-								aliasedType := self visit: aTSNode _type.
-								self
-									resolve: ((SRIdentifierResolvable identifier: aliasedType)
-											 expectedKind: FamixCType;
-											 notFoundReplacementEntity: [ :unresolved :currentEntity | 1 halt ];
-											 yourself)
-									foundAction: [ :type :currentEntity | typedefEntity aliasedType: type ] ]
-						ifFalse: [ typedefEntity aliasedType: aliasedType ] ] ]
+	self useCurrentEntity: typedefEntities first during: [
+			aliasedType := self visit: aTSNode _type.
+
+			aliasedType isString
+				ifTrue: [
+						aliasedType := self visit: aTSNode _type.
+						self
+							resolve: ((SRIdentifierResolvable identifier: aliasedType)
+									 expectedKind: FamixCType;
+									 notFoundReplacementEntity: [ :unresolved :currentEntity | 1 halt ];
+									 yourself)
+							foundAction: [ :type :currentEntity | typedefEntities do: [ :each | each aliasedType: type ] ] ]
+				ifFalse: [ typedefEntities do: [ :each | each aliasedType: aliasedType ] ] ]
 ]
 
 { #category : 'visiting' }
