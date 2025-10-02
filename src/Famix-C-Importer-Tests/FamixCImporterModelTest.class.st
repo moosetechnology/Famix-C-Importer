@@ -2323,6 +2323,24 @@ FamixCImporterModelTest >> testTypedefSourceAnchor [
 		equals: 20
 ]
 
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefTypeSpecifier [
+
+	| sourceCode |
+	sourceCode := '
+	typedef unsigned char uint8_t;
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAliasType) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'uint8_t'
+]
+
 { #category : 'tests - union' }
 FamixCImporterModelTest >> testUnionFieldAnonymousUnion [
 
