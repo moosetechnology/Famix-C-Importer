@@ -2341,6 +2341,25 @@ FamixCImporterModelTest >> testTypedefTypeSpecifier [
 		equals: 'uint8_t'
 ]
 
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefWithMultipleNames [
+
+	| sourceCode aliases |
+	sourceCode := '
+	typedef struct myStruct {
+		int a
+		} tdStruct1, tdStruct2;
+	'.
+
+	importer importFromString: sourceCode.
+	aliases := importer model allWithType: FamixCAliasType.
+	
+	self assert: aliases size equals: 2.
+	self assert: aliases first aliasedType name equals: 'myStruct'.
+	self assert: aliases second aliasedType name equals: 'myStruct'.
+	self assert: importer model allStructuralEntities size equals: 1
+]
+
 { #category : 'tests - union' }
 FamixCImporterModelTest >> testUnionFieldAnonymousUnion [
 

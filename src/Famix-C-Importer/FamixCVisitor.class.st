@@ -815,29 +815,29 @@ FamixCVisitor >> visitTranslationUnit: aTSNode [
 FamixCVisitor >> visitTypeDefinition: aTSNode [
 	"type declarator"
 
-	| typedefEntity aliasedType |
-	typedefEntity := model newAliasType name: (self visit: aTSNode _declarator).
+	| aliasedType typeIdentifiers |
+	typeIdentifiers := self ensureAsOrderedCollection: aTSNode _declarator.
+	typeIdentifiers do: [ :each |
+			| typedefEntity |
+			typedefEntity := model newAliasType name: (self visit: each).
 
-	typedefEntity typeContainer: self currentEntity.
+			typedefEntity typeContainer: self currentEntity.
 
-	self setSourceAnchor: typedefEntity from: aTSNode.
+			self setSourceAnchor: typedefEntity from: aTSNode.
 
-	self useCurrentEntity: typedefEntity during: [
-			aliasedType := self visit: aTSNode _type.
-			
-
-			aliasedType isString
-				ifTrue: [
-						aliasedType := self visit: aTSNode _type.
-
-
-						self
-							resolve: ((SRIdentifierResolvable identifier: aliasedType)
-									 expectedKind: FamixCType;
-									 notFoundReplacementEntity: [ :unresolved :currentEntity | 1 halt ];
-									 yourself)
-							foundAction: [ :type :currentEntity | typedefEntity aliasedType: type ] ]
-				ifFalse: [ typedefEntity aliasedType: aliasedType ] ]
+			self useCurrentEntity: typedefEntity during: [
+					aliasedType := self visit: aTSNode _type.
+					
+					aliasedType isString
+						ifTrue: [
+								aliasedType := self visit: aTSNode _type.
+								self
+									resolve: ((SRIdentifierResolvable identifier: aliasedType)
+											 expectedKind: FamixCType;
+											 notFoundReplacementEntity: [ :unresolved :currentEntity | 1 halt ];
+											 yourself)
+									foundAction: [ :type :currentEntity | typedefEntity aliasedType: type ] ]
+						ifFalse: [ typedefEntity aliasedType: aliasedType ] ] ]
 ]
 
 { #category : 'visiting' }
