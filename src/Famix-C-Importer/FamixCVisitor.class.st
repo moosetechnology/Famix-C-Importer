@@ -55,6 +55,22 @@ FamixCVisitor class >> cPrimitiveTypes [
 ]
 
 { #category : 'as yet unclassified' }
+FamixCVisitor class >> notPrimitiveTypes [
+	"tree-sitter considers these as primitive types but they are not in reality.
+	They may be typedef defined in the standard library or compiler specific
+	"
+	self flag: 'TODO'. "to be completed"
+	^ #( 
+		'uint8_t' 
+		'uint16_t' 
+		'uint32_t' 
+		'uint64_t' 
+		'intptr_t' 
+		'uintptr_t'
+		)
+]
+
+{ #category : 'as yet unclassified' }
 FamixCVisitor >> allHeaderFiles [
 
 	^ model allWithType: FamixCHeaderFile
@@ -691,7 +707,10 @@ FamixCVisitor >> visitPreprocInclude: aTSNode [
 { #category : 'visiting' }
 FamixCVisitor >> visitPrimitiveType: aTSNode [
 
-	^ self ensurePrimitiveTypeExist: aTSNode sourceText
+	self class notPrimitiveTypes 
+		detect: [ :each | each = aTSNode sourceText ]
+		ifFound: [ ^ aTSNode sourceText ]
+		ifNone: [ ^ self ensurePrimitiveTypeExist: aTSNode sourceText ]
 ]
 
 { #category : 'private - transcript cleaning' }
@@ -805,6 +824,7 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 
 	self useCurrentEntity: typedefEntity during: [
 			aliasedType := self visit: aTSNode _type.
+			
 
 			aliasedType isString
 				ifTrue: [
