@@ -397,8 +397,14 @@ FamixCVisitor >> visitArgumentList: aTSNode [
 FamixCVisitor >> visitArrayDeclarator: aTSNode [
 	"declarator size"
 
+	| arrName |
+	
 	self visit: aTSNode _size.
-	^ self visit: aTSNode _declarator
+	arrName := self visit: aTSNode _declarator.
+	
+	arrName isString
+		ifTrue: [ ^ arrName ]
+		ifFalse: [ ^ arrName first ]
 ]
 
 { #category : 'visiting' }

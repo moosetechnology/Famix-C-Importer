@@ -934,6 +934,63 @@ FamixCImporterModelTest >> testLocalVariableArray [
 ]
 
 { #category : 'tests - local variables' }
+FamixCImporterModelTest >> testLocalVariableArray2D [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int matrix[3][4];  
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'matrix'
+]
+
+{ #category : 'tests - local variables' }
+FamixCImporterModelTest >> testLocalVariableArrayOfPointers [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		char *names[3];
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'names'
+]
+
+{ #category : 'tests - local variables' }
+FamixCImporterModelTest >> testLocalVariableArrayPointer [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		uint8_t (*bufs)[64*1024] = NULL;
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'bufs'
+]
+
+{ #category : 'tests - local variables' }
 FamixCImporterModelTest >> testLocalVariableArrayVariableLength [
 
 	| sourceCode |
@@ -949,6 +1006,25 @@ FamixCImporterModelTest >> testLocalVariableArrayVariableLength [
 	self
 		assert: importer model allLocalVariables anyOne name
 		equals: 'vla'
+]
+
+{ #category : 'tests - local variables' }
+FamixCImporterModelTest >> testLocalVariableDynamicArray [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int *arr = malloc(5 * sizeof(int)); 
+		return 0;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allLocalVariables size equals: 1.
+	self
+		assert: importer model allLocalVariables anyOne name
+		equals: 'arr'
 ]
 
 { #category : 'tests - local variables' }
