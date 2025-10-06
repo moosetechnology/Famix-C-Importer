@@ -55,6 +55,22 @@ FamixCVisitor class >> cPrimitiveTypes [
 ]
 
 { #category : 'as yet unclassified' }
+FamixCVisitor class >> notPrimitiveTypes [
+	"tree-sitter considers these as primitive types but they are not in reality.
+	They may be typedef defined in the standard library or compiler specific
+	"
+	self flag: 'TODO'. "to be completed"
+	^ #( 
+		'uint8_t' 
+		'uint16_t' 
+		'uint32_t' 
+		'uint64_t' 
+		'intptr_t' 
+		'uintptr_t'
+		)
+]
+
+{ #category : 'as yet unclassified' }
 FamixCVisitor >> allHeaderFiles [
 
 	^ model allWithType: FamixCHeaderFile
@@ -69,7 +85,10 @@ FamixCVisitor >> assignTypeTo: aFamixCTypedEntity with: aStringOrType [
 				self
 					resolve: ((SRIdentifierWithNode identifier: aStringOrType)
 							 expectedKind: FamixCType;
-							 notFoundReplacementEntity: [ :unresolved | 1 halt ];
+							 notFoundReplacementEntity: [ :unresolved |
+									 (model newTypeNamed: aStringOrType)
+										 isStub: true;
+										 yourself ];
 							 yourself)
 					foundAction: [ :type :currentEntity | aFamixCTypedEntity typing: (self newEntityTypingFor: type) ] ]
 		ifFalse: [ "sometimes when the type of the entity is an anonymous structural entity like struct or union so we need to directly assign it to the entity. Moreover this type is only used there.
@@ -691,7 +710,10 @@ FamixCVisitor >> visitPreprocInclude: aTSNode [
 { #category : 'visiting' }
 FamixCVisitor >> visitPrimitiveType: aTSNode [
 
-	^ self ensurePrimitiveTypeExist: aTSNode sourceText
+	self class notPrimitiveTypes 
+		detect: [ :each | each = aTSNode sourceText ]
+		ifFound: [ ^ aTSNode sourceText ]
+		ifNone: [ ^ self ensurePrimitiveTypeExist: aTSNode sourceText ]
 ]
 
 { #category : 'private - transcript cleaning' }
@@ -796,28 +818,32 @@ FamixCVisitor >> visitTranslationUnit: aTSNode [
 FamixCVisitor >> visitTypeDefinition: aTSNode [
 	"type declarator"
 
-	| typedefEntity aliasedType |
-	typedefEntity := model newAliasType name: (self visit: aTSNode _declarator).
+	| aliasedType typeIdentifiers typedefEntities |
+	
+	typeIdentifiers := self ensureAsOrderedCollection: aTSNode _declarator. "this may be a collection in the case of a multiple names for one typedef"
+	
+	typedefEntities := typeIdentifiers collect: [ :each |
+			| typedefEntity |
+			typedefEntity := model newAliasType 
+											name: (self visit: each); 
+											typeContainer: self currentEntity.
 
-	typedefEntity typeContainer: self currentEntity.
+			self setSourceAnchor: typedefEntity from: aTSNode.
+			typedefEntity ].
 
-	self setSourceAnchor: typedefEntity from: aTSNode.
-
-	self useCurrentEntity: typedefEntity during: [
+	self useCurrentEntity: typedefEntities first during: [
 			aliasedType := self visit: aTSNode _type.
 
 			aliasedType isString
 				ifTrue: [
 						aliasedType := self visit: aTSNode _type.
-
-
 						self
 							resolve: ((SRIdentifierResolvable identifier: aliasedType)
 									 expectedKind: FamixCType;
 									 notFoundReplacementEntity: [ :unresolved :currentEntity | 1 halt ];
 									 yourself)
-							foundAction: [ :type :currentEntity | typedefEntity aliasedType: type ] ]
-				ifFalse: [ typedefEntity aliasedType: aliasedType ] ]
+							foundAction: [ :type :currentEntity | typedefEntities do: [ :each | each aliasedType: type ] ] ]
+				ifFalse: [ typedefEntities do: [ :each | each aliasedType: aliasedType ] ] ]
 ]
 
 { #category : 'visiting' }

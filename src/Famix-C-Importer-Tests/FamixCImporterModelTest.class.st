@@ -2089,6 +2089,24 @@ FamixCImporterModelTest >> testStructTypeVarExcludedFromModel [
 		equals: 1
 ]
 
+{ #category : 'tests - type' }
+FamixCImporterModelTest >> testTypeStub [
+
+	| sourceCode stubTypes |
+	sourceCode := '
+	struct sockaddr_un {
+       CURL_SA_FAMILY_T sun_family;
+       char sun_path[UNIX_PATH_MAX];
+     } '.
+
+	importer importFromString: sourceCode.
+	stubTypes := (importer model allTypes select: [ :each | each isStub ]).
+
+	self assert: stubTypes size equals: 1.
+	self assert: stubTypes anyOne name equals: 'CURL_SA_FAMILY_T'
+	
+]
+
 { #category : 'tests - typedef' }
 FamixCImporterModelTest >> testTypedefForAnonymousStruct [
 
@@ -2321,6 +2339,68 @@ FamixCImporterModelTest >> testTypedefSourceAnchor [
 		(importer model allWithType: FamixCAliasType) anyOne sourceAnchor
 			endPos
 		equals: 20
+]
+
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefTypeSpecifier [
+
+	| sourceCode |
+	sourceCode := '
+	typedef unsigned char uint8_t;
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: (importer model allWithType: FamixCAliasType) size
+		equals: 1.
+	self
+		assert: (importer model allWithType: FamixCAliasType) anyOne name
+		equals: 'uint8_t'
+]
+
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefWithMultipleNames [
+
+	| sourceCode aliases structs |
+	sourceCode := '
+	typedef struct myStruct {
+		int a
+		} tdStruct1, tdStruct2;
+	'.
+
+	importer importFromString: sourceCode.
+	aliases := importer model allWithType: FamixCAliasType.
+	structs := importer model allWithType: FamixCStruct.
+	
+	self assert: aliases size equals: 2.
+	self assert: aliases first aliasedType name equals: 'myStruct'.
+	self assert: aliases second aliasedType name equals: 'myStruct'.
+	self assert: structs size equals: 1.
+	self assert: structs anyOne typeAliases size equals: 2
+	
+]
+
+{ #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefWithMultipleNamesPointer [
+
+	| sourceCode aliases structs |
+	sourceCode := '
+	typedef struct myStruct {
+		int a
+		} tdStruct1, *tdStruct2;
+	'.
+
+	importer importFromString: sourceCode.
+	aliases := importer model allWithType: FamixCAliasType.
+	structs := importer model allWithType: FamixCStruct.
+	
+	self assert: aliases size equals: 2.
+	self assert: aliases first aliasedType name equals: 'myStruct'.
+	self assert: aliases second aliasedType name equals: 'myStruct'.
+	self assert: structs size equals: 1.
+	self assert: structs anyOne typeAliases size equals: 2
+	
 ]
 
 { #category : 'tests - union' }
