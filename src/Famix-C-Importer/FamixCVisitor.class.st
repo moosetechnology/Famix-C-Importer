@@ -862,12 +862,12 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 						                 typeContainer: self currentEntity.
 					self setSourceAnchor: typedefEntity from: aTSNode.
 					typedefEntities add: typedefEntity ] ].
-			
+
 	typedefEntities isNotEmpty
 		ifTrue: [
 				self useCurrentEntity: typedefEntities first during: [
 						aliasedType := self visit: aTSNode _type.
-
+						"aliasedType may be a string, a type, a FamixCVisitor (in rare cases)"
 						aliasedType isString
 							ifTrue: [
 									aliasedType := self visit: aTSNode _type.
@@ -880,7 +880,8 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 										foundAction: [ :type :currentEntity |
 											typedefEntities do: [ :each | each aliasedType: type ] ] ]
 							ifFalse: [
-							typedefEntities do: [ :each | each aliasedType: aliasedType ] ] ] ]
+									(aliasedType class inheritsFrom: FamixCType) ifTrue: [
+										typedefEntities do: [ :each | each aliasedType: aliasedType ] ] ] ] ]
 		ifFalse: [ self visit: aTSNode _type ]
 ]
 

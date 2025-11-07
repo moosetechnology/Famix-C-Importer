@@ -2543,6 +2543,26 @@ FamixCImporterModelTest >> testTypedefTypeSpecifier [
 ]
 
 { #category : 'tests - typedef' }
+FamixCImporterModelTest >> testTypedefWithErrorNode [ 
+	"parsing this code produces ERROR node which will break the AST structure.
+	The ERROR node is not due the code but from tree-sitter-c grammar issue. 
+	
+	I just want to test that importing this will not raise any blocking errors.
+	errors raised when there is something else left if the scope apart from the file entity
+	"
+	| sourceCode |
+	sourceCode := '
+	typedef HMODULE (APIENTRY *LOADLIBRARYEX_FN)(LPCTSTR, HANDLE, DWORD);
+	'.
+
+	importer importFromString: sourceCode.
+
+	self
+		assert: importer errorReport errors size
+		equals: 0.
+]
+
+{ #category : 'tests - typedef' }
 FamixCImporterModelTest >> testTypedefWithMultipleNames [
 
 	| sourceCode aliases structs |
