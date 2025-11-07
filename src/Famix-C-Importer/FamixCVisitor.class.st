@@ -850,36 +850,44 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 	"type declarator"
 
 	| aliasedType typeIdentifiers typedefEntities |
-	
-	typeIdentifiers := self ensureAsOrderedCollection: aTSNode _declarator. "this may be a collection in the case of a multiple names for one typedef"
-	
-	typedefEntities := typeIdentifiers collect: [ :each |
-			| typedefEntity |
-			typedefEntity := model newAliasType 
-											name: (self visit: each); 
-											typeContainer: self currentEntity.
-
-			self setSourceAnchor: typedefEntity from: aTSNode.
-			typedefEntity ].
-
-	self useCurrentEntity: typedefEntities first during: [
-			aliasedType := self visit: aTSNode _type.
-
-			aliasedType isString
-				ifTrue: [
+	typedefEntities := OrderedCollection new.
+	typeIdentifiers := self ensureAsOrderedCollection:
+		                   aTSNode _declarator. "this may be a collection in the case of a multiple names for one typedef"
+	typeIdentifiers do: [ :each |
+			| typedefEntity aliasName |
+			aliasName := self visit: each.
+			aliasName isString ifTrue: [
+					typedefEntity := model newAliasType
+						                 name: (self visit: each);
+						                 typeContainer: self currentEntity.
+					self setSourceAnchor: typedefEntity from: aTSNode.
+					typedefEntities add: typedefEntity ] ].
+			
+	typedefEntities isNotEmpty
+		ifTrue: [
+				self useCurrentEntity: typedefEntities first during: [
 						aliasedType := self visit: aTSNode _type.
-						self
-							resolve: ((SRIdentifierResolvable identifier: aliasedType)
-									 expectedKind: FamixCType;
-									 notFoundReplacementEntity: [ :unresolved :currentEntity | 1 halt ];
-									 yourself)
-							foundAction: [ :type :currentEntity | typedefEntities do: [ :each | each aliasedType: type ] ] ]
-				ifFalse: [ typedefEntities do: [ :each | each aliasedType: aliasedType ] ] ]
+
+						aliasedType isString
+							ifTrue: [
+									aliasedType := self visit: aTSNode _type.
+									self
+										resolve: ((SRIdentifierResolvable identifier: aliasedType)
+												 expectedKind: FamixCType;
+												 notFoundReplacementEntity: [ :unresolved :currentEntity |
+													 1 halt ];
+												 yourself)
+										foundAction: [ :type :currentEntity |
+											typedefEntities do: [ :each | each aliasedType: type ] ] ]
+							ifFalse: [
+							typedefEntities do: [ :each | each aliasedType: aliasedType ] ] ] ]
+		ifFalse: [ self visit: aTSNode _type ]
 ]
 
 { #category : 'visiting' }
 FamixCVisitor >> visitTypeIdentifier: aTSNode [ 
 	"no fields"
+	"1 haltIf: [ aTSNode sourceText = 'ULONGLONG' ]."
 	^ aTSNode sourceText 
 ]
 
