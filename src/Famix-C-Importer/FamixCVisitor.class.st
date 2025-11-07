@@ -329,6 +329,15 @@ FamixCVisitor >> newEntityTypingFor: aFamixCTypeEntity [
 ]
 
 { #category : 'accessing' }
+FamixCVisitor >> newNamedPreprocDefine: aString from: aTSNode [
+
+	| macro |
+	macro := model newPreprocessorDefineNamed: aString.
+	self setSourceAnchor: macro from: aTSNode.
+	^ macro
+]
+
+{ #category : 'accessing' }
 FamixCVisitor >> newNamedVariable: aString isLocal: aBoolean [
 
 	^ aBoolean
@@ -688,6 +697,22 @@ FamixCVisitor >> visitPointerDeclarator: aTSNode [
 FamixCVisitor >> visitPointerExpression: aTSNode [
 
 	^ self visitChildren: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitPreprocDef: aTSNode [
+
+	^ self
+		  newNamedPreprocDefine: (self visit: aTSNode _name)
+		  from: aTSNode
+]
+
+{ #category : 'visiting' }
+FamixCVisitor >> visitPreprocFunctionDef: aTSNode [
+
+	^ self
+		  newNamedPreprocDefine: (self visit: aTSNode _name)
+		  from: aTSNode
 ]
 
 { #category : 'visiting' }

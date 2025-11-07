@@ -1560,6 +1560,113 @@ FamixCImporterModelTest >> testLocalVariableWriteAccessSourceAnchor [
 		equals: 28
 ]
 
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroNameValue [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define PI 3.14159265359
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'PI'
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroNameWithExpression [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define PI (22 / 7)
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'PI'
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroWithExpressionMultiLine [
+
+	| sourceCode macros |
+	sourceCode := '
+	#define UNITTEST_BEGIN_SIMPLE                   \
+  		(void)arg;                                    \
+  		{
+
+	#define UNITTEST_END_SIMPLE                     \
+    	goto unit_test_abort;  			              \
+  		}                                             \
+	unit_test_abort:                                \
+  		return (CURLcode)unitfail;
+
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	self assert: macros size equals: 2.
+	self assert: macros first name equals: 'UNITTEST_BEGIN_SIMPLE'.
+	self assert: macros second name equals: 'UNITTEST_END_SIMPLE'
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroWithExpressionMultiLineWithParsingError [
+	"adding comments inside macros lead to an ERROR node even if the code is correct due to the tree-sitter C parser limitation. 
+This test aims to to test the hacky code that skip the error node
+"
+
+	| sourceCode macros |
+	self skip.
+	sourceCode := '
+	#define DEBUG_PRINT(msg)                    \
+    	do {             /*dfdf*/                       \
+        	printf("DEBUG: %s\n", msg);       \
+    	} while (0)
+
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	self assert: macros size equals: 1.
+	self assert: macros first name equals: 'DEBUG_PRINT'.
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroWithParameterizedExpression [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define SQUARE_AREA(s) (s * s)
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'SQUARE_AREA'
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroWithParameterizedExpressionMultiLine [
+
+	| sourceCode macros |
+	sourceCode := '
+	#define DEBUG_PRINT(msg) \
+    	do { \
+        	printf("DEBUG: %s\n", msg); \
+    	} while (0)
+
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'DEBUG_PRINT'
+]
+
 { #category : 'tests - local variables' }
 FamixCImporterModelTest >> testNestedLocalVariable [
 
@@ -2734,4 +2841,18 @@ FamixCImporterModelTest >> testUsingEnum [
 	self
 		assert: (importer model allEnums ) anyOne name
 		equals: 'priority'
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testVariadicMacros [
+
+	| sourceCode macros |
+	sourceCode := '
+	#define eprintf(...) fprintf (stderr, __VA_ARGS__)
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'eprintf'
 ]
