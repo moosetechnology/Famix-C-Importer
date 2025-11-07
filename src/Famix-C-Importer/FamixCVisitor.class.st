@@ -701,7 +701,7 @@ FamixCVisitor >> visitPointerExpression: aTSNode [
 
 { #category : 'visiting' }
 FamixCVisitor >> visitPreprocDef: aTSNode [
-1halt.
+
 	^ self
 		  newNamedPreprocDefine: (self visit: aTSNode _name)
 		  from: aTSNode

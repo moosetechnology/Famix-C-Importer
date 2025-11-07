@@ -1598,7 +1598,7 @@ FamixCImporterModelTest >> testMacroWithExpressionMultiLine [
   		{
 
 	#define UNITTEST_END_SIMPLE                     \
-    	goto unit_test_abort; /* avoid warning */   \
+    	goto unit_test_abort;  			              \
   		}                                             \
 	unit_test_abort:                                \
   		return (CURLcode)unitfail;
@@ -1610,6 +1610,28 @@ FamixCImporterModelTest >> testMacroWithExpressionMultiLine [
 	self assert: macros size equals: 2.
 	self assert: macros first name equals: 'UNITTEST_BEGIN_SIMPLE'.
 	self assert: macros second name equals: 'UNITTEST_END_SIMPLE'
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroWithExpressionMultiLineWithParsingError [
+	"adding comments inside macros lead to an ERROR node even if the code is correct due to the tree-sitter C parser limitation. 
+This test aims to to test the hacky code that skip the error node
+"
+
+	| sourceCode macros |
+	self skip.
+	sourceCode := '
+	#define DEBUG_PRINT(msg)                    \
+    	do {             /*dfdf*/                       \
+        	printf("DEBUG: %s\n", msg);       \
+    	} while (0)
+
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	self assert: macros size equals: 1.
+	self assert: macros first name equals: 'DEBUG_PRINT'.
 ]
 
 { #category : 'tests - macro' }
