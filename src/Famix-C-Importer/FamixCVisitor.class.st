@@ -887,7 +887,6 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 { #category : 'visiting' }
 FamixCVisitor >> visitTypeIdentifier: aTSNode [ 
 	"no fields"
-	"1 haltIf: [ aTSNode sourceText = 'ULONGLONG' ]."
 	^ aTSNode sourceText 
 ]
 
