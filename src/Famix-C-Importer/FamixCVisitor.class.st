@@ -527,6 +527,7 @@ FamixCVisitor >> visitEnumerator: aTSNode [
 			                    (self visit: aTSNode _name))
 		                   parentEnum: self currentEntity;
 		                   yourself.
+	self currentEntity enumValues add: enumValueEntity.
 	self setSourceAnchor: enumValueEntity from: aTSNode.
 
 	^ enumValueEntity
@@ -559,7 +560,7 @@ FamixCVisitor >> visitFieldDeclaration: aTSNode [
 								fieldDelcarationEntity := model newAttribute
 									                          name: eachName;
 									                          parentType: self currentEntity.
-
+								self currentEntity attributes add: fieldDelcarationEntity.
 								self setSourceAnchor: fieldDelcarationEntity from: aTSNode.
 								type := self visit: aTSNode _type.
 								self assignTypeTo: fieldDelcarationEntity with: type ] ] ]
@@ -878,10 +879,14 @@ FamixCVisitor >> visitTypeDefinition: aTSNode [
 													 1 halt ];
 												 yourself)
 										foundAction: [ :type :currentEntity |
-											typedefEntities do: [ :each | each aliasedType: type ] ] ]
+												typedefEntities do: [ :each |
+														each aliasedType: type.
+														type typeAliases add: each ] ] ]
 							ifFalse: [
 									(aliasedType class inheritsFrom: FamixCType) ifTrue: [
-										typedefEntities do: [ :each | each aliasedType: aliasedType ] ] ] ] ]
+											typedefEntities do: [ :each |
+													each aliasedType: aliasedType.
+													aliasedType typeAliases add: each ] ] ] ] ]
 		ifFalse: [ self visit: aTSNode _type ]
 ]
 
