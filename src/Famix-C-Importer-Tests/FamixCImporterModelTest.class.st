@@ -1137,9 +1137,9 @@ FamixCImporterModelTest >> testLocalVariableReadAccessInArgumentListWithLiteral 
 		assert: readAccesses anyOne accessor name
 		equals: 'parentFunction'.
 	self assert:
-		(readAccesses anySatisfy: [ :access | access variable name = 'a' ]).
+		(readAccesses anySatisfy: [ :access | access candidates first name = 'a' ]).
 	self assert:
-		(readAccesses anySatisfy: [ :access | access variable name = 'b' ])
+		(readAccesses anySatisfy: [ :access | access candidates first name = 'b' ])
 ]
 
 { #category : 'tests - accesses' }

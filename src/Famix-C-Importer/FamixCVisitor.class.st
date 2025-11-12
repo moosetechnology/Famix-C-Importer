@@ -167,7 +167,7 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 		          in: [ :access | self setSourceAnchor: access from: aTSNode ];
 		          yourself.
 		
-	self resolveAccessOf: variableName foundAction: [ :variable :currentEntity | access variable: variable ].
+	self resolveAccessOf: variableName foundAction: [ :variable :currentEntity | access candidates add: variable ].
 
 	^ access
 ]
