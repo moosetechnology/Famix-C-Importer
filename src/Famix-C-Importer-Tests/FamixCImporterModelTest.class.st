@@ -636,6 +636,24 @@ FamixCImporterModelTest >> testFunctionInvocationSignature [
 ]
 
 { #category : 'tests - invocations' }
+FamixCImporterModelTest >> testFunctionInvocationStub [
+
+	| sourceCode stubFunctions |
+	sourceCode := '
+	int main(){
+		func();
+		return func();
+	}
+	'.
+	importer importFromString: sourceCode.
+
+	stubFunctions := importer model allFunctions select: [ :e | e isStub ].
+
+	self assert: stubFunctions size equals: 1.
+	self assert: stubFunctions first name equals: 'func'
+]
+
+{ #category : 'tests - invocations' }
 FamixCImporterModelTest >> testFunctionOutgoingInvocations [
 
 	| sourceCode invocation |

@@ -142,7 +142,8 @@ FamixCVisitor >> createDereferencedInvocation: aTSNode [
 	self
 		resolve: ((SRIdentifierResolvable identifier: aTSNode _function sourceText)
 				 expectedKind: FamixCFunction;
-				 notFoundReplacementEntity: [ :unresolved |self createStubFunctionFrom: aTSNode _function sourceText];
+				 notFoundReplacementEntity: [ :unresolved |
+					self ensureStubFunctionFrom: aTSNode _function sourceText];
 				 yourself)
 		foundAction: [ :function :currentEntity | invocation addCandidate: function ].
 
@@ -243,6 +244,15 @@ FamixCVisitor >> ensureEntityExist: aFamixCEntity name: aString [
 FamixCVisitor >> ensurePrimitiveTypeExist: aString [
 
 	^ self ensureEntityExist: FamixCPrimitiveType name: aString
+]
+
+{ #category : 'private' }
+FamixCVisitor >> ensureStubFunctionFrom: aString [
+
+	^ model allFunctions
+		  detect: [ :function |
+		  function isStub and: [ function name = aString ] ]
+		  ifNone: [ self createStubFunctionFrom: aString ]
 ]
 
 { #category : 'private' }
