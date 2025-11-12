@@ -180,6 +180,15 @@ FamixCVisitor >> createStubFunctionFrom: aString [
 		  yourself
 ]
 
+{ #category : 'accessing' }
+FamixCVisitor >> createStubGlobalVariableFrom: aString [
+
+	| var |
+	var := model newGlobalVariableNamed: aString.
+	var isStub: true.
+	^ var
+]
+
 { #category : 'private' }
 FamixCVisitor >> createStubHeaderFileFrom: aPath [
 
@@ -234,6 +243,12 @@ FamixCVisitor >> ensureEntityExist: aFamixCEntity name: aString [
 FamixCVisitor >> ensurePrimitiveTypeExist: aString [
 
 	^ self ensureEntityExist: FamixCPrimitiveType name: aString
+]
+
+{ #category : 'private' }
+FamixCVisitor >> ensureStubGlobalVariableFrom: aString [
+
+	^ (model allGlobalVariables ) detect: [ :var | var isStub and: [ var name = aString ] ] ifNone: [ self createStubGlobalVariableFrom: aString ]
 ]
 
 { #category : 'private' }
@@ -388,6 +403,7 @@ FamixCVisitor >> resolveAccessOf: identifier foundAction: aBlockClosure [
 						 FamixCPreprocessorDefine };
 				 notFoundReplacementEntity: [ :unresolved :currentEntity | "we will look among the global variables or create a stub if not found"
 						 | globalVar |
+						 self flag: 'TODO'. "refactor"
 						 model allGlobalVariables
 							 detect: [ :each | each name = unresolved identifier ]
 							 ifFound: [ :found | globalVar := found ]
@@ -395,7 +411,9 @@ FamixCVisitor >> resolveAccessOf: identifier foundAction: aBlockClosure [
 									 (model allWithType: FamixCPreprocessorDefine)
 										 detect: [ :each | each name = unresolved identifier ]
 										 ifFound: [ :found | globalVar := found ]
-										 ifNone: [ 1 halt "create globalVar stub" ] ].
+										 ifNone: [ "create globalVar stub"
+											 globalVar := self ensureStubGlobalVariableFrom:
+													              unresolved identifier ] ].
 						 globalVar ];
 				 yourself)
 		foundAction: aBlockClosure

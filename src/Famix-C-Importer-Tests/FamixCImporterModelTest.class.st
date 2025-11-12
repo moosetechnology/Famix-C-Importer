@@ -862,6 +862,45 @@ FamixCImporterModelTest >> testGlobalVariableReadAccessOvewrite [
 	self assert: importer model allGlobalVariables anyOne incomingAccesses size equals: 0.
 ]
 
+{ #category : 'tests - global variables' }
+FamixCImporterModelTest >> testGlobalVariableStub [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		return aGlobalVarStub;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allGlobalVariables size equals: 1.
+	self assert: importer model allGlobalVariables anyOne isStub.
+	self
+		assert: importer model allGlobalVariables anyOne name
+		equals: 'aGlobalVarStub'
+]
+
+{ #category : 'tests - global variables' }
+FamixCImporterModelTest >> testGlobalVariableStubAlreadyExist [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a = aGlobalVarStub;
+		return aGlobalVarStub;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allGlobalVariables size equals: 1.
+	self assert: importer model allGlobalVariables anyOne isStub.
+	self
+		assert: importer model allGlobalVariables anyOne name
+		equals: 'aGlobalVarStub'
+]
+
 { #category : 'tests - accesses' }
 FamixCImporterModelTest >> testGlobalVariableWriteAccess [
 
