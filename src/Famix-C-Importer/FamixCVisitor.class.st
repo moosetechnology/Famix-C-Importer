@@ -142,7 +142,8 @@ FamixCVisitor >> createDereferencedInvocation: aTSNode [
 	self
 		resolve: ((SRIdentifierResolvable identifier: aTSNode _function sourceText)
 				 expectedKind: FamixCFunction;
-				 notFoundReplacementEntity: [ :unresolved |self createStubFunctionFrom: aTSNode _function sourceText];
+				 notFoundReplacementEntity: [ :unresolved |
+					self ensureStubFunctionFrom: aTSNode _function sourceText];
 				 yourself)
 		foundAction: [ :function :currentEntity | invocation addCandidate: function ].
 
@@ -167,7 +168,7 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 		          in: [ :access | self setSourceAnchor: access from: aTSNode ];
 		          yourself.
 		
-	self resolveAccessOf: variableName foundAction: [ :variable :currentEntity | access variable: variable ].
+	self resolveAccessOf: variableName foundAction: [ :variable :currentEntity | access candidates add: variable ].
 
 	^ access
 ]
@@ -178,6 +179,15 @@ FamixCVisitor >> createStubFunctionFrom: aString [
 	^ (model newFunctionNamed: aString)
 		  isStub: true;
 		  yourself
+]
+
+{ #category : 'accessing' }
+FamixCVisitor >> createStubGlobalVariableFrom: aString [
+
+	| var |
+	var := model newGlobalVariableNamed: aString.
+	var isStub: true.
+	^ var
 ]
 
 { #category : 'private' }
@@ -237,6 +247,21 @@ FamixCVisitor >> ensurePrimitiveTypeExist: aString [
 ]
 
 { #category : 'private' }
+FamixCVisitor >> ensureStubFunctionFrom: aString [
+
+	^ model allFunctions
+		  detect: [ :function |
+		  function isStub and: [ function name = aString ] ]
+		  ifNone: [ self createStubFunctionFrom: aString ]
+]
+
+{ #category : 'private' }
+FamixCVisitor >> ensureStubGlobalVariableFrom: aString [
+
+	^ (model allGlobalVariables ) detect: [ :var | var isStub and: [ var name = aString ] ] ifNone: [ self createStubGlobalVariableFrom: aString ]
+]
+
+{ #category : 'private' }
 FamixCVisitor >> ensureStubHeaderFileFrom: aPath [
 
 	self flag: #todo. "Manage paths"
@@ -284,14 +309,14 @@ FamixCVisitor >> isPrimitiveType: aString [
 
 { #category : 'accessing' }
 FamixCVisitor >> isReadAccess: aTSNode [
-
+	
 	(aTSNode isInField: #arguments ofParentOfType: #call_expression) ifTrue: [ ^ true ].
 
 
 	aTSNode parentsDo: [ :parentNode |
 			parentNode type = #call_expression ifTrue: [ ^ false ].
 
-			(#( binary_expression argument_list parenthesized_expression return_statement ) includes: parentNode type) ifTrue: [
+			(#( binary_expression argument_list parenthesized_expression return_statement preproc_ifdef ) includes: parentNode type) ifTrue: [
 				^ parentNode includesChild: aTSNode ].
 
 			"only true if the identifier is on right side of an assignement otherWise it is a write access"
@@ -378,21 +403,30 @@ FamixCVisitor >> relativePath: aFileReference [
 
 { #category : 'as yet unclassified' }
 FamixCVisitor >> resolveAccessOf: identifier foundAction: aBlockClosure [
-self
-		resolve: ((SRIdentifierResolvable identifier: identifier )
+
+	self
+		resolve: ((SRIdentifierResolvable identifier: identifier)
 				 expectedKind: {
 						 FamixCLocalVariable.
-							FamixCParameter.
-						 FamixCGlobalVariable };
+						 FamixCParameter.
+						 FamixCGlobalVariable.
+						 FamixCPreprocessorDefine };
 				 notFoundReplacementEntity: [ :unresolved :currentEntity | "we will look among the global variables or create a stub if not found"
 						 | globalVar |
+						 self flag: 'TODO'. "refactor"
 						 model allGlobalVariables
 							 detect: [ :each | each name = unresolved identifier ]
 							 ifFound: [ :found | globalVar := found ]
-							 ifNone: [ 1 halt "create globalVar stub" ].
+							 ifNone: [
+									 (model allWithType: FamixCPreprocessorDefine)
+										 detect: [ :each | each name = unresolved identifier ]
+										 ifFound: [ :found | globalVar := found ]
+										 ifNone: [ "create globalVar stub"
+											 globalVar := self ensureStubGlobalVariableFrom:
+													              unresolved identifier ] ].
 						 globalVar ];
 				 yourself)
-		foundAction: aBlockClosure.
+		foundAction: aBlockClosure
 ]
 
 { #category : 'visiting' }

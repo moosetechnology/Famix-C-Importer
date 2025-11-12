@@ -636,6 +636,24 @@ FamixCImporterModelTest >> testFunctionInvocationSignature [
 ]
 
 { #category : 'tests - invocations' }
+FamixCImporterModelTest >> testFunctionInvocationStub [
+
+	| sourceCode stubFunctions |
+	sourceCode := '
+	int main(){
+		func();
+		return func();
+	}
+	'.
+	importer importFromString: sourceCode.
+
+	stubFunctions := importer model allFunctions select: [ :e | e isStub ].
+
+	self assert: stubFunctions size equals: 1.
+	self assert: stubFunctions first name equals: 'func'
+]
+
+{ #category : 'tests - invocations' }
 FamixCImporterModelTest >> testFunctionOutgoingInvocations [
 
 	| sourceCode invocation |
@@ -860,6 +878,45 @@ FamixCImporterModelTest >> testGlobalVariableReadAccessOvewrite [
 	self assert: readAccesses anyOne variable name equals: 'b'.
 	self assert: readAccesses anyOne variable class equals: FamixCLocalVariable.
 	self assert: importer model allGlobalVariables anyOne incomingAccesses size equals: 0.
+]
+
+{ #category : 'tests - global variables' }
+FamixCImporterModelTest >> testGlobalVariableStub [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		return aGlobalVarStub;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allGlobalVariables size equals: 1.
+	self assert: importer model allGlobalVariables anyOne isStub.
+	self
+		assert: importer model allGlobalVariables anyOne name
+		equals: 'aGlobalVarStub'
+]
+
+{ #category : 'tests - global variables' }
+FamixCImporterModelTest >> testGlobalVariableStubAlreadyExist [
+
+	| sourceCode |
+	sourceCode := '
+	int parentFunction(){
+		int a = aGlobalVarStub;
+		return aGlobalVarStub;
+	}
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allGlobalVariables size equals: 1.
+	self assert: importer model allGlobalVariables anyOne isStub.
+	self
+		assert: importer model allGlobalVariables anyOne name
+		equals: 'aGlobalVarStub'
 ]
 
 { #category : 'tests - accesses' }
@@ -1137,9 +1194,9 @@ FamixCImporterModelTest >> testLocalVariableReadAccessInArgumentListWithLiteral 
 		assert: readAccesses anyOne accessor name
 		equals: 'parentFunction'.
 	self assert:
-		(readAccesses anySatisfy: [ :access | access variable name = 'a' ]).
+		(readAccesses anySatisfy: [ :access | access candidates first name = 'a' ]).
 	self assert:
-		(readAccesses anySatisfy: [ :access | access variable name = 'b' ])
+		(readAccesses anySatisfy: [ :access | access candidates first name = 'b' ])
 ]
 
 { #category : 'tests - accesses' }
@@ -1572,6 +1629,44 @@ FamixCImporterModelTest >> testMacroNameValue [
 	macros := importer model allWithType: FamixCPreprocessorDefine.
 	self assert: macros size equals: 1.
 	self assert: macros anyOne name equals: 'PI'
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroNameValueAccess [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define PI 3.14159265359
+		int a = PI;
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'PI'.
+	self assert: macros anyOne incomingAccesses isNotEmpty.
+	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroNameValueAccessInsideIfdef [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define DEBUG
+		#ifdef DEBUG
+    		printf("Debug info\n");
+		#endif
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'DEBUG'.
+	self assert: macros anyOne incomingAccesses isNotEmpty.
+	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine
 ]
 
 { #category : 'tests - macro' }
