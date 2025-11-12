@@ -284,14 +284,14 @@ FamixCVisitor >> isPrimitiveType: aString [
 
 { #category : 'accessing' }
 FamixCVisitor >> isReadAccess: aTSNode [
-
+	
 	(aTSNode isInField: #arguments ofParentOfType: #call_expression) ifTrue: [ ^ true ].
 
 
 	aTSNode parentsDo: [ :parentNode |
 			parentNode type = #call_expression ifTrue: [ ^ false ].
 
-			(#( binary_expression argument_list parenthesized_expression return_statement ) includes: parentNode type) ifTrue: [
+			(#( binary_expression argument_list parenthesized_expression return_statement preproc_ifdef ) includes: parentNode type) ifTrue: [
 				^ parentNode includesChild: aTSNode ].
 
 			"only true if the identifier is on right side of an assignement otherWise it is a write access"
@@ -378,21 +378,27 @@ FamixCVisitor >> relativePath: aFileReference [
 
 { #category : 'as yet unclassified' }
 FamixCVisitor >> resolveAccessOf: identifier foundAction: aBlockClosure [
-self
-		resolve: ((SRIdentifierResolvable identifier: identifier )
+
+	self
+		resolve: ((SRIdentifierResolvable identifier: identifier)
 				 expectedKind: {
 						 FamixCLocalVariable.
-							FamixCParameter.
-						 FamixCGlobalVariable };
+						 FamixCParameter.
+						 FamixCGlobalVariable.
+						 FamixCPreprocessorDefine };
 				 notFoundReplacementEntity: [ :unresolved :currentEntity | "we will look among the global variables or create a stub if not found"
 						 | globalVar |
 						 model allGlobalVariables
 							 detect: [ :each | each name = unresolved identifier ]
 							 ifFound: [ :found | globalVar := found ]
-							 ifNone: [ 1 halt "create globalVar stub" ].
+							 ifNone: [
+									 (model allWithType: FamixCPreprocessorDefine)
+										 detect: [ :each | each name = unresolved identifier ]
+										 ifFound: [ :found | globalVar := found ]
+										 ifNone: [ 1 halt "create globalVar stub" ] ].
 						 globalVar ];
 				 yourself)
-		foundAction: aBlockClosure.
+		foundAction: aBlockClosure
 ]
 
 { #category : 'visiting' }

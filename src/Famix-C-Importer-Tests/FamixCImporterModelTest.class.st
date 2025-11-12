@@ -1575,6 +1575,44 @@ FamixCImporterModelTest >> testMacroNameValue [
 ]
 
 { #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroNameValueAccess [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define PI 3.14159265359
+		int a = PI;
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'PI'.
+	self assert: macros anyOne incomingAccesses isNotEmpty.
+	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroNameValueAccessInsideIfdef [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define DEBUG
+		#ifdef DEBUG
+    		printf("Debug info\n");
+		#endif
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'DEBUG'.
+	self assert: macros anyOne incomingAccesses isNotEmpty.
+	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine
+]
+
+{ #category : 'tests - macro' }
 FamixCImporterModelTest >> testMacroNameWithExpression [
 
 	| sourceCode macros |
