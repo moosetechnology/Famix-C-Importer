@@ -163,7 +163,10 @@ FamixCVisitor >> createReadAccessTo: variableName from: aTSNode [
 
 	| access |
 	access := model newAccess
-		          accessor: self currentEntity;
+					"for macros which can be accesed anywhere even if the current entity does not support accesses,
+					so I look for the nearest ancestor that support acceses to make it as the macro's accessor. 
+					But usually the accessor is the current entity"
+		          accessor: self nearestEntityThatSupportAccesses; 
 		          isWrite: false;
 		          in: [ :access | self setSourceAnchor: access from: aTSNode ];
 		          yourself.
@@ -343,6 +346,13 @@ FamixCVisitor >> model: anObject [
 FamixCVisitor >> modelClass [
 
 	^ FamixCModel
+]
+
+{ #category : 'as yet unclassified' }
+FamixCVisitor >> nearestEntityThatSupportAccesses [
+	"I return the nearest ancestor that support accesses. Usually the current entity "
+
+	^ (self solver scopes detect: [ :each | each entity class usesTrait: FamixTWithAccesses ]) entity
 ]
 
 { #category : 'accessing' }

@@ -1646,7 +1646,8 @@ FamixCImporterModelTest >> testMacroNameValueAccess [
 	self assert: macros size equals: 1.
 	self assert: macros anyOne name equals: 'PI'.
 	self assert: macros anyOne incomingAccesses isNotEmpty.
-	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine
+	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine.
+	self assert: macros anyOne incomingAccesses anyOne accessor isPreprocFile 
 ]
 
 { #category : 'tests - macro' }
@@ -1667,6 +1668,57 @@ FamixCImporterModelTest >> testMacroNameValueAccessInsideIfdef [
 	self assert: macros anyOne name equals: 'DEBUG'.
 	self assert: macros anyOne incomingAccesses isNotEmpty.
 	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroNameValueAccessInsideNoAccessesEntity [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define PI 3.14159265359
+		struct Person{
+			char name[50];
+			#ifdef PI
+				int foo;
+			#endif
+		}; 
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'PI'.
+	self assert: macros anyOne incomingAccesses isNotEmpty.
+	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine.
+	self assert: macros anyOne incomingAccesses anyOne accessor isPreprocFile 
+]
+
+{ #category : 'tests - macro' }
+FamixCImporterModelTest >> testMacroNameValueAccessInsideNoAccessesEntity2 [
+
+	| sourceCode macros |
+	sourceCode := '
+		#define PI 3.14159265359 
+		int func(){
+			struct Person{
+				char name[50];
+				#ifdef PI
+					int foo;
+				#endif
+			};			
+			return 0;
+		}
+	'.
+
+	importer importFromString: sourceCode.
+	macros := importer model allWithType: FamixCPreprocessorDefine.
+	
+	self assert: macros size equals: 1.
+	self assert: macros anyOne name equals: 'PI'.
+	self assert: macros anyOne incomingAccesses isNotEmpty.
+	self assert: macros anyOne incomingAccesses anyOne candidates first class equals: FamixCPreprocessorDefine.
+	self assert: macros anyOne incomingAccesses anyOne accessor isFunction 
 ]
 
 { #category : 'tests - macro' }
