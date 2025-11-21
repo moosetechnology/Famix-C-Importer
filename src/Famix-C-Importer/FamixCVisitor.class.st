@@ -657,7 +657,6 @@ FamixCVisitor >> visitFunctionDefinition: aTSNode [
 	"get the created function entity after visiting the declarator"
 	fnEntity := self visit: aTSNode _declarator.
 	
-	fnEntity functionOwner: self currentEntity.
 	self setSourceAnchor: fnEntity from: aTSNode.
 
 	self assignTypeTo: fnEntity with: type.
