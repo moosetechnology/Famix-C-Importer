@@ -638,7 +638,10 @@ FamixCVisitor >> visitFunctionDeclarator: aTSNode [
 	| fnName fnEntity |
 	fnName := aTSNode _declarator sourceText.
 	fnEntity := self ensureEntityExist: FamixCFunction name: fnName.
-	fnEntity functionOwner: self currentEntity.
+	fnEntity functionOwner class = FamixCCompilationUnit ifFalse: [ 
+		"set the functionOwner to the c file"
+		fnEntity functionOwner: self currentEntity ].
+
 	self setSourceAnchor: fnEntity from: aTSNode.
 
 	^ self useCurrentEntity: fnEntity during: [ self visit: aTSNode _parameters ]
@@ -653,7 +656,8 @@ FamixCVisitor >> visitFunctionDefinition: aTSNode [
 
 	"get the created function entity after visiting the declarator"
 	fnEntity := self visit: aTSNode _declarator.
-
+	
+	fnEntity functionOwner: self currentEntity.
 	self setSourceAnchor: fnEntity from: aTSNode.
 
 	self assignTypeTo: fnEntity with: type.
