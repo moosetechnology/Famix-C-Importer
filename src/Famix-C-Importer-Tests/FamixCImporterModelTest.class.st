@@ -919,6 +919,23 @@ FamixCImporterModelTest >> testGlobalVariableStubAlreadyExist [
 		equals: 'aGlobalVarStub'
 ]
 
+{ #category : 'tests - global variables' }
+FamixCImporterModelTest >> testGlobalVariableStubPointer [
+
+	| sourceCode |
+	sourceCode := '
+	*q = ''\0'';
+	'.
+
+	importer importFromString: sourceCode.
+
+	self assert: importer model allGlobalVariables size equals: 1.
+	self assert: importer model allGlobalVariables anyOne isStub.
+	self
+		assert: importer model allGlobalVariables anyOne name
+		equals: 'q'
+]
+
 { #category : 'tests - accesses' }
 FamixCImporterModelTest >> testGlobalVariableWriteAccess [
 

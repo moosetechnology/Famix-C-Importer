@@ -413,7 +413,7 @@ FamixCVisitor >> relativePath: aFileReference [
 
 { #category : 'as yet unclassified' }
 FamixCVisitor >> resolveAccessOf: identifier foundAction: aBlockClosure [
-
+ 
 	self
 		resolve: ((SRIdentifierResolvable identifier: identifier)
 				 expectedKind: {
@@ -741,7 +741,7 @@ FamixCVisitor >> visitPointerDeclarator: aTSNode [
 { #category : 'visiting' }
 FamixCVisitor >> visitPointerExpression: aTSNode [
 
-	^ self visitChildren: aTSNode
+	^ self visit: aTSNode _argument
 ]
 
 { #category : 'visiting' }
